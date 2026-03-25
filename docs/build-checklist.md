@@ -74,12 +74,12 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add packaging tests
 
 ## Phase 8: Memory and Outcome Tracking
-- [ ] Log detected candidates
-- [ ] Log rejected candidates and reasons
-- [ ] Log accepted submissions
-- [ ] Log approval outcomes
-- [ ] Log sats and BTC outcomes
-- [ ] Log leaderboard and beat observations
+- [x] Log detected candidates
+- [x] Log rejected candidates and reasons
+- [x] Log accepted submissions
+- [x] Log approval outcomes
+- [x] Log sats and BTC outcomes
+- [x] Log leaderboard and beat observations
 
 ## Phase 9: Daily Reporting
 - [ ] Create daily report generator

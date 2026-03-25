@@ -1,4 +1,5 @@
 export * from "./candidate-signal.js";
+export * from "./memory-records.js";
 export * from "./model-disclosure.js";
 export * from "./outcome-tracking.js";
 export * from "./pre-submission.js";
