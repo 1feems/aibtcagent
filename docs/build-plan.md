@@ -17,6 +17,7 @@ Build the smallest strong version of the AIBTC Onchain Signal Agent that can eva
 - create state and fixture folders
 - create workflow or runtime skeleton
 - optionally configure development aids for repo search and code analysis
+- treat GitHub Actions as the default MVP hosting path
 
 ### Step 3: Implement the core signal model
 - candidate signal structure

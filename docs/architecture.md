@@ -125,6 +125,7 @@ MVP runtime:
 - one primary beat
 - one detection lane
 - durable local or artifact-backed state
+- GitHub Actions as the default low-cost hosted runner
 
 Later runtime:
 - continuous loop

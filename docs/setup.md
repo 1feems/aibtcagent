@@ -32,6 +32,7 @@ Recommended MVP runtime model:
 - filesystem or simple durable state
 - aggressive rejection logic
 - one primary beat
+- GitHub-hosted automation as the default execution environment
 
 ## Future Runtime Option
 If the MVP proves valuable and GitHub Actions becomes a bottleneck, reconsider a low-cost always-on runtime such as `agentic.hosting`.

@@ -37,6 +37,7 @@ The first build focuses on:
 - strict validation and rejection logic
 - submission-ready output packaging
 - daily learning and reporting
+- GitHub-hosted execution for the lowest-cost runtime path
 
 ## Repo Structure
 ```text

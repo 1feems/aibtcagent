@@ -19,20 +19,20 @@ Mark items complete only after implementation and testing both pass.
 - [x] Testing plan completed
 
 ## Phase 1: Repo and Runtime Scaffold
-- [ ] Create source folder structure
-- [ ] Create config structure
-- [ ] Create state and log folders in runtime code
-- [ ] Create environment variable template
-- [ ] Create GitHub Actions workflow scaffold
+- [x] Create source folder structure
+- [x] Create config structure
+- [x] Create state and log folders in runtime code
+- [x] Create environment variable template
+- [x] Create GitHub Actions workflow scaffold
 - [x] Add README overview for developers
 
 ## Phase 2: Core Types and Schemas
-- [ ] Implement candidate signal types
-- [ ] Implement proof types
-- [ ] Implement source types
-- [ ] Implement model disclosure types
-- [ ] Implement validation result types
-- [ ] Implement outcome tracking types
+- [x] Implement candidate signal types
+- [x] Implement proof types
+- [x] Implement source types
+- [x] Implement model disclosure types
+- [x] Implement validation result types
+- [x] Implement outcome tracking types
 
 ## Phase 3: Validation Engine
 - [ ] Implement one-sentence headline validator
