@@ -1,4 +1,6 @@
 import type {
+  EditorialReview,
+  EditorialRoleReview,
   OutcomeTracking,
   PreSubmissionIntelligence,
   SubmissionDecision,
@@ -78,6 +80,159 @@ export function buildSubmissionDecision(
   };
 }
 
+function buildRoleReview(status: EditorialRoleReview["status"], notes: string[]): EditorialRoleReview {
+  return { status, notes };
+}
+
+export function buildEditorialReview(
+  subject: ValidationSubject,
+  validation: ValidationResult,
+  preSubmissionIntelligence: PreSubmissionIntelligence,
+  submissionDecision: SubmissionDecision
+): EditorialReview {
+  const protocolNotes: string[] = [];
+  const factCheckerNotes: string[] = [];
+  const publisherNotes: string[] = [];
+
+  if (subject.candidate.beat === "protocol-updates") {
+    protocolNotes.push("Candidate fits the protocol-updates beat.");
+  } else {
+    protocolNotes.push("Candidate drifts outside the primary protocol-updates beat.");
+  }
+
+  if (validation.checks.onchainProofPresent) {
+    protocolNotes.push("Onchain proof is attached to a specific contract and transaction.");
+  } else {
+    protocolNotes.push("Missing exact onchain proof for a protocol beat submission.");
+  }
+
+  if (validation.checks.causalityPresent) {
+    protocolNotes.push("Causal trigger is stated rather than implied.");
+  } else {
+    protocolNotes.push("Causality is too weak for a differentiated protocol update.");
+  }
+
+  if (validation.checks.independentlyVerifiable) {
+    factCheckerNotes.push("Proof and sources appear independently verifiable.");
+  } else {
+    factCheckerNotes.push("Independent verification is too weak for fact-checker confidence.");
+  }
+
+  if (validation.checks.sourcesDisclosed) {
+    factCheckerNotes.push("Source disclosure is present.");
+  } else {
+    factCheckerNotes.push("Source disclosure is incomplete.");
+  }
+
+  if (preSubmissionIntelligence.checks.dailyBriefChecked) {
+    factCheckerNotes.push("Daily brief review was recorded.");
+  } else {
+    factCheckerNotes.push("Daily brief review is missing.");
+  }
+
+  if (preSubmissionIntelligence.checks.activityFeedChecked) {
+    factCheckerNotes.push("Activity feed review was recorded.");
+  } else {
+    factCheckerNotes.push("Activity feed review is missing.");
+  }
+
+  if (!subject.candidate.usesDashboardAsPrimarySource) {
+    publisherNotes.push("Signal is not framed as a dashboard recap.");
+  } else {
+    publisherNotes.push("Signal reads too much like a dashboard-first observation.");
+  }
+
+  if (!subject.candidate.likelyDuplicate) {
+    publisherNotes.push("No duplicate flag was raised by the current pipeline.");
+  } else {
+    publisherNotes.push("Duplicate risk is elevated.");
+  }
+
+  if (subject.headline.length <= 140) {
+    publisherNotes.push("Headline is concise enough for a newsroom-style signal.");
+  } else {
+    publisherNotes.push("Headline may be too long for a sharp publisher-facing signal.");
+  }
+
+  if (
+    subject.candidate.significance.toLowerCase().includes("before") ||
+    subject.candidate.significance.toLowerCase().includes("early") ||
+    subject.candidate.significance.toLowerCase().includes("same day")
+  ) {
+    publisherNotes.push("Significance claims the event is early relative to broader visibility.");
+  } else {
+    publisherNotes.push("Early/non-obvious edge is not stated strongly enough.");
+  }
+
+  const protocolStatus: EditorialRoleReview["status"] =
+    subject.candidate.beat === "protocol-updates" &&
+    validation.checks.onchainProofPresent &&
+    validation.checks.causalityPresent
+      ? "pass"
+      : "fail";
+
+  const factCheckerStatus: EditorialRoleReview["status"] =
+    validation.checks.independentlyVerifiable &&
+    validation.checks.sourcesDisclosed &&
+    preSubmissionIntelligence.checks.dailyBriefChecked &&
+    preSubmissionIntelligence.checks.activityFeedChecked
+      ? "pass"
+      : "fail";
+
+  let publisherStatus: EditorialRoleReview["status"] = "pass";
+  if (subject.candidate.usesDashboardAsPrimarySource || subject.candidate.likelyDuplicate) {
+    publisherStatus = "fail";
+  } else if (
+    subject.headline.length > 140 ||
+    !(
+      subject.candidate.significance.toLowerCase().includes("before") ||
+      subject.candidate.significance.toLowerCase().includes("early") ||
+      subject.candidate.significance.toLowerCase().includes("same day")
+    )
+  ) {
+    publisherStatus = "warn";
+  }
+
+  const holdReasons: string[] = [];
+  if (submissionDecision.status !== "submit") {
+    holdReasons.push("technical_submission_gate_failed");
+  }
+  if (protocolStatus !== "pass") {
+    holdReasons.push("protocol_editorial_gate_failed");
+  }
+  if (factCheckerStatus !== "pass") {
+    holdReasons.push("fact_checker_gate_failed");
+  }
+  if (publisherStatus === "fail") {
+    holdReasons.push("publisher_gate_failed");
+  }
+  if (publisherStatus === "warn") {
+    holdReasons.push("publisher_review_needed");
+  }
+
+  const readyToFile = holdReasons.length === 0;
+  const editorialFit =
+    protocolStatus === "pass" && factCheckerStatus === "pass" && publisherStatus === "pass"
+      ? "strong"
+      : protocolStatus === "fail" || factCheckerStatus === "fail" || publisherStatus === "fail"
+        ? "weak"
+        : "borderline";
+  const publisherConfidence =
+    readyToFile ? "high" : publisherStatus === "warn" && submissionDecision.status === "submit"
+      ? "medium"
+      : "low";
+
+  return {
+    protocol: buildRoleReview(protocolStatus, protocolNotes),
+    factChecker: buildRoleReview(factCheckerStatus, factCheckerNotes),
+    publisher: buildRoleReview(publisherStatus, publisherNotes),
+    editorialFit,
+    publisherConfidence,
+    readyToFile,
+    holdReasons
+  };
+}
+
 export function buildDefaultOutcomeTracking(): OutcomeTracking {
   return {
     approved: null,
@@ -94,6 +249,14 @@ export function buildSubmissionPayload(
   preSubmissionIntelligence: PreSubmissionIntelligence,
   generatedAt: string
 ): SubmissionPayload {
+  const submissionDecision = buildSubmissionDecision(validation, preSubmissionIntelligence);
+  const editorialReview = buildEditorialReview(
+    subject,
+    validation,
+    preSubmissionIntelligence,
+    submissionDecision
+  );
+
   return {
     candidateSignal: subject.candidate,
     headline: subject.headline,
@@ -102,7 +265,8 @@ export function buildSubmissionPayload(
     modelDisclosure: subject.modelDisclosure,
     validationStatus: validation,
     preSubmissionIntelligence,
-    submissionDecision: buildSubmissionDecision(validation, preSubmissionIntelligence),
+    submissionDecision,
+    editorialReview,
     outcomeTracking: buildDefaultOutcomeTracking(),
     generatedAt
   };

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
 import { runProtocolUpdateLane } from "../dist/signals/index.js";
 import {
+  buildEditorialReview,
   buildSubmissionDecision,
   buildSubmissionPayload,
   serializeSubmissionPayload
@@ -81,6 +82,8 @@ test("submission payload preserves proof, sources, and disclosure", () => {
   assert.equal(payload.sources.length > 0, true);
   assert.equal(payload.modelDisclosure.toolsUsed.length > 0, true);
   assert.equal(payload.submissionDecision.status, "submit");
+  assert.equal(payload.editorialReview.readyToFile, true);
+  assert.equal(payload.editorialReview.publisher.status, "pass");
 });
 
 test("submission decision rejects when pre-submission checks are incomplete", () => {
@@ -120,4 +123,24 @@ test("submission payload can be serialized to schema-compatible snake_case", () 
   assert.equal("generated_at" in serialized, true);
   assert.equal("tx_hash" in serialized.proof[0], true);
   assert.equal("tools_used" in serialized.model_disclosure, true);
+  assert.equal("editorial_review" in serialized, true);
+  assert.equal(serialized.editorial_review.ready_to_file, true);
+});
+
+test("editorial review can hold a technically valid candidate for publisher caution", () => {
+  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  subject.candidate.significance = "the contract is now visible onchain";
+  const validation = validateSubject(subject);
+  const submissionDecision = buildSubmissionDecision(validation, createPreSubmission());
+  const editorialReview = buildEditorialReview(
+    subject,
+    validation,
+    createPreSubmission(),
+    submissionDecision
+  );
+
+  assert.equal(submissionDecision.status, "submit");
+  assert.equal(editorialReview.publisher.status, "warn");
+  assert.equal(editorialReview.readyToFile, false);
+  assert.equal(editorialReview.holdReasons.includes("publisher_review_needed"), true);
 });

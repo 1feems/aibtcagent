@@ -39,6 +39,8 @@ After the run finishes, inspect the artifact files:
 Treat a candidate as ready to file only if:
 
 - `submissionStatus` is `submit`
+- `editorial_review.ready_to_file` is `true`
+- the `protocol`, `fact_checker`, and `publisher` reviews do not hold the candidate
 - the headline is one sentence and still feels non-obvious
 - the proof and source URLs are exact and reproducible
 - the pre-submission notes show the brief, activity feed, and duplicate risk were checked for the same day

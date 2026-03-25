@@ -11,6 +11,21 @@ export interface SubmissionDecision {
   rejectionReasons: string[];
 }
 
+export interface EditorialRoleReview {
+  status: "pass" | "warn" | "fail";
+  notes: string[];
+}
+
+export interface EditorialReview {
+  protocol: EditorialRoleReview;
+  factChecker: EditorialRoleReview;
+  publisher: EditorialRoleReview;
+  editorialFit: "strong" | "borderline" | "weak";
+  publisherConfidence: "high" | "medium" | "low";
+  readyToFile: boolean;
+  holdReasons: string[];
+}
+
 export interface SubmissionPayload {
   candidateSignal: CandidateSignal;
   headline: string;
@@ -20,6 +35,7 @@ export interface SubmissionPayload {
   validationStatus: ValidationResult;
   preSubmissionIntelligence: PreSubmissionIntelligence;
   submissionDecision: SubmissionDecision;
+  editorialReview: EditorialReview;
   outcomeTracking: OutcomeTracking;
   generatedAt: string;
 }
