@@ -53,15 +53,17 @@
       "duplicate_rejected": "boolean"
     }
   },
-  "pre_submission_checks": {
+  "pre_submission_intelligence": {
+    "checks": {
     "daily_brief_checked": "boolean",
+    "activity_feed_checked": "boolean",
     "leaderboard_checked": "boolean",
     "reputation_checked": "boolean",
     "inbox_checked": "boolean",
-    "bounties_checked": "boolean",
-    "heartbeat_active": "boolean",
-    "reward_attribution_ready": "boolean",
-    "treasury_ready": "boolean"
+    "agent_status_checked": "boolean"
+    },
+    "notes": ["string"],
+    "checked_at": "ISO-8601 timestamp"
   },
   "submission_decision": {
     "status": "submit | reject",
@@ -158,15 +160,19 @@
       "duplicate_rejected": true
     }
   },
-  "pre_submission_checks": {
-    "daily_brief_checked": true,
-    "leaderboard_checked": true,
-    "reputation_checked": true,
-    "inbox_checked": true,
-    "bounties_checked": true,
-    "heartbeat_active": true,
-    "reward_attribution_ready": true,
-    "treasury_ready": true
+  "pre_submission_intelligence": {
+    "checks": {
+      "daily_brief_checked": true,
+      "activity_feed_checked": true,
+      "leaderboard_checked": true,
+      "reputation_checked": true,
+      "inbox_checked": true,
+      "agent_status_checked": true
+    },
+    "notes": [
+      "Latest brief reviewed for duplicate risk."
+    ],
+    "checked_at": "2026-03-25T05:14:00Z"
   },
   "submission_decision": {
     "status": "submit",
@@ -190,5 +196,5 @@
 - `candidate_signal` captures the internal detection record before final submission.
 - `headline` is the newsroom-ready one-line output.
 - `proof`, `sources`, and `model_disclosure` are mandatory for publishable signals.
-- `pre_submission_checks` records the final intelligence pass before filing.
-- `outcome_tracking` exists so the agent can learn from approvals, sats, and leaderboard movement over time.
+- `pre_submission_intelligence` records the final intelligence pass before filing.
+- `outcome_tracking` is carried with the payload for compatibility, but canonical approval and reward results should be read from the outcome files in `data/outcomes/`.

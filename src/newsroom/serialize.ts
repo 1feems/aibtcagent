@@ -2,6 +2,18 @@ import type { SubmissionPayload } from "../types/index.js";
 
 export function serializeSubmissionPayload(payload: SubmissionPayload) {
   return {
+    candidate_signal: {
+      candidate_id: payload.candidateSignal.candidateId,
+      detected_at: payload.candidateSignal.detectedAt,
+      beat: payload.candidateSignal.beat,
+      category: payload.candidateSignal.category,
+      summary: payload.candidateSignal.summary,
+      significance: payload.candidateSignal.significance,
+      causality: payload.candidateSignal.causality,
+      detection_method: payload.candidateSignal.detectionMethod,
+      uses_dashboard_as_primary_source: payload.candidateSignal.usesDashboardAsPrimarySource,
+      likely_duplicate: payload.candidateSignal.likelyDuplicate
+    },
     headline: payload.headline,
     proof: payload.proof.map((item) => ({
       chain: item.chain,

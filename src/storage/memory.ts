@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type {
   AcceptedSubmissionRecord,
@@ -20,6 +20,17 @@ function sanitizeId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
 }
 
+async function ensureFileDoesNotExist(filePath: string): Promise<void> {
+  try {
+    await access(resolve(process.cwd(), filePath));
+    throw new Error(`Refusing to overwrite existing log file: ${filePath}`);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("Refusing to overwrite")) {
+      throw error;
+    }
+  }
+}
+
 export async function logDetectedCandidate(
   candidate: CandidateSignal,
   recordedAt: string
@@ -30,7 +41,9 @@ export async function logDetectedCandidate(
     candidate
   };
 
-  await writeJson(`data/logs/candidates/${sanitizeId(candidate.candidateId)}.json`, record);
+  const filePath = `data/logs/candidates/${sanitizeId(candidate.candidateId)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }
 
 export async function logRejectedCandidate(
@@ -38,14 +51,16 @@ export async function logRejectedCandidate(
   reasons: string[],
   recordedAt: string
 ): Promise<void> {
-  const record = {
+  const record: import("../types/index.js").RejectionLogRecord = {
     kind: "rejection",
     recordedAt,
     candidateId,
     reasons
   };
 
-  await writeJson(`data/logs/rejections/${sanitizeId(candidateId)}.json`, record);
+  const filePath = `data/logs/rejections/${sanitizeId(candidateId)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }
 
 export async function logAcceptedSubmission(
@@ -60,7 +75,9 @@ export async function logAcceptedSubmission(
     submission
   };
 
-  await writeJson(`data/logs/accepted/${sanitizeId(candidateId)}.json`, record);
+  const filePath = `data/logs/accepted/${sanitizeId(candidateId)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }
 
 export async function logApprovalOutcome(
@@ -77,7 +94,9 @@ export async function logApprovalOutcome(
     note
   };
 
-  await writeJson(`data/outcomes/approvals/${sanitizeId(candidateId)}.json`, record);
+  const filePath = `data/outcomes/approvals/${sanitizeId(candidateId)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }
 
 export async function logRewardOutcome(
@@ -94,7 +113,9 @@ export async function logRewardOutcome(
     btcRewardEarned
   };
 
-  await writeJson(`data/outcomes/rewards/${sanitizeId(candidateId)}.json`, record);
+  const filePath = `data/outcomes/rewards/${sanitizeId(candidateId)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }
 
 export async function logLeaderboardObservation(
@@ -111,5 +132,7 @@ export async function logLeaderboardObservation(
     notes
   };
 
-  await writeJson(`data/logs/leaderboard/${sanitizeId(beat)}-${sanitizeId(recordedAt)}.json`, record);
+  const filePath = `data/logs/leaderboard/${sanitizeId(beat)}-${sanitizeId(recordedAt)}.json`;
+  await ensureFileDoesNotExist(filePath);
+  await writeJson(filePath, record);
 }

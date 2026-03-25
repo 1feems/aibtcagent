@@ -65,6 +65,15 @@ test("memory layer logs detected candidates", async () => {
   assert.equal(parsed.candidate.candidateId, "protocol-update-001");
 });
 
+test("memory layer refuses to overwrite an existing candidate log", async () => {
+  const subject = createSubject();
+
+  await assert.rejects(
+    () => logDetectedCandidate(subject.candidate, "2026-03-25T08:00:00Z"),
+    /Refusing to overwrite existing log file/
+  );
+});
+
 test("memory layer logs rejections and reasons", async () => {
   await logRejectedCandidate(
     "protocol-update-001",

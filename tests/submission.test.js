@@ -75,6 +75,7 @@ test("submission payload preserves proof, sources, and disclosure", () => {
     "2026-03-25T07:05:00Z"
   );
 
+  assert.equal(payload.candidateSignal.candidateId, "protocol-update-001");
   assert.equal(payload.headline, subject.headline);
   assert.equal(payload.proof.length > 0, true);
   assert.equal(payload.sources.length > 0, true);
@@ -114,6 +115,7 @@ test("submission payload can be serialized to schema-compatible snake_case", () 
 
   const serialized = serializeSubmissionPayload(payload);
 
+  assert.equal("candidate_signal" in serialized, true);
   assert.equal("model_disclosure" in serialized, true);
   assert.equal("generated_at" in serialized, true);
   assert.equal("tx_hash" in serialized.proof[0], true);

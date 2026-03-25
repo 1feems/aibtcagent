@@ -76,7 +76,7 @@ export function buildSubmissionDecision(
   ];
 
   return {
-    status: rejectionReasons.length === 0 ? "submit" : "reject",
+    status: validation.passed && rejectionReasons.length === 0 ? "submit" : "reject",
     rejectionReasons
   };
 }
@@ -98,6 +98,7 @@ export function buildSubmissionPayload(
   generatedAt: string
 ): SubmissionPayload {
   return {
+    candidateSignal: subject.candidate,
     headline: subject.headline,
     proof: subject.proof,
     sources: subject.sources,

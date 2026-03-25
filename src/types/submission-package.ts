@@ -4,6 +4,7 @@ import type { PreSubmissionIntelligence } from "./pre-submission.js";
 import type { ProofRecord } from "./proof.js";
 import type { SourceRecord } from "./source.js";
 import type { ValidationResult } from "./validation-result.js";
+import type { CandidateSignal } from "./candidate-signal.js";
 
 export interface SubmissionDecision {
   status: "submit" | "reject";
@@ -11,6 +12,7 @@ export interface SubmissionDecision {
 }
 
 export interface SubmissionPayload {
+  candidateSignal: CandidateSignal;
   headline: string;
   proof: ProofRecord[];
   sources: SourceRecord[];
