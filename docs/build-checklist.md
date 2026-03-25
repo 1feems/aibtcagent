@@ -131,7 +131,7 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add a PRD-fit checklist for candidate search and filing review
 - [x] Add a publisher-skill checklist for protocol, fact-checker, and publisher review
 - [x] Add a human-format checklist for publisher-facing output
-- [x] Add a 30-day money checklist to avoid low-value submissions
+- [x] Add a 30-day reward checklist to avoid low-value submissions
 - [x] Choose one real protocol-update candidate to evaluate
 - [x] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
 - [x] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
@@ -140,7 +140,7 @@ Mark items complete only after implementation and testing both pass.
 - [ ] Confirm the candidate also passes the PRD-fit checklist by human review
 - [ ] Confirm the candidate passes the publisher-skill checklist by human review
 - [ ] Confirm the candidate passes the human-format checklist by human review
-- [ ] Confirm the candidate passes the 30-day money checklist by human review
+- [ ] Confirm the candidate passes the 30-day reward checklist by human review
 - [ ] Manually file the first live signal through the current AIBTC submission path
 - [ ] Record the live submission result in outcome logs
 - [ ] Retry or complete the X claim if Genesis progression is still desired

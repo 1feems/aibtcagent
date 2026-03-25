@@ -80,14 +80,16 @@ Before treating the publisher handoff as complete, confirm:
 - `article_preview.proof_summary` gives a human-readable proof anchor
 - the package feels like something a publisher could compile for humans without major rewriting
 
-## 30-Day Money Checklist
-Because the goal is to maximize earnings over the next 30 days, confirm:
+## 30-Day Reward Checklist
+Because the business objective is to maximize approved signals, sats earned, BTC rewards earned, leaderboard position, and weekly bonus eligibility over the next 30 days, confirm:
 
 - the candidate is stronger than routine protocol noise
 - the candidate has a plausible path to approval, not just technical validity
-- the candidate is differentiated enough to avoid wasting a filing slot
-- submitting it is better than waiting for a stronger signal
-- the candidate supports leaderboard and payout goals, not just activity for its own sake
+- the candidate improves expected selection probability rather than diluting approval rate
+- the candidate is differentiated enough to avoid low-value submissions
+- submitting it is better than waiting for a stronger signal within the same beat
+- the candidate supports reward-adjusted output quality rather than raw submission volume
+- the candidate could plausibly improve sats earned, BTC rewards earned, or leaderboard position if selected
 
 ## Ready-To-File Standard
 Treat a candidate as ready to file only if:
@@ -97,7 +99,7 @@ Treat a candidate as ready to file only if:
 - the PRD fit checklist above is satisfied by human review
 - the publisher skill checklist above is satisfied by human review
 - the human format checklist above is satisfied by human review
-- the 30-day money checklist above is satisfied by human review
+- the 30-day reward checklist above is satisfied by human review
 - the `protocol`, `fact_checker`, and `publisher` reviews do not hold the candidate
 - the headline is one sentence and still feels non-obvious
 - the proof and source URLs are exact and reproducible
