@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xverse AIBTC Registration Helper</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe5;
+        --panel: #fffaf2;
+        --ink: #1d1b18;
+        --muted: #5f574d;
+        --accent: #0b6b5d;
+        --accent-2: #c96f33;
+        --border: #d9ccb7;
+        --danger: #8a2d1f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(201, 111, 51, 0.18), transparent 28%),
+          radial-gradient(circle at top right, rgba(11, 107, 93, 0.14), transparent 32%),
+          linear-gradient(180deg, #f9f4eb 0%, var(--bg) 100%);
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 20px 56px;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+        line-height: 1.1;
+      }
+
+      p,
+      li {
+        line-height: 1.5;
+      }
+
+      .hero,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(40, 32, 19, 0.08);
+      }
+
+      .hero {
+        padding: 28px;
+        margin-bottom: 20px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 20px;
+      }
+
+      @media (min-width: 900px) {
+        .grid {
+          grid-template-columns: 1.15fr 0.85fr;
+        }
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 16px 0 0;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: var(--accent);
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+      }
+
+      button.ghost {
+        color: var(--ink);
+        background: #e9decd;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 8px;
+        font-weight: 700;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #f7efe2;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #f7efe2;
+        border: 1px solid var(--border);
+      }
+
+      .status.error {
+        color: var(--danger);
+        background: #fde9e4;
+        border-color: #e6b2a7;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .pill {
+        display: inline-block;
+        margin: 0 8px 8px 0;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #efe4d4;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <h1>Xverse Trigger for AIBTC Registration</h1>
+        <p>
+          This page exists for the exact gap you ran into: your Xverse extension has the keys, but
+          the AIBTC site is not directly triggering the signing prompt. This helper does the
+          trigger locally and keeps signing inside Xverse.
+        </p>
+        <div class="pill">No seed phrase needed</div>
+        <div class="pill">No BTC or STX transfer</div>
+        <div class="pill">Message signing only</div>
+        <div class="button-row">
+          <button id="connectBtn">1. Connect Xverse</button>
+          <button id="signBtn" class="secondary" disabled>2. Sign Both Messages</button>
+          <button id="registerBtn" class="ghost" disabled>3. Submit Registration</button>
+        </div>
+        <div id="status" class="status small">
+          Open this page in the same Chrome profile where the Xverse extension is installed.
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Addresses</h2>
+          <label for="btcAddress">Bitcoin address</label>
+          <input
+            id="btcAddress"
+            value="bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d"
+            spellcheck="false"
+          />
+
+          <label for="stxAddress">Stacks address</label>
+          <input
+            id="stxAddress"
+            value="SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR"
+            spellcheck="false"
+          />
+
+          <label for="description">Agent description</label>
+          <textarea id="description" spellcheck="false">
+AIBTC onchain signal agent focused on early protocol updates with proof-first validation and human-reviewed submissions.</textarea
+          >
+
+          <label for="message">Message to sign</label>
+          <input id="message" value="Bitcoin will be the currency of AIs" spellcheck="false" />
+
+          <p class="small">
+            Xverse should only show message-signing prompts here. If you see a transfer, PSBT,
+            network fee, inputs, or outputs, cancel it.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>Results</h2>
+          <label for="connectionDump">Connected account data</label>
+          <pre id="connectionDump">Not connected yet.</pre>
+
+          <label for="signatureDump">Signature payload</label>
+          <pre id="signatureDump">No signatures yet.</pre>
+
+          <label for="responseDump">AIBTC response</label>
+          <pre id="responseDump">No registration submitted yet.</pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module">
+      import { request } from "https://esm.sh/sats-connect@latest";
+
+      const connectBtn = document.getElementById("connectBtn");
+      const signBtn = document.getElementById("signBtn");
+      const registerBtn = document.getElementById("registerBtn");
+      const status = document.getElementById("status");
+      const btcAddressInput = document.getElementById("btcAddress");
+      const stxAddressInput = document.getElementById("stxAddress");
+      const descriptionInput = document.getElementById("description");
+      const messageInput = document.getElementById("message");
+      const connectionDump = document.getElementById("connectionDump");
+      const signatureDump = document.getElementById("signatureDump");
+      const responseDump = document.getElementById("responseDump");
+
+      let connected = null;
+      let btcSignature = null;
+      let stxSignature = null;
+      let stxPublicKey = null;
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.className = isError ? "status error small" : "status small";
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function getAddressByPurpose(addresses, purpose) {
+        return addresses.find((entry) => entry.purpose === purpose) || null;
+      }
+
+      connectBtn.addEventListener("click", async () => {
+        setStatus("Requesting Xverse connection...");
+
+        try {
+          const response = await request("wallet_connect", {
+            addresses: ["payment", "stacks"],
+            message: "Connect this local helper to request AIBTC registration signatures.",
+            network: "Mainnet"
+          });
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Xverse connection failed.");
+          }
+
+          connected = response.result;
+          connectionDump.textContent = pretty(connected);
+
+          const payment = getAddressByPurpose(connected.addresses || [], "payment");
+          const stacks = getAddressByPurpose(connected.addresses || [], "stacks");
+
+          if (payment?.address) {
+            btcAddressInput.value = payment.address;
+          }
+          if (stacks?.address) {
+            stxAddressInput.value = stacks.address;
+          }
+          if (stacks?.publicKey) {
+            stxPublicKey = stacks.publicKey;
+          }
+
+          signBtn.disabled = false;
+          setStatus("Connected. Confirm the addresses above match your intended Xverse account.");
+        } catch (error) {
+          setStatus(error.message || "Could not connect to Xverse.", true);
+        }
+      });
+
+      signBtn.addEventListener("click", async () => {
+        const btcAddress = btcAddressInput.value.trim();
+        const stxAddress = stxAddressInput.value.trim();
+        const message = messageInput.value;
+
+        if (!connected) {
+          setStatus("Connect Xverse first.", true);
+          return;
+        }
+
+        const payment = getAddressByPurpose(connected.addresses || [], "payment");
+        const stacks = getAddressByPurpose(connected.addresses || [], "stacks");
+
+        if (!payment || payment.address !== btcAddress) {
+          setStatus(
+            "The connected Bitcoin payment address does not match the address in the form. Switch Xverse accounts if needed.",
+            true
+          );
+          return;
+        }
+
+        if (!stacks || stacks.address !== stxAddress) {
+          setStatus(
+            "The connected Stacks address does not match the address in the form. Switch Xverse accounts if needed.",
+            true
+          );
+          return;
+        }
+
+        if (!stacks.publicKey) {
+          setStatus("Xverse did not return a Stacks public key, so STX signing cannot continue.", true);
+          return;
+        }
+
+        setStatus("Requesting Bitcoin signature from Xverse...");
+
+        try {
+          const btcResponse = await request("signMessage", {
+            address: btcAddress,
+            message,
+            protocol: "BIP322"
+          });
+
+          if (btcResponse.status !== "success") {
+            throw new Error(btcResponse.error?.message || "Bitcoin signing failed.");
+          }
+
+          setStatus("Bitcoin signature complete. Requesting Stacks signature from Xverse...");
+
+          const stxResponse = await request("stx_signMessage", {
+            message,
+            publicKey: stacks.publicKey
+          });
+
+          if (stxResponse.status !== "success") {
+            throw new Error(stxResponse.error?.message || "Stacks signing failed.");
+          }
+
+          btcSignature = btcResponse.result.signature;
+          stxSignature = stxResponse.result.signature;
+          stxPublicKey = stxResponse.result.publicKey || stacks.publicKey;
+
+          signatureDump.textContent = pretty({
+            btcAddress,
+            stxAddress,
+            btcSignature,
+            stxSignature,
+            stxPublicKey
+          });
+
+          registerBtn.disabled = false;
+          setStatus("Both signatures captured. You can submit registration now.");
+        } catch (error) {
+          setStatus(error.message || "Signing failed.", true);
+        }
+      });
+
+      registerBtn.addEventListener("click", async () => {
+        if (!btcSignature || !stxSignature) {
+          setStatus("Sign both messages before submitting registration.", true);
+          return;
+        }
+
+        setStatus("Submitting registration to AIBTC...");
+
+        try {
+          const payload = {
+            bitcoinSignature: btcSignature,
+            stacksSignature: stxSignature,
+            btcAddress: btcAddressInput.value.trim(),
+            description: descriptionInput.value.trim()
+          };
+
+          const response = await fetch("https://aibtc.com/api/register", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const body = await response.json().catch(() => ({ raw: "Non-JSON response" }));
+          responseDump.textContent = pretty({
+            status: response.status,
+            ok: response.ok,
+            body
+          });
+
+          if (!response.ok) {
+            throw new Error(body?.error || body?.message || "Registration request failed.");
+          }
+
+          setStatus("Registration submitted successfully. Save the response details before closing this page.");
+        } catch (error) {
+          setStatus(error.message || "Could not submit registration.", true);
+        }
+      });
+    </script>
+  </body>
+</html>
