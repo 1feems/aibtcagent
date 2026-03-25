@@ -11,6 +11,7 @@ This runbook defines the shortest safe path from "we have a real candidate" to "
 - actual wallet signing remains local and manual
 - the repo packages valid candidate signals, but live filing still depends on the current AIBTC submission path available to the operator
 - use `docs/posting-guide.md` alongside this runbook so candidate selection matches what is actually being selected
+- use `docs/signal-sourcing-checklist.md` before sourcing and before filing so we stay aligned on qualification, publisher fit, and reward-adjusted selection
 
 ## Before A Live Run
 - collect one real raw event JSON in `data/live-inputs/`
