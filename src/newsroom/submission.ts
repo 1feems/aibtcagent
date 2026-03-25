@@ -1,4 +1,5 @@
 import type {
+  ArticlePreview,
   EditorialReview,
   EditorialRoleReview,
   OutcomeTracking,
@@ -233,6 +234,37 @@ export function buildEditorialReview(
   };
 }
 
+function trimSentence(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+export function buildArticlePreview(
+  subject: ValidationSubject,
+  generatedAt: string
+): ArticlePreview {
+  const firstProof = subject.proof[0];
+  const title = trimSentence(subject.headline);
+  const dek = trimSentence(
+    `${subject.candidate.summary} ${subject.candidate.significance.charAt(0).toUpperCase()}${subject.candidate.significance.slice(1)}.`
+  );
+  const lede = trimSentence(
+    `${subject.candidate.summary} ${subject.candidate.causality.charAt(0).toUpperCase()}${subject.candidate.causality.slice(1)}.`
+  );
+  const whyItMatters = trimSentence(subject.candidate.significance);
+  const proofSummary = trimSentence(
+    `Proof anchor: ${firstProof.txHash} on ${firstProof.chain} for ${firstProof.contractAddress}, reviewed at ${generatedAt}.`
+  );
+
+  return {
+    title,
+    dek,
+    lede,
+    whyItMatters,
+    proofSummary,
+    audience: "human"
+  };
+}
+
 export function buildDefaultOutcomeTracking(): OutcomeTracking {
   return {
     approved: null,
@@ -256,6 +288,7 @@ export function buildSubmissionPayload(
     preSubmissionIntelligence,
     submissionDecision
   );
+  const articlePreview = buildArticlePreview(subject, generatedAt);
 
   return {
     candidateSignal: subject.candidate,
@@ -267,6 +300,7 @@ export function buildSubmissionPayload(
     preSubmissionIntelligence,
     submissionDecision,
     editorialReview,
+    articlePreview,
     outcomeTracking: buildDefaultOutcomeTracking(),
     generatedAt
   };

@@ -84,6 +84,9 @@ test("submission payload preserves proof, sources, and disclosure", () => {
   assert.equal(payload.submissionDecision.status, "submit");
   assert.equal(payload.editorialReview.readyToFile, true);
   assert.equal(payload.editorialReview.publisher.status, "pass");
+  assert.equal(payload.articlePreview.audience, "human");
+  assert.equal(payload.articlePreview.title.length > 0, true);
+  assert.equal(payload.articlePreview.proofSummary.includes("0xbbbbbb"), true);
 });
 
 test("submission decision rejects when pre-submission checks are incomplete", () => {
@@ -125,6 +128,8 @@ test("submission payload can be serialized to schema-compatible snake_case", () 
   assert.equal("tools_used" in serialized.model_disclosure, true);
   assert.equal("editorial_review" in serialized, true);
   assert.equal(serialized.editorial_review.ready_to_file, true);
+  assert.equal("article_preview" in serialized, true);
+  assert.equal(serialized.article_preview.audience, "human");
 });
 
 test("editorial review can hold a technically valid candidate for publisher caution", () => {

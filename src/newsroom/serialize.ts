@@ -73,6 +73,14 @@ export function serializeSubmissionPayload(payload: SubmissionPayload) {
       ready_to_file: payload.editorialReview.readyToFile,
       hold_reasons: payload.editorialReview.holdReasons
     },
+    article_preview: {
+      title: payload.articlePreview.title,
+      dek: payload.articlePreview.dek,
+      lede: payload.articlePreview.lede,
+      why_it_matters: payload.articlePreview.whyItMatters,
+      proof_summary: payload.articlePreview.proofSummary,
+      audience: payload.articlePreview.audience
+    },
     outcome_tracking: {
       approved: payload.outcomeTracking.approved,
       btc_reward_earned: payload.outcomeTracking.btcRewardEarned,

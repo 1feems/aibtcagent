@@ -26,6 +26,15 @@ export interface EditorialReview {
   holdReasons: string[];
 }
 
+export interface ArticlePreview {
+  title: string;
+  dek: string;
+  lede: string;
+  whyItMatters: string;
+  proofSummary: string;
+  audience: "human";
+}
+
 export interface SubmissionPayload {
   candidateSignal: CandidateSignal;
   headline: string;
@@ -36,6 +45,7 @@ export interface SubmissionPayload {
   preSubmissionIntelligence: PreSubmissionIntelligence;
   submissionDecision: SubmissionDecision;
   editorialReview: EditorialReview;
+  articlePreview: ArticlePreview;
   outcomeTracking: OutcomeTracking;
   generatedAt: string;
 }
