@@ -44,10 +44,10 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add tests for all validation rules
 
 ## Phase 4: Headline Composer
-- [ ] Implement one-line headline generator
-- [ ] Enforce concise formatting
-- [ ] Add acceptance and rejection examples
-- [ ] Add headline tests
+- [x] Implement one-line headline generator
+- [x] Enforce concise formatting
+- [x] Add acceptance and rejection examples
+- [x] Add headline tests
 
 ## Phase 5: First Detection Lane
 - [ ] Confirm primary lane is protocol updates
