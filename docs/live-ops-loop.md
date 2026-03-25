@@ -25,6 +25,10 @@ This runbook defines the smallest useful operating loop after MVP completion.
 npm run dry-run -- --raw data/live-inputs/protocol-update-YYYY-MM-DD.json --pre data/fixtures/pre-submission-intelligence.json
 ```
 
+## GitHub Path
+- use `.github/workflows/dry-run-report.yml` for scheduled or manual dry runs
+- keep Claude/Codex for manual optimization review, not the recurring execution path
+
 ## Daily Review Questions
 - did the lane find something real and early?
 - did weak signals reject correctly?

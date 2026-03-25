@@ -1,0 +1,64 @@
+name: Dry Run Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_path:
+        description: "Raw protocol update JSON path"
+        required: false
+        default: "data/fixtures/protocol-update-raw.json"
+      pre_submission_path:
+        description: "Pre-submission intelligence JSON path"
+        required: false
+        default: "data/fixtures/pre-submission-intelligence.json"
+  schedule:
+    - cron: "15 1 * * *"
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Clean runtime artifacts
+        run: |
+          rm -rf data/logs/accepted \
+                 data/logs/candidates \
+                 data/logs/leaderboard \
+                 data/logs/rejections \
+                 data/outcomes/approvals \
+                 data/outcomes/rewards \
+                 data/reports \
+                 data/experiments/optimization \
+                 data/dry-runs \
+                 data/state/test-pre-submission-output.json
+
+      - name: Run dry run
+        env:
+          RAW_PATH: ${{ github.event.inputs.raw_path || 'data/fixtures/protocol-update-raw.json' }}
+          PRE_PATH: ${{ github.event.inputs.pre_submission_path || 'data/fixtures/pre-submission-intelligence.json' }}
+        run: |
+          REPORT_DATE="$(date -u +%Y-%m-%d)"
+          GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          npm run dry-run -- --raw "$RAW_PATH" --pre "$PRE_PATH" --report-date "$REPORT_DATE" --generated-at "$GENERATED_AT"
+
+      - name: Upload dry run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aibtc-dry-run-artifacts
+          path: |
+            data/dry-runs
+            data/reports
+            data/experiments/optimization
+          if-no-files-found: error

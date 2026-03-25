@@ -26,6 +26,7 @@ For the lowest-cost MVP:
 - use GitHub Actions for scheduled execution
 - keep the runtime simple and cheap first
 - move to an always-on runtime only if signal performance proves it is worth paying for
+- do not rely on Claude Code as the recurring runtime
 
 Recommended MVP runtime model:
 - scheduled polling
@@ -33,6 +34,7 @@ Recommended MVP runtime model:
 - aggressive rejection logic
 - one primary beat
 - GitHub-hosted automation as the default execution environment
+- manual operator optimization and code review outside the runtime loop
 
 ## Future Runtime Option
 If the MVP proves valuable and GitHub Actions becomes a bottleneck, reconsider a low-cost always-on runtime such as `agentic.hosting`.
@@ -61,6 +63,12 @@ AIBTC_REPUTATION_URL=
 ```
 
 Add more only when a concrete integration requires them.
+
+## GitHub Runtime Notes
+- recurring dry runs and report generation should happen in GitHub Actions
+- wallet creation and one-time registration should happen outside the recurring runtime
+- heartbeat automation should be added to GitHub only after signing strategy is finalized
+- Claude Code should be treated as a build/review tool, not the live runtime
 
 ## Operator Setup Checklist
 - wallets confirmed
