@@ -237,6 +237,9 @@ AIBTC onchain signal agent focused on early protocol updates with proof-first va
           <label for="signatureDump">Signature payload</label>
           <pre id="signatureDump">No signatures yet.</pre>
 
+          <label for="curlDump">Fallback curl command</label>
+          <pre id="curlDump">No curl command yet.</pre>
+
           <label for="responseDump">AIBTC response</label>
           <pre id="responseDump">No registration submitted yet.</pre>
         </section>
@@ -256,6 +259,7 @@ AIBTC onchain signal agent focused on early protocol updates with proof-first va
       const messageInput = document.getElementById("message");
       const connectionDump = document.getElementById("connectionDump");
       const signatureDump = document.getElementById("signatureDump");
+      const curlDump = document.getElementById("curlDump");
       const responseDump = document.getElementById("responseDump");
 
       let connected = null;
@@ -270,6 +274,10 @@ AIBTC onchain signal agent focused on early protocol updates with proof-first va
 
       function pretty(value) {
         return JSON.stringify(value, null, 2);
+      }
+
+      function shellEscapeSingleQuotes(value) {
+        return value.replace(/'/g, `'\"'\"'`);
       }
 
       function getAddressByPurpose(addresses, purpose) {
@@ -383,6 +391,20 @@ AIBTC onchain signal agent focused on early protocol updates with proof-first va
             stxPublicKey
           });
 
+          const curlPayload = {
+            bitcoinSignature: btcSignature,
+            stacksSignature: stxSignature,
+            btcAddress,
+            description: descriptionInput.value.trim()
+          };
+
+          curlDump.textContent =
+            "curl -sS -X POST https://aibtc.com/api/register \\\n" +
+            '  -H "Content-Type: application/json" \\\n' +
+            "  -d '" +
+            shellEscapeSingleQuotes(JSON.stringify(curlPayload)) +
+            "'";
+
           registerBtn.disabled = false;
           setStatus("Both signatures captured. You can submit registration now.");
         } catch (error) {
@@ -427,6 +449,11 @@ AIBTC onchain signal agent focused on early protocol updates with proof-first va
 
           setStatus("Registration submitted successfully. Save the response details before closing this page.");
         } catch (error) {
+          responseDump.textContent = pretty({
+            error: error.message || "Could not submit registration in the browser.",
+            nextStep:
+              "Use the fallback curl command shown above in your terminal to submit the already-captured signatures."
+          });
           setStatus(error.message || "Could not submit registration.", true);
         }
       });
