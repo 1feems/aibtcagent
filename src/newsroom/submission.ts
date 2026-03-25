@@ -85,6 +85,21 @@ function buildRoleReview(status: EditorialRoleReview["status"], notes: string[])
   return { status, notes };
 }
 
+function proofAnchorLabel(subject: ValidationSubject): string {
+  const firstProof = subject.proof[0];
+
+  if (!firstProof) {
+    return "the candidate";
+  }
+
+  return (
+    firstProof.contractAddress ??
+    firstProof.txHash ??
+    firstProof.queryName ??
+    "the candidate"
+  );
+}
+
 export function buildEditorialReview(
   subject: ValidationSubject,
   validation: ValidationResult,
@@ -102,9 +117,9 @@ export function buildEditorialReview(
   }
 
   if (validation.checks.onchainProofPresent) {
-    protocolNotes.push("Onchain proof is attached to a specific contract and transaction.");
+    protocolNotes.push("Exact proof is attached to a specific contract, transaction, or versioned release.");
   } else {
-    protocolNotes.push("Missing exact onchain proof for a protocol beat submission.");
+    protocolNotes.push("Missing exact proof for a protocol beat submission.");
   }
 
   if (validation.checks.causalityPresent) {
@@ -251,9 +266,9 @@ export function buildArticlePreview(
     `${subject.candidate.summary} ${subject.candidate.causality.charAt(0).toUpperCase()}${subject.candidate.causality.slice(1)}.`
   );
   const whyItMatters = trimSentence(subject.candidate.significance);
-  const proofSummary = trimSentence(
-    `Proof anchor: ${firstProof.txHash} on ${firstProof.chain} for ${firstProof.contractAddress}, reviewed at ${generatedAt}.`
-  );
+  const proofSummary = trimSentence(firstProof
+    ? `Proof anchor: ${proofAnchorLabel(subject)} on ${firstProof.chain}, reviewed at ${generatedAt}.`
+    : `Proof anchor: ${subject.candidate.candidateId}, reviewed at ${generatedAt}.`);
 
   return {
     title,

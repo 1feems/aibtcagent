@@ -137,10 +137,10 @@ Mark items complete only after implementation and testing both pass.
 - [x] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
 - [ ] Run `Dry Run Report` in GitHub Actions against the real input paths
 - [x] Inspect the generated submission package and confirm the decision is `submit`
-- [ ] Confirm the candidate also passes the PRD-fit checklist by human review
-- [ ] Confirm the candidate passes the publisher-skill checklist by human review
-- [ ] Confirm the candidate passes the human-format checklist by human review
-- [ ] Confirm the candidate passes the 30-day reward checklist by human review
+- [x] Confirm the candidate also passes the PRD-fit checklist by human review
+- [x] Confirm the candidate passes the publisher-skill checklist by human review
+- [x] Confirm the candidate passes the human-format checklist by human review
+- [x] Confirm the candidate passes the 30-day reward checklist by human review
 - [ ] Manually file the first live signal through the current AIBTC submission path
 - [ ] Record the live submission result in outcome logs
 - [ ] Retry or complete the X claim if Genesis progression is still desired

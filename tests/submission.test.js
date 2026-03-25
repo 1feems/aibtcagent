@@ -45,6 +45,30 @@ function createRawProtocolEvent() {
   };
 }
 
+function createReleaseProtocolEvent() {
+  return {
+    id: "protocol-update-release-001",
+    detectedAt: "2026-03-25T18:00:00Z",
+    chain: "github",
+    summary: "x402 relay v1.22.0 doubles sponsor pool to 10 wallets",
+    significance:
+      "agents get 2x concurrent payment capacity from a versioned relay release before the change is broadly framed as a release signal",
+    causalTrigger:
+      "the relay was hitting nonce contention at 5 wallets under concurrent agent load",
+    usesDashboardAsPrimarySource: false,
+    likelyDuplicate: false,
+    versionNumber: "x402-sponsor-relay-v1.22.0",
+    releaseDate: "2026-03-24T19:12:39Z",
+    changelogEntry: "increase sponsor wallet pool from 5 to 10",
+    sourceUrls: {
+      release:
+        "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.22.0",
+      compare:
+        "https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.21.1...x402-sponsor-relay-v1.22.0"
+    }
+  };
+}
+
 test("submission decision submits valid signals", () => {
   const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
@@ -86,7 +110,12 @@ test("submission payload preserves proof, sources, and disclosure", () => {
   assert.equal(payload.editorialReview.publisher.status, "pass");
   assert.equal(payload.articlePreview.audience, "human");
   assert.equal(payload.articlePreview.title.length > 0, true);
-  assert.equal(payload.articlePreview.proofSummary.includes("0xbbbbbb"), true);
+  assert.equal(
+    payload.articlePreview.proofSummary.includes(
+      "SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.protocol-v1"
+    ),
+    true
+  );
 });
 
 test("submission decision rejects when pre-submission checks are incomplete", () => {
@@ -148,4 +177,19 @@ test("editorial review can hold a technically valid candidate for publisher caut
   assert.equal(editorialReview.publisher.status, "warn");
   assert.equal(editorialReview.readyToFile, false);
   assert.equal(editorialReview.holdReasons.includes("publisher_review_needed"), true);
+});
+
+test("submission payload supports versioned release-style protocol updates", () => {
+  const subject = runProtocolUpdateLane(createReleaseProtocolEvent()).subject;
+  const validation = validateSubject(subject);
+  const payload = buildSubmissionPayload(
+    subject,
+    validation,
+    createPreSubmission(),
+    "2026-03-25T18:05:00Z"
+  );
+
+  assert.equal(payload.submissionDecision.status, "submit");
+  assert.equal(payload.editorialReview.readyToFile, true);
+  assert.equal(payload.articlePreview.proofSummary.includes("x402-sponsor-relay-v1.22.0"), true);
 });

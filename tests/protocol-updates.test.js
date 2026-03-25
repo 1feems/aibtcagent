@@ -43,6 +43,37 @@ test("protocol update lane attaches proof and sources", async () => {
   assert.equal(subject.sources.length >= 2, true);
 });
 
+test("protocol update lane supports versioned release candidates", () => {
+  const raw = {
+    id: "protocol-update-release-001",
+    detectedAt: "2026-03-25T18:00:00Z",
+    chain: "github",
+    summary: "x402 relay v1.22.0 doubles sponsor wallet pool to 10 wallets",
+    significance: "agents get 2x concurrent payment capacity from a versioned relay release",
+    causalTrigger:
+      "the relay was hitting nonce contention at 5 wallets under concurrent agent load",
+    usesDashboardAsPrimarySource: false,
+    likelyDuplicate: false,
+    versionNumber: "x402-sponsor-relay-v1.22.0",
+    releaseDate: "2026-03-24T19:12:39Z",
+    changelogEntry: "increase sponsor wallet pool from 5 to 10",
+    sourceUrls: {
+      release:
+        "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.22.0",
+      compare:
+        "https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.21.1...x402-sponsor-relay-v1.22.0"
+    }
+  };
+
+  const { subject } = runProtocolUpdateLane(raw);
+
+  assert.equal(subject.candidate.beat, "protocol-updates");
+  assert.equal(subject.proof[0].txHash, null);
+  assert.equal(subject.proof[0].contractAddress, "x402-sponsor-relay-v1.22.0");
+  assert.equal(subject.proof[0].queryName, "protocol-update-versioned-release");
+  assert.equal(subject.sources[0].sourceUrl, raw.sourceUrls.release);
+});
+
 test("protocol update lane produces a validation-ready signal", async () => {
   const raw = await readFixture();
   const { subject } = runProtocolUpdateLane(raw);
