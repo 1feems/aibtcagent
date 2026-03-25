@@ -53,6 +53,16 @@ Then click:
 
 If the browser POST fails, copy the fallback curl command shown on the page and run it in a new terminal tab.
 
+If terminal quoting is annoying again, paste the heartbeat signature into:
+
+- `tools/xverse-register/submit-heartbeat.sh`
+
+Then run:
+
+```bash
+bash tools/xverse-register/submit-heartbeat.sh
+```
+
 ## Safety expectations
 
 - this should trigger message-signing prompts only

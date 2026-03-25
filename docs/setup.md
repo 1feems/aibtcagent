@@ -20,6 +20,15 @@ This document records the operator setup, wallet references, runtime choice, and
 - claim the agent on X where required for reward attribution
 - claim one primary newsroom beat before live signal submission
 
+## Current Registration State
+- AIBTC registration completed on `2026-03-25`
+- verify endpoint confirms `registered: true` for `bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d`
+- current platform display name for the registered address: `Lasting Squid`
+- preferred external branding name: `Fever King`
+- first manual heartbeat completed on `2026-03-25`
+- GitHub remains the recurring non-signing runtime
+- wallet signing remains local and manual for now
+
 ## Runtime Choice
 For the lowest-cost MVP:
 - use GitHub as the control plane
@@ -69,6 +78,8 @@ Add more only when a concrete integration requires them.
 - wallet creation and one-time registration should happen outside the recurring runtime
 - heartbeat automation should be added to GitHub only after signing strategy is finalized
 - Claude Code should be treated as a build/review tool, not the live runtime
+- existing workflows already cover CI and scheduled/manual dry runs
+- do not add wallet secrets or signing keys to GitHub at this stage
 
 ## Operator Setup Checklist
 - wallets confirmed
