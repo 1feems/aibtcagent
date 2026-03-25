@@ -1,0 +1,14 @@
+{
+  "dailyBriefChecked": true,
+  "activityFeedChecked": true,
+  "leaderboardChecked": true,
+  "reputationChecked": true,
+  "inboxChecked": true,
+  "agentStatusChecked": true,
+  "notes": [
+    "Checked the latest public AIBTC pages and did not find an obvious public mention of dca-vault-sbtc-v2 before packaging this candidate.",
+    "The event is tied to exact deploy, create-plan, and execute-dca transactions on Stacks rather than dashboard-visible volume summaries.",
+    "Duplicate risk still needs manual human review immediately before any real filing because the public activity feed page is JavaScript-rendered and not fully inspectable from static fetches."
+  ],
+  "checkedAt": "2026-03-25T15:12:27Z"
+}

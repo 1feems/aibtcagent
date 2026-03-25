@@ -1,0 +1,19 @@
+{
+  "id": "protocol-update-2026-03-25-001",
+  "detectedAt": "2026-03-25T13:56:52.000Z",
+  "chain": "stacks",
+  "contractAddress": "SP2CMK69QNY60HBG8BJ4X5TD7XX2ZT4XB62V13SV.dca-vault-sbtc-v2",
+  "deployTxHash": "0xc6d9eea83720be8a2b16743f902377b20a02e831ec1c2a756ec3cf1f3da97724",
+  "firstInteractionTxHash": "0xdf5ce962debb15d6c1c791de7912bc9f67f443bdf54415247970b07b98f9673f",
+  "blockHeight": 7336945,
+  "summary": "A newly deployed sBTC DCA vault contract executed its first live swap shortly after launch.",
+  "significance": "The contract appears live before broad dashboard visibility because it moved from deployment to plan creation and first execution within the same day.",
+  "causalTrigger": "A user created a DCA plan on the new vault and then called execute-dca through the Bitflow USDCx swap router, producing the contract's first live swap execution.",
+  "usesDashboardAsPrimarySource": false,
+  "likelyDuplicate": false,
+  "firstInteractionQueryResult": "Deploy at 2026-03-25T13:34:11Z (block 7336699), create-plan at 2026-03-25T13:44:33Z (tx 0x827f340ce744c004cd98ee37df1288615122baa318114101b492857dd54c95be), execute-dca at 2026-03-25T13:56:52Z (tx 0xdf5ce962debb15d6c1c791de7912bc9f67f443bdf54415247970b07b98f9673f) returning ok tuple with net-swapped u333 and swaps-done u1.",
+  "sourceUrls": {
+    "rpc": "https://api.hiro.so/extended/v1/address/SP2CMK69QNY60HBG8BJ4X5TD7XX2ZT4XB62V13SV.dca-vault-sbtc-v2/transactions?limit=20",
+    "explorer": "https://explorer.hiro.so/txid/0xdf5ce962debb15d6c1c791de7912bc9f67f443bdf54415247970b07b98f9673f?chain=mainnet"
+  }
+}

@@ -128,11 +128,11 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add a live raw-event template for protocol updates
 - [x] Add a live pre-submission intelligence template
 - [x] Add a runbook for the first live signal handoff
-- [ ] Choose one real protocol-update candidate to evaluate
-- [ ] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
-- [ ] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
+- [x] Choose one real protocol-update candidate to evaluate
+- [x] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
+- [x] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
 - [ ] Run `Dry Run Report` in GitHub Actions against the real input paths
-- [ ] Inspect the generated submission package and confirm the decision is `submit`
+- [x] Inspect the generated submission package and confirm the decision is `submit`
 - [ ] Manually file the first live signal through the current AIBTC submission path
 - [ ] Record the live submission result in outcome logs
 - [ ] Retry or complete the X claim if Genesis progression is still desired
