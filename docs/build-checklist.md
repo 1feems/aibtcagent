@@ -50,13 +50,13 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add headline tests
 
 ## Phase 5: First Detection Lane
-- [ ] Confirm primary lane is protocol updates
-- [ ] Connect first raw detection source
-- [ ] Normalize source data into candidate signals
-- [ ] Attach proof
-- [ ] Attach causality
-- [ ] Add fixtures for this lane
-- [ ] Add lane tests
+- [x] Confirm primary lane is protocol updates
+- [x] Connect first raw detection source
+- [x] Normalize source data into candidate signals
+- [x] Attach proof
+- [x] Attach causality
+- [x] Add fixtures for this lane
+- [x] Add lane tests
 
 ## Phase 6: Pre-Submission Intelligence
 - [ ] Add daily brief check

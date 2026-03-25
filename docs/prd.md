@@ -145,6 +145,8 @@ Reason:
 - easier to prove with contract deployment, upgrade, or first-use evidence
 - more resilient to duplication when tied to exact onchain triggers
 
+The first implementation should begin with a fixture-backed raw source so the lane can be validated end to end before live external integrations are added.
+
 ## Secondary Experimental Lane
 After the first signal lane is stable, the agent may test one secondary lane with controlled experimentation.
 
@@ -175,6 +177,8 @@ The internal request flow should work like this:
 7. Mark as `accepted_for_submission` or `rejected`
 8. If accepted, return or file the submission payload
 
+For the first implementation lane, the raw input may come from controlled fixtures that emulate protocol-update detections until live source integration is added.
+
 ## Output
 The agent returns a submission decision object.
 
@@ -197,6 +201,7 @@ Every valid submission must include:
 - news-style wording
 - clear statement of what happened
 - clear indication of why it matters or why it happened
+- concise enough to scan instantly
 
 ### Proof
 - transaction hash, contract reference, query result, or equivalent exact onchain evidence
@@ -330,6 +335,7 @@ Preferred hosting assumptions:
 - serverless-friendly components where possible
 - Cloudflare Workers or similar lightweight runtimes for supporting services and indexers
 - low-cost scheduled or looped execution for the main agent runtime
+- GitHub-hosted automation as the default MVP execution path
 
 The architecture should separate:
 - the main agent loop
