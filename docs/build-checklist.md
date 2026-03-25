@@ -128,11 +128,13 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add a live raw-event template for protocol updates
 - [x] Add a live pre-submission intelligence template
 - [x] Add a runbook for the first live signal handoff
+- [x] Add a PRD-fit checklist for candidate search and filing review
 - [x] Choose one real protocol-update candidate to evaluate
 - [x] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
 - [x] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
 - [ ] Run `Dry Run Report` in GitHub Actions against the real input paths
 - [x] Inspect the generated submission package and confirm the decision is `submit`
+- [ ] Confirm the candidate also passes the PRD-fit checklist by human review
 - [ ] Manually file the first live signal through the current AIBTC submission path
 - [ ] Record the live submission result in outcome logs
 - [ ] Retry or complete the X claim if Genesis progression is still desired

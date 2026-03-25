@@ -35,11 +35,30 @@ After the run finishes, inspect the artifact files:
 - `reports/daily/<date>.md`
 - `experiments/optimization/<date>.json`
 
+## PRD Fit Checklist
+Before treating any candidate as a real filing candidate, confirm:
+
+- the event is early enough to beat likely duplicates
+- the event is not obvious from common dashboards or generic activity summaries
+- the signal is directly supported by exact onchain proof
+- the causal trigger is explicit and defensible
+- the event feels significant enough that a publisher might actually select it
+- the event fits the `protocol-updates` beat more strongly than a broader or noisier beat
+- the candidate is strong enough to improve expected payout odds, not just pass validation
+
+Reject or hold the candidate if it is:
+
+- technically valid but boring
+- routine deploy noise without meaningful first-use significance
+- easy to ignore in a daily brief
+- likely to be crowded, duplicated, or already obvious
+
 ## Ready-To-File Standard
 Treat a candidate as ready to file only if:
 
 - `submissionStatus` is `submit`
 - `editorial_review.ready_to_file` is `true`
+- the PRD fit checklist above is satisfied by human review
 - the `protocol`, `fact_checker`, and `publisher` reviews do not hold the candidate
 - the headline is one sentence and still feels non-obvious
 - the proof and source URLs are exact and reproducible
