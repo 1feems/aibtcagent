@@ -4,3 +4,4 @@ export * from "./outcome-tracking.js";
 export * from "./proof.js";
 export * from "./source.js";
 export * from "./validation-result.js";
+export * from "./validation-subject.js";

@@ -35,13 +35,13 @@ Mark items complete only after implementation and testing both pass.
 - [x] Implement outcome tracking types
 
 ## Phase 3: Validation Engine
-- [ ] Implement one-sentence headline validator
-- [ ] Implement proof validator
-- [ ] Implement causality validator
-- [ ] Implement disclosure validator
-- [ ] Implement dashboard-source rejection rule
-- [ ] Implement duplicate rejection rule
-- [ ] Add tests for all validation rules
+- [x] Implement one-sentence headline validator
+- [x] Implement proof validator
+- [x] Implement causality validator
+- [x] Implement disclosure validator
+- [x] Implement dashboard-source rejection rule
+- [x] Implement duplicate rejection rule
+- [x] Add tests for all validation rules
 
 ## Phase 4: Headline Composer
 - [ ] Implement one-line headline generator
