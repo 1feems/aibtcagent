@@ -18,6 +18,9 @@ export interface ProtocolUpdateRawEvent {
   summary: string;
   significance: string;
   causalTrigger: string;
+  usesDashboardAsPrimarySource: boolean;
+  likelyDuplicate: boolean;
+  firstInteractionQueryResult?: string | null;
   sourceUrls: {
     rpc: string;
     explorer: string;
@@ -43,8 +46,8 @@ export function buildProtocolUpdateCandidate(raw: ProtocolUpdateRawEvent): Candi
     significance: raw.significance,
     causality: raw.causalTrigger,
     detectionMethod: "raw-query",
-    usesDashboardAsPrimarySource: false,
-    likelyDuplicate: false
+    usesDashboardAsPrimarySource: raw.usesDashboardAsPrimarySource,
+    likelyDuplicate: raw.likelyDuplicate
   };
 }
 
@@ -55,7 +58,7 @@ export function buildProtocolUpdateProof(raw: ProtocolUpdateRawEvent): ProofReco
       txHash: raw.firstInteractionTxHash,
       contractAddress: raw.contractAddress,
       queryName: "protocol-update-deploy-and-first-use",
-      queryResult: `deploy ${raw.deployTxHash} -> first interaction ${raw.firstInteractionTxHash}`,
+      queryResult: raw.firstInteractionQueryResult ?? null,
       blockHeight: raw.blockHeight,
       proofNote: "First interaction followed deployment in the monitored window."
     }

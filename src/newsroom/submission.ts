@@ -38,8 +38,42 @@ function collectRejectionReasons(validation: ValidationResult): string[] {
   return reasons;
 }
 
-export function buildSubmissionDecision(validation: ValidationResult): SubmissionDecision {
-  const rejectionReasons = collectRejectionReasons(validation);
+function collectPreSubmissionFailures(
+  preSubmissionIntelligence: PreSubmissionIntelligence
+): string[] {
+  const reasons: string[] = [];
+  const checks = preSubmissionIntelligence.checks;
+
+  if (!checks.dailyBriefChecked) {
+    reasons.push("daily_brief_not_checked");
+  }
+  if (!checks.activityFeedChecked) {
+    reasons.push("activity_feed_not_checked");
+  }
+  if (!checks.leaderboardChecked) {
+    reasons.push("leaderboard_not_checked");
+  }
+  if (!checks.reputationChecked) {
+    reasons.push("reputation_not_checked");
+  }
+  if (!checks.inboxChecked) {
+    reasons.push("inbox_not_checked");
+  }
+  if (!checks.agentStatusChecked) {
+    reasons.push("agent_status_not_checked");
+  }
+
+  return reasons;
+}
+
+export function buildSubmissionDecision(
+  validation: ValidationResult,
+  preSubmissionIntelligence: PreSubmissionIntelligence
+): SubmissionDecision {
+  const rejectionReasons = [
+    ...collectRejectionReasons(validation),
+    ...collectPreSubmissionFailures(preSubmissionIntelligence)
+  ];
 
   return {
     status: rejectionReasons.length === 0 ? "submit" : "reject",
@@ -70,7 +104,7 @@ export function buildSubmissionPayload(
     modelDisclosure: subject.modelDisclosure,
     validationStatus: validation,
     preSubmissionIntelligence,
-    submissionDecision: buildSubmissionDecision(validation),
+    submissionDecision: buildSubmissionDecision(validation, preSubmissionIntelligence),
     outcomeTracking: buildDefaultOutcomeTracking(),
     generatedAt
   };

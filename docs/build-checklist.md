@@ -42,12 +42,16 @@ Mark items complete only after implementation and testing both pass.
 - [x] Implement dashboard-source rejection rule
 - [x] Implement duplicate rejection rule
 - [x] Add tests for all validation rules
+- [x] Run Claude Code review for Phase 3
+- [x] Apply Claude Code fixes for Phase 3
 
 ## Phase 4: Headline Composer
 - [x] Implement one-line headline generator
 - [x] Enforce concise formatting
 - [x] Add acceptance and rejection examples
 - [x] Add headline tests
+- [x] Run Claude Code review for Phase 4
+- [x] Apply Claude Code fixes for Phase 4
 
 ## Phase 5: First Detection Lane
 - [x] Confirm primary lane is protocol updates
@@ -57,6 +61,8 @@ Mark items complete only after implementation and testing both pass.
 - [x] Attach causality
 - [x] Add fixtures for this lane
 - [x] Add lane tests
+- [x] Run Claude Code review for Phase 5
+- [x] Apply Claude Code fixes for Phase 5
 
 ## Phase 6: Pre-Submission Intelligence
 - [x] Add daily brief check
@@ -66,12 +72,16 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add inbox check
 - [x] Add agent status check
 - [x] Persist pre-submission check results
+- [x] Run Claude Code review for Phase 6
+- [x] Apply Claude Code fixes for Phase 6
 
 ## Phase 7: Submission Packaging
 - [x] Build final submission payload
 - [x] Add submit or reject decision structure
 - [x] Preserve proof, sources, and disclosure in output
 - [x] Add packaging tests
+- [x] Run Claude Code review for Phase 7
+- [x] Apply Claude Code fixes for Phase 7
 
 ## Phase 8: Memory and Outcome Tracking
 - [x] Log detected candidates
@@ -80,6 +90,8 @@ Mark items complete only after implementation and testing both pass.
 - [x] Log approval outcomes
 - [x] Log sats and BTC outcomes
 - [x] Log leaderboard and beat observations
+- [x] Run Claude Code review for Phase 8
+- [x] Apply Claude Code fixes for Phase 8
 
 ## Phase 9: Daily Reporting
 - [ ] Create daily report generator

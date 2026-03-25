@@ -29,7 +29,7 @@ function createValidSubject() {
     proof: [
       {
         chain: "stacks",
-        txHash: "0xabc123",
+        txHash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         contractAddress: "SP11.contract-v1",
         queryName: "deploy",
         queryResult: "confirmed",
@@ -61,6 +61,13 @@ test("one-sentence headline validator accepts a single sentence", () => {
   );
 });
 
+test("one-sentence headline validator accepts version numbers and decimals", () => {
+  assert.equal(
+    validateOneSentenceHeadline("Protocol v2.0 launched after a $4.2M funding event on Stacks."),
+    true
+  );
+});
+
 test("one-sentence headline validator rejects multiple sentences", () => {
   assert.equal(
     validateOneSentenceHeadline(
@@ -83,6 +90,15 @@ test("proof validator rejects signals without usable proof", () => {
       proofNote: null
     }
   ];
+
+  assert.equal(validateProof(subject), false);
+});
+
+test("proof validator rejects malformed tx hashes", () => {
+  const subject = createValidSubject();
+  subject.proof[0].txHash = "placeholder";
+  subject.proof[0].contractAddress = null;
+  subject.proof[0].queryResult = null;
 
   assert.equal(validateProof(subject), false);
 });

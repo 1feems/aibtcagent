@@ -1,20 +1,40 @@
 import type { ValidationResult, ValidationChecks, ValidationSubject } from "../types/index.js";
 
-function sentenceCount(headline: string): number {
-  return headline
-    .trim()
-    .split(/[.!?]+/u)
+function splitIntoSentences(text: string): string[] {
+  const trimmed = text.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
+    return Array.from(segmenter.segment(trimmed))
+      .map((segment) => segment.segment.trim())
+      .filter(Boolean);
+  }
+
+  return trimmed
+    .split(/(?<=[!?])\s+|(?<!\d)\.(?=\s|$)/u)
     .map((part) => part.trim())
-    .filter(Boolean).length;
+    .filter(Boolean);
 }
 
 export function validateOneSentenceHeadline(headline: string): boolean {
-  return sentenceCount(headline) === 1;
+  return splitIntoSentences(headline).length === 1;
+}
+
+function isValidTxHash(txHash: string | null): boolean {
+  if (!txHash) {
+    return false;
+  }
+
+  return /^0x[a-fA-F0-9]{64}$/u.test(txHash);
 }
 
 export function validateProof(subject: ValidationSubject): boolean {
   return subject.proof.some((item) => {
-    return Boolean(item.txHash || item.contractAddress || item.queryResult);
+    return Boolean(isValidTxHash(item.txHash) || item.contractAddress || item.queryResult);
   });
 }
 
@@ -23,6 +43,14 @@ export function validateCausality(subject: ValidationSubject): boolean {
 }
 
 export function validateDisclosure(subject: ValidationSubject): boolean {
+  return validateSourcesDisclosed(subject) && validateModelDisclosure(subject);
+}
+
+export function validateSourcesDisclosed(subject: ValidationSubject): boolean {
+  return subject.sources.length > 0;
+}
+
+export function validateModelDisclosure(subject: ValidationSubject): boolean {
   const hasSources = subject.sources.length > 0;
   const hasTools = subject.modelDisclosure.toolsUsed.length > 0;
   const hasDerivation = subject.modelDisclosure.derivationSteps.length > 0;
@@ -39,15 +67,18 @@ export function rejectDuplicate(subject: ValidationSubject): boolean {
 }
 
 export function validateSubject(subject: ValidationSubject): ValidationResult {
+  const proofPresent = validateProof(subject);
+  const causalityPresent = validateCausality(subject);
+  const sourcesDisclosed = validateSourcesDisclosed(subject);
+  const modelDisclosurePresent = validateModelDisclosure(subject);
+
   const checks: ValidationChecks = {
     oneSentenceHeadline: validateOneSentenceHeadline(subject.headline),
-    onchainProofPresent: validateProof(subject),
-    causalityPresent: validateCausality(subject),
-    sourcesDisclosed: subject.sources.length > 0,
-    modelDisclosurePresent:
-      subject.modelDisclosure.toolsUsed.length > 0 &&
-      subject.modelDisclosure.derivationSteps.length > 0,
-    independentlyVerifiable: validateProof(subject) && subject.sources.length > 0,
+    onchainProofPresent: proofPresent,
+    causalityPresent,
+    sourcesDisclosed,
+    modelDisclosurePresent,
+    independentlyVerifiable: proofPresent && sourcesDisclosed,
     dashboardPrimarySourceRejected: rejectDashboardPrimarySource(subject),
     duplicateRejected: rejectDuplicate(subject)
   };

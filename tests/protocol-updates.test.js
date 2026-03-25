@@ -24,6 +24,16 @@ test("protocol update lane normalizes raw input into a candidate signal", async 
   assert.equal(subject.candidate.causality.length > 0, true);
 });
 
+test("protocol update lane preserves duplicate and dashboard flags from raw input", async () => {
+  const raw = await readFixture();
+  raw.usesDashboardAsPrimarySource = true;
+  raw.likelyDuplicate = true;
+  const { subject } = runProtocolUpdateLane(raw);
+
+  assert.equal(subject.candidate.usesDashboardAsPrimarySource, true);
+  assert.equal(subject.candidate.likelyDuplicate, true);
+});
+
 test("protocol update lane attaches proof and sources", async () => {
   const raw = await readFixture();
   const { subject } = runProtocolUpdateLane(raw);
@@ -39,4 +49,14 @@ test("protocol update lane produces a validation-ready signal", async () => {
   const result = validateSubject(subject);
 
   assert.equal(result.passed, true);
+});
+
+test("protocol update lane fails validation when raw event is marked duplicate", async () => {
+  const raw = await readFixture();
+  raw.likelyDuplicate = true;
+  const { subject } = runProtocolUpdateLane(raw);
+  const result = validateSubject(subject);
+
+  assert.equal(result.passed, false);
+  assert.equal(result.checks.duplicateRejected, false);
 });

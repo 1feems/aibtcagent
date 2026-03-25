@@ -59,3 +59,12 @@ test("concise enforcement trims multiple sentences to one", () => {
 
   assert.equal(headline, "A new contract launched on Stacks.");
 });
+
+test("headline composer preserves version numbers within one sentence", () => {
+  const headline = enforceConciseHeadline(
+    "Protocol v2.0 launched on Stacks after a funding event.",
+    MAX_HEADLINE_LENGTH
+  );
+
+  assert.equal(headline, "Protocol v2.0 launched on Stacks after a funding event.");
+});

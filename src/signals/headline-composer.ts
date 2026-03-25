@@ -16,12 +16,24 @@ function toSentence(text: string): string {
 }
 
 function ensureSingleSentence(text: string): string {
-  const [first] = text
-    .split(/[.!?]+/u)
-    .map((part) => normalizeWhitespace(part))
-    .filter(Boolean);
+  const trimmed = normalizeWhitespace(text);
+  if (!trimmed) {
+    return "";
+  }
 
-  return first ? `${first}.` : "";
+  const segments =
+    typeof Intl !== "undefined" && "Segmenter" in Intl
+      ? Array.from(new Intl.Segmenter("en", { granularity: "sentence" }).segment(trimmed))
+          .map((segment) => normalizeWhitespace(segment.segment))
+          .filter(Boolean)
+      : trimmed
+          .split(/(?<=[!?])\s+|(?<!\d)\.(?=\s|$)/u)
+          .map((part) => normalizeWhitespace(part))
+          .filter(Boolean);
+
+  const [first] = segments;
+
+  return first ? `${stripEnding(first)}.` : "";
 }
 
 export function enforceConciseHeadline(headline: string, maxLength = MAX_HEADLINE_LENGTH): string {
@@ -41,9 +53,8 @@ export function buildHeadline(candidate: CandidateSignal, maxLength = MAX_HEADLI
   const significance = stripEnding(candidate.significance);
 
   const variants = [
-    `${summary} because ${causality}, signaling ${significance}`,
     `${summary} because ${causality}`,
-    `${summary}, signaling ${significance}`,
+    `${summary}, which suggests ${significance}`,
     summary
   ]
     .map(toSentence)
