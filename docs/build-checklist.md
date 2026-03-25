@@ -94,12 +94,12 @@ Mark items complete only after implementation and testing both pass.
 - [x] Apply Claude Code fixes for Phase 8
 
 ## Phase 9: Daily Reporting
-- [ ] Create daily report generator
-- [ ] Summarize detections and submissions
-- [ ] Summarize rejections and reasons
-- [ ] Summarize approvals and rewards
-- [ ] Summarize what changed and what to improve
-- [ ] Save reports in a readable format
+- [x] Create daily report generator
+- [x] Summarize detections and submissions
+- [x] Summarize rejections and reasons
+- [x] Summarize approvals and rewards
+- [x] Summarize what changed and what to improve
+- [x] Save reports in a readable format
 
 ## Phase 10: Optimization Loop
 - [ ] Adjust beat preference from outcomes
