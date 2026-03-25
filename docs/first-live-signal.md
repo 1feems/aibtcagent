@@ -10,6 +10,7 @@ This runbook defines the shortest safe path from "we have a real candidate" to "
 - GitHub Actions is the recurring non-signing runtime
 - actual wallet signing remains local and manual
 - the repo packages valid candidate signals, but live filing still depends on the current AIBTC submission path available to the operator
+- use `docs/posting-guide.md` alongside this runbook so candidate selection matches what is actually being selected
 
 ## Before A Live Run
 - collect one real raw event JSON in `data/live-inputs/`
