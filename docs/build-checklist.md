@@ -109,12 +109,12 @@ Mark items complete only after implementation and testing both pass.
 - [x] Record next-day recommendations
 
 ## Phase 11: Final MVP Review
-- [ ] Confirm one lane works end to end
-- [ ] Confirm weak signals are rejected reliably
-- [ ] Confirm outputs match schema
-- [ ] Confirm daily report is readable and useful
-- [ ] Confirm docs match implementation
-- [ ] Confirm build is ready for live iteration
+- [x] Confirm one lane works end to end
+- [x] Confirm weak signals are rejected reliably
+- [x] Confirm outputs match schema
+- [x] Confirm daily report is readable and useful
+- [x] Confirm docs match implementation
+- [x] Confirm build is ready for live iteration
 
 ## Rule
-- [ ] Do not start the next incomplete phase before the current one is implemented and tested
+- [x] Do not start the next incomplete phase before the current one is implemented and tested
