@@ -21,8 +21,8 @@ function createSubject(id, summary, significance, causality, detectedAt) {
     detectedAt,
     chain: "stacks",
     contractAddress: `SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.${id}`,
-    deployTxHash: `0xdeploy-${id}`,
-    firstInteractionTxHash: `0xinteract-${id}`,
+    deployTxHash: `0x${"a".repeat(64)}`,
+    firstInteractionTxHash: `0x${"b".repeat(64)}`,
     blockHeight: 182450,
     summary,
     significance,
@@ -118,12 +118,72 @@ test(
       });
       assert.ok(snapshot.winningHeadlinePatterns.some((pattern) => pattern.pattern === "before-advantage"));
       assert.ok(snapshot.winningHeadlinePatterns.some((pattern) => pattern.pattern === "full-length"));
+      assert.equal(
+        snapshot.winningHeadlinePatterns.find((pattern) => pattern.pattern === "before-advantage")?.count,
+        1
+      );
       assert.ok(snapshot.nextDayRecommendations.some((line) => /protocol-updates/.test(line)));
       assert.ok(snapshot.nextDayRecommendations.some((line) => /headline/i.test(line)));
 
       const saved = JSON.parse(await readFile(savedTo, "utf8"));
       assert.equal(saved.kind, "daily_optimization");
       assert.match(savedTo, /data\/experiments\/optimization\/2026-03-25\.json$/);
+    } finally {
+      process.chdir(originalCwd);
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test(
+  "optimization loop attributes cross-day approvals to the original beat without forced decrease",
+  { concurrency: false },
+  async () => {
+    const originalCwd = process.cwd();
+    const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-optimization-cross-day-"));
+
+    process.chdir(tempDir);
+
+    try {
+      const priorDayWinner = createSubject(
+        "protocol-update-opt-previous",
+        "A newly deployed Stacks contract drew immediate first-use activity before public dashboards caught up",
+        "a live protocol launch is visible onchain before broad public visibility",
+        "its deployment was followed by a first funding and interaction transaction",
+        "2026-03-24T06:30:00Z"
+      );
+      const currentDayCandidate = createSubject(
+        "protocol-update-opt-current",
+        "A new Stacks protocol upgrade began attracting early contract calls",
+        "an active launch can be seen before broad public distribution",
+        "its deployment was followed by immediate first-use traffic",
+        "2026-03-25T07:00:00Z"
+      );
+
+      await logDetectedCandidate(priorDayWinner.candidate, "2026-03-24T08:00:00Z");
+      await logAcceptedSubmission(
+        priorDayWinner.candidate.candidateId,
+        createSubmission(priorDayWinner, "2026-03-24T08:10:00Z"),
+        "2026-03-24T08:10:00Z"
+      );
+      await logDetectedCandidate(currentDayCandidate.candidate, "2026-03-25T08:05:00Z");
+      await logApprovalOutcome(
+        priorDayWinner.candidate.candidateId,
+        true,
+        "Selected for brief",
+        "2026-03-25T09:00:00Z"
+      );
+
+      const { snapshot } = await generateAndSaveDailyOptimizationSnapshot(
+        "2026-03-25",
+        "2026-03-25T23:00:00Z"
+      );
+
+      assert.equal(snapshot.beatPreferences.length, 1);
+      assert.equal(snapshot.beatPreferences[0].beat, "protocol-updates");
+      assert.equal(snapshot.beatPreferences[0].approvals, 1);
+      assert.equal(snapshot.beatPreferences[0].preference, "increase");
+      assert.equal(snapshot.beatPreferences[0].approvalRate, null);
     } finally {
       process.chdir(originalCwd);
       await rm(tempDir, { recursive: true, force: true });

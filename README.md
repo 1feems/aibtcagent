@@ -7,9 +7,9 @@ Private working repository for an AIBTC onchain signal agent focused on:
 - leaderboard, reward, and reputation optimization
 
 ## Current Status
-The repository is in the planning and build-prep stage.
+The repository is now in MVP implementation and verification.
 
-Core product docs are already in place:
+Core product docs are in place:
 - [`docs/concept-note.md`](./docs/concept-note.md)
 - [`docs/prd.md`](./docs/prd.md)
 - [`docs/json-schema.md`](./docs/json-schema.md)
@@ -43,9 +43,16 @@ The first build focuses on:
 ```text
 docs/    product, setup, architecture, strategy, and testing docs
 data/    state, logs, outcomes, and experiments
+src/     signal detection, validation, packaging, reporting, and optimization logic
+tests/   node-based integration and behavior tests
 ```
 
-Implementation code will be added once the documentation-led planning phase is complete.
+The current implementation covers:
+- one production-style `protocol-updates` lane
+- strict validation and pre-submission gating
+- filesystem-backed memory and outcome tracking
+- daily reporting in markdown and JSON
+- daily optimization snapshots and next-day recommendations
 
 ## Build Rule
 Build the decision system first.

@@ -51,11 +51,10 @@ export function validateSourcesDisclosed(subject: ValidationSubject): boolean {
 }
 
 export function validateModelDisclosure(subject: ValidationSubject): boolean {
-  const hasSources = subject.sources.length > 0;
   const hasTools = subject.modelDisclosure.toolsUsed.length > 0;
   const hasDerivation = subject.modelDisclosure.derivationSteps.length > 0;
 
-  return hasSources && hasTools && hasDerivation;
+  return hasTools && hasDerivation;
 }
 
 export function rejectDashboardPrimarySource(subject: ValidationSubject): boolean {

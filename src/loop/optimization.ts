@@ -103,6 +103,9 @@ function buildWinningHeadlinePatterns(headlines: string[]): WinningHeadlinePatte
     if (normalized.includes(" because ")) {
       patterns.add("because-causality");
     }
+    if (normalized.includes(", signaling ")) {
+      patterns.add("signaling-significance");
+    }
     if (normalized.includes("which suggests")) {
       patterns.add("which-suggests-significance");
     }
@@ -156,25 +159,23 @@ function buildDuplicateLossPatterns(
 }
 
 function buildBeatPreferences(
+  beatByCandidateId: Map<string, string>,
   detections: CandidateLogRecord[],
   submissions: AcceptedSubmissionRecord[],
   approvals: ApprovalOutcomeRecord[],
   duplicateLossPatterns: DuplicateLossPattern[]
 ): DailyOptimizationSnapshot["beatPreferences"] {
-  const beatByCandidateId = new Map<string, string>();
   const allBeats = new Set<string>();
-
-  for (const detection of detections) {
-    beatByCandidateId.set(detection.candidate.candidateId, detection.candidate.beat);
-    allBeats.add(detection.candidate.beat);
-  }
 
   const detectionCounts = new Map<string, number>();
   const submissionCounts = new Map<string, number>();
   const approvalCounts = new Map<string, number>();
+  const resolvedSubmissionCounts = new Map<string, number>();
   const duplicateLossCounts = new Map<string, number>();
+  const approvalsByCandidateId = new Map(approvals.map((record) => [record.candidateId, record]));
 
   for (const detection of detections) {
+    allBeats.add(detection.candidate.beat);
     detectionCounts.set(
       detection.candidate.beat,
       (detectionCounts.get(detection.candidate.beat) ?? 0) + 1
@@ -182,9 +183,13 @@ function buildBeatPreferences(
   }
 
   for (const submission of submissions) {
-    const beat = beatByCandidateId.get(submission.candidateId) ?? submission.submission.candidateSignal.beat;
+    const beat =
+      beatByCandidateId.get(submission.candidateId) ?? submission.submission.candidateSignal.beat;
     allBeats.add(beat);
     submissionCounts.set(beat, (submissionCounts.get(beat) ?? 0) + 1);
+    if (approvalsByCandidateId.has(submission.candidateId)) {
+      resolvedSubmissionCounts.set(beat, (resolvedSubmissionCounts.get(beat) ?? 0) + 1);
+    }
   }
 
   for (const approval of approvals) {
@@ -209,9 +214,10 @@ function buildBeatPreferences(
     .map((beat) => {
       const detectionsForBeat = detectionCounts.get(beat) ?? 0;
       const submissionsForBeat = submissionCounts.get(beat) ?? 0;
+      const resolvedSubmissionsForBeat = resolvedSubmissionCounts.get(beat) ?? 0;
       const approvalsForBeat = approvalCounts.get(beat) ?? 0;
       const duplicateLossesForBeat = duplicateLossCounts.get(beat) ?? 0;
-      const approvalRate = formatRatio(approvalsForBeat, submissionsForBeat);
+      const approvalRate = formatRatio(approvalsForBeat, resolvedSubmissionsForBeat);
 
       if (approvalsForBeat > 0 && duplicateLossesForBeat === 0) {
         return {
@@ -226,7 +232,10 @@ function buildBeatPreferences(
         };
       }
 
-      if (duplicateLossesForBeat > 0 || (submissionsForBeat > 0 && approvalsForBeat === 0)) {
+      if (
+        duplicateLossesForBeat > 0 ||
+        (resolvedSubmissionsForBeat > 0 && approvalsForBeat === 0)
+      ) {
         return {
           beat,
           detections: detectionsForBeat,
@@ -348,19 +357,18 @@ export async function generateDailyOptimizationSnapshot(
   const submissionsByCandidateId = new Map(
     allSubmissions.map((record) => [record.candidateId, record])
   );
-  const approvedHeadlines = submissions
-    .filter((submission) => approvals.some((approval) => approval.candidateId === submission.candidateId && approval.approved))
-    .map((submission) => submission.submission.headline)
-    .concat(
-      approvals
-        .filter((approval) => approval.approved)
-        .map((approval) => submissionsByCandidateId.get(approval.candidateId)?.submission.headline)
-        .filter((headline): headline is string => Boolean(headline))
-    );
+  const approvedHeadlineSet = new Set(
+    approvals
+      .filter((approval) => approval.approved)
+      .map((approval) => submissionsByCandidateId.get(approval.candidateId)?.submission.headline)
+      .filter((headline): headline is string => Boolean(headline))
+  );
+  const approvedHeadlines = [...approvedHeadlineSet];
 
   const duplicateLossPatterns = buildDuplicateLossPatterns(rejections, beatByCandidateId);
   const winningHeadlinePatterns = buildWinningHeadlinePatterns(approvedHeadlines);
   const beatPreferences = buildBeatPreferences(
+    beatByCandidateId,
     detections,
     submissions,
     approvals,
