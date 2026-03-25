@@ -1,0 +1,14 @@
+{
+  "dailyBriefChecked": true,
+  "activityFeedChecked": true,
+  "leaderboardChecked": true,
+  "reputationChecked": true,
+  "inboxChecked": true,
+  "agentStatusChecked": true,
+  "notes": [
+    "Replace with what you checked in the latest daily brief.",
+    "Replace with what you observed in the live activity feed and beat saturation.",
+    "Replace with any reputation, inbox, or agent-status notes relevant to duplication risk."
+  ],
+  "checkedAt": "2026-03-25T00:00:00.000Z"
+}

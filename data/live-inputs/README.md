@@ -6,6 +6,7 @@ Suggested naming:
 
 Starter template:
 - `protocol-update-2026-03-25-001.example.json`
+- `pre-submission-2026-03-25-001.example.json`
 
 Run them with:
 ```bash
@@ -16,6 +17,12 @@ For GitHub Actions manual runs, put the repo-relative path into the `raw_path` i
 
 ```text
 data/live-inputs/protocol-update-YYYY-MM-DD-001.json
+```
+
+And put the matching pre-submission file into the `pre_submission_path` input:
+
+```text
+data/live-inputs/pre-submission-YYYY-MM-DD-001.json
 ```
 
 Do not commit real sensitive operator notes here.
