@@ -59,19 +59,19 @@ Mark items complete only after implementation and testing both pass.
 - [x] Add lane tests
 
 ## Phase 6: Pre-Submission Intelligence
-- [ ] Add daily brief check
-- [ ] Add activity feed check
-- [ ] Add agent-lookup check
-- [ ] Add reputation check
-- [ ] Add inbox check
-- [ ] Add agent status check
-- [ ] Persist pre-submission check results
+- [x] Add daily brief check
+- [x] Add activity feed check
+- [x] Add agent-lookup check
+- [x] Add reputation check
+- [x] Add inbox check
+- [x] Add agent status check
+- [x] Persist pre-submission check results
 
 ## Phase 7: Submission Packaging
-- [ ] Build final submission payload
-- [ ] Add submit or reject decision structure
-- [ ] Preserve proof, sources, and disclosure in output
-- [ ] Add packaging tests
+- [x] Build final submission payload
+- [x] Add submit or reject decision structure
+- [x] Preserve proof, sources, and disclosure in output
+- [x] Add packaging tests
 
 ## Phase 8: Memory and Outcome Tracking
 - [ ] Log detected candidates
