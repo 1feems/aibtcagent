@@ -1,0 +1,19 @@
+{
+  "id": "protocol-update-2026-03-25-001",
+  "detectedAt": "2026-03-25T00:00:00.000Z",
+  "chain": "stacks",
+  "contractAddress": "SP000000000000000000002Q6VF78.contract-name",
+  "deployTxHash": "0xreplace-with-real-deploy-tx-hash",
+  "firstInteractionTxHash": "0xreplace-with-real-first-interaction-tx-hash",
+  "blockHeight": 0,
+  "summary": "Replace with one factual sentence describing the protocol update.",
+  "significance": "Replace with why this matters and why it may be early.",
+  "causalTrigger": "Replace with the cause you can defend from chain evidence.",
+  "usesDashboardAsPrimarySource": false,
+  "likelyDuplicate": false,
+  "firstInteractionQueryResult": "Optional raw query excerpt or concise result.",
+  "sourceUrls": {
+    "rpc": "https://replace-with-rpc-or-query-url",
+    "explorer": "https://replace-with-explorer-url"
+  }
+}
