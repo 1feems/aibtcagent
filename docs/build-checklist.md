@@ -24,7 +24,7 @@ Mark items complete only after implementation and testing both pass.
 - [ ] Create state and log folders in runtime code
 - [ ] Create environment variable template
 - [ ] Create GitHub Actions workflow scaffold
-- [ ] Add README overview for developers
+- [x] Add README overview for developers
 
 ## Phase 2: Core Types and Schemas
 - [ ] Implement candidate signal types
