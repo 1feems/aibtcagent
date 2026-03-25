@@ -2,6 +2,7 @@ export * from "./candidate-signal.js";
 export * from "./daily-report.js";
 export * from "./memory-records.js";
 export * from "./model-disclosure.js";
+export * from "./optimization-loop.js";
 export * from "./outcome-tracking.js";
 export * from "./pre-submission.js";
 export * from "./proof.js";

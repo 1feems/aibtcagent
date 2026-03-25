@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
@@ -59,12 +59,12 @@ test(
   "daily reporting summarizes detections, outcomes, and recommendations in markdown",
   { concurrency: false },
   async () => {
-    const originalCwd = process.cwd();
     const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-reporting-"));
-
-    process.chdir(tempDir);
+    const originalCwd = process.cwd();
 
     try {
+      await mkdir(resolve(tempDir, "data/logs"), { recursive: true });
+      process.chdir(tempDir);
       const firstSubject = createSubject(
         "protocol-update-report-001",
         "2026-03-25T06:30:00Z",
@@ -154,7 +154,7 @@ test(
         "2026-03-25T09:15:00Z"
       );
 
-      const { report, savedTo } = await generateAndSaveDailyReport(
+      const { report, savedTo, savedJsonTo } = await generateAndSaveDailyReport(
         "2026-03-25",
         "2026-03-25T23:00:00Z"
       );
@@ -162,7 +162,7 @@ test(
       assert.equal(report.kind, "daily_report");
       assert.equal(report.detections.totalDetected, 4);
       assert.equal(report.detections.totalSubmitted, 2);
-      assert.equal(report.detections.detectionRate, 0.5);
+      assert.equal(report.detections.submissionConversionRate, 0.5);
       assert.deepEqual(report.detections.beats, ["protocol-updates"]);
       assert.equal(report.rejections.totalRejected, 2);
       assert.deepEqual(report.rejections.reasons[0], {
@@ -171,7 +171,9 @@ test(
       });
       assert.equal(report.approvalsAndRewards.totalApprovals, 1);
       assert.equal(report.approvalsAndRewards.totalDeclines, 1);
-      assert.equal(report.approvalsAndRewards.approvalRate, 0.5);
+      assert.equal(report.approvalsAndRewards.resolvedSubmissionCount, 2);
+      assert.equal(report.approvalsAndRewards.pendingSubmissionCount, 0);
+      assert.equal(report.approvalsAndRewards.sameDayResolvedApprovalRate, 0.5);
       assert.equal(report.approvalsAndRewards.totalSatsEarned, 500);
       assert.deepEqual(report.approvalsAndRewards.btcRewards, ["$20 BTC"]);
       assert.deepEqual(report.approvalsAndRewards.leaderboardChanges, ["up_2"]);
@@ -181,13 +183,41 @@ test(
       assert.match(report.markdown, /\$20 BTC/);
       assert.match(report.markdown, /up_2/);
       assert.match(report.markdown, /Reduce likely_duplicate rejections/);
+      assert.match(report.markdown, /## Next-Day Recommendations/);
+      assert.ok(report.optimization.nextDayRecommendations.length > 0);
+      assert.ok(report.optimization.duplicateLossPatterns.length > 0);
 
       const savedMarkdown = await readFile(savedTo, "utf8");
       assert.equal(savedMarkdown, report.markdown);
+      const savedJson = JSON.parse(await readFile(savedJsonTo, "utf8"));
+      assert.equal(savedJson.kind, "daily_report");
       assert.match(savedTo, /data\/reports\/daily\/2026-03-25\.md$/);
+      assert.match(savedJsonTo, /data\/reports\/daily\/2026-03-25\.json$/);
     } finally {
       process.chdir(originalCwd);
       await rm(tempDir, { recursive: true, force: true });
     }
   }
 );
+
+test("daily reporting handles an empty first day without false warnings", async () => {
+  const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-reporting-empty-"));
+
+  try {
+    const { report, savedJsonTo } = await generateAndSaveDailyReport(
+      "2026-03-25",
+      "2026-03-25T23:00:00Z",
+      { baseDir: tempDir }
+    );
+
+    assert.equal(report.detections.totalDetected, 0);
+    assert.equal(report.detections.totalSubmitted, 0);
+    assert.equal(report.detections.submissionConversionRate, null);
+    assert.equal(report.approvalsAndRewards.sameDayResolvedApprovalRate, null);
+    assert.match(report.markdown, /Submission conversion rate: n\/a/);
+    assert.doesNotMatch(report.markdown, /Record a leaderboard observation each day/);
+    assert.equal(JSON.parse(await readFile(savedJsonTo, "utf8")).kind, "daily_report");
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});

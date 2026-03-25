@@ -102,11 +102,11 @@ Mark items complete only after implementation and testing both pass.
 - [x] Save reports in a readable format
 
 ## Phase 10: Optimization Loop
-- [ ] Adjust beat preference from outcomes
-- [ ] Adjust rejection thresholds from outcomes
-- [ ] Track duplicate-loss patterns
-- [ ] Track winning headline patterns
-- [ ] Record next-day recommendations
+- [x] Adjust beat preference from outcomes
+- [x] Adjust rejection thresholds from outcomes
+- [x] Track duplicate-loss patterns
+- [x] Track winning headline patterns
+- [x] Record next-day recommendations
 
 ## Phase 11: Final MVP Review
 - [ ] Confirm one lane works end to end

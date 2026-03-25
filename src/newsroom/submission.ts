@@ -25,7 +25,11 @@ function collectRejectionReasons(validation: ValidationResult): string[] {
   if (!validation.checks.modelDisclosurePresent) {
     reasons.push("model_disclosure_missing");
   }
-  if (!validation.checks.independentlyVerifiable) {
+  if (
+    validation.checks.onchainProofPresent &&
+    validation.checks.sourcesDisclosed &&
+    !validation.checks.independentlyVerifiable
+  ) {
     reasons.push("not_independently_verifiable");
   }
   if (!validation.checks.dashboardPrimarySourceRejected) {
