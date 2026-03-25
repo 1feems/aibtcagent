@@ -8,6 +8,32 @@ Sources: `docs/prd.md`, `docs/posting-guide.md`, `docs/first-live-signal.md`, ob
 
 ---
 
+## Sourcing Method
+
+Use this method every time. It exists to prevent weak candidates from surviving too long.
+
+1. Read the primary source, not the summary
+- [ ] Open the actual release body, changelog, filing, or primary document
+- [ ] Do not stop at a repo push list, commit timestamp, or activity summary
+- [ ] Look for the exact version, number, named entity, fix, or capability that could support a headline
+
+2. Verify novelty before getting attached
+- [ ] Check the daily brief before calling a candidate open
+- [ ] Check the live signal feed before calling a candidate unfiled
+- [ ] Confirm whether existing signals are actually about the same version, number, or event instead of just the same broad topic
+
+3. Use the headline formula as a filter, not a formatter
+- [ ] If the candidate does not naturally fit a strong headline formula, hold it early
+- [ ] Do not use the formula at the end to dress up a weak candidate
+- [ ] Prefer candidates that immediately produce a version-number-change-consequence headline
+
+Short version:
+- [ ] read primary sources instead of summaries
+- [ ] verify novelty against the live feed explicitly
+- [ ] use the headline formula to kill weak candidates before spending more time on them
+
+---
+
 ## STEP 0 — Pull, Analyze, Set Strategy
 
 Step 0 in the checklist is now the first thing that runs every day from tomorrow onwards. It has three sub-steps:

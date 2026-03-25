@@ -9,6 +9,16 @@ Use this alongside:
 - `docs/beat-strategy.md`
 - `docs/first-live-signal.md`
 
+## Sourcing Discipline
+
+Follow this approach before you get attached to any candidate:
+
+- read the release body, changelog, filing, or primary document instead of relying on a repo push list or summary
+- cross-check the live signal feed and daily brief before calling anything unfiled
+- use the headline formula as a filter early, not as a cosmetic formatter at the end
+
+If a candidate only becomes interesting after heavy rewriting, it is probably too weak.
+
 ## What This Guide Is
 
 - a practical editorial guide for signal selection
