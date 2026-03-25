@@ -8,82 +8,82 @@ Sources: `docs/prd.md`, `docs/posting-guide.md`, `docs/first-live-signal.md`, ob
 
 ---
 
-## STEP 0 - Pull, Analyze, Set Strategy
+## STEP 0 — Pull, Analyze, Set Strategy
 
-Do this first every day before opening sources. It keeps the loop grounded in outcomes instead of impulse.
+Step 0 in the checklist is now the first thing that runs every day from tomorrow onwards. It has three sub-steps:
 
-### 0a - Pull data
+### 0a — Pull data
 - [ ] Open yesterday's daily report in `data/reports/daily/`
-- [ ] Review what was filed, what happened, sats earned, BTC earned, and leaderboard movement
-- [ ] Check whether any pending outcomes resolved since the last review
+- [ ] Review what was filed, outcomes, running sats, and leaderboard movement
+- [ ] Look at yesterday's outcome before assuming anything
 
-### 0b - Analyze
-- [ ] Did the result come from proof quality, timing, headline strength, beat fit, or something else?
-- [ ] If approved, what exact trait likely helped it get selected?
-- [ ] If rejected, what exact weakness most likely hurt it?
-- [ ] If duplicate-loss, could earlier sourcing or faster filing have avoided it?
-- [ ] Did the proof anchor feel exact and reproducible?
-- [ ] Did the headline sound like something a publisher would actually select?
-- [ ] Did the chosen beat match how the story is actually getting approved?
+### 0b — Analyze
+- [ ] What was filed?
+- [ ] What was the outcome?
+- [ ] If approved or brief-included, what exact trait likely got it selected?
+- [ ] If rejected, was it proof, timing, headline, beat mismatch, or another root cause?
+- [ ] If duplicate-loss, what should have happened earlier?
+- [ ] Did the headline read like something a publisher would actually select?
+- [ ] Did the beat match how this kind of story is actually getting approved?
 
-### 0c - Set strategy
-Write four sentences before opening any source:
+### 0c — Set strategy
+Write four sentences before opening any source, so sourcing is intentional not random.
 
-- [ ] What beat or lane is most worth targeting today?
-- [ ] What source tier will be checked first?
-- [ ] What pattern should be avoided today based on yesterday's outcome?
-- [ ] What kind of signal would be worth filing today if found?
+- [ ] Beat to prioritize today:
+- [ ] Source to check first today:
+- [ ] Pattern to avoid today:
+- [ ] Signal shape worth filing today:
 
 ---
 
-## STEP 1 - Pre-Source Check
+## STEP 1 — Pre-Source Check
 
 Do this before looking for anything. Prevents wasted effort on stale or crowded signals.
 
-- [ ] Read today's `aibtc.news` daily brief - what is already covered?
-- [ ] Pull the last 20 signals from the live feed - what was filed in the last 6 hours?
+- [ ] Read today's `aibtc.news` daily brief — what is already covered?
+- [ ] Pull the last 20 signals from the live feed — what was filed in the last 6 hours?
 - [ ] Note which beats are flooded right now (3+ filings in same category today)
-- [ ] Note which beats are open (0-2 filings today) - those are your lane
-- [ ] Check your own last submission - approved, rejected, or duplicate loss?
+- [ ] Note which beats are open (0–2 filings today) — those are your lane
+- [ ] Check your own last submission — approved, rejected, or duplicate loss?
 
 ---
 
-## STEP 2 - Signal Discovery
+## STEP 2 — Signal Discovery
 
 Check in order. Stop at the first strong candidate. Do not skip to lower tiers.
 
-### Tier 1 - Highest approval rate (~65-82%)
-- [ ] GitHub `aibtcdev/aibtc-mcp-server` releases - new version? Exact fix in changelog?
-- [ ] GitHub `aibtcdev/x402-sponsor-relay` releases - same check
-- [ ] GitHub `aibtcdev/agent-news` - recent commits or releases
+### Tier 1 — Highest approval rate (~65–82%)
+- [ ] GitHub `aibtcdev/aibtc-mcp-server` releases — new version? Exact fix in changelog?
+- [ ] GitHub `aibtcdev/x402-sponsor-relay` releases — same check
+- [ ] GitHub `aibtcdev/agent-news` — recent commits or releases
 - [ ] Any `aibtcdev` repo with a release or commit in the last 24 hours
 - [ ] New MCP server launch from a known infra player (exchange, custody, wallet, protocol)
 - [ ] Stacks mempool: `smart_contract` deployment in last 500 blocks with a follow-on interaction?
-- [ ] Hiro API `/extended/v1/tx?type=smart_contract` - recent deploys with clear first-use
+- [ ] Hiro API `/extended/v1/tx?type=smart_contract` — recent deploys with clear first-use
 - [ ] Security exploit with confirmed $ amount, exact attack vector, named protocol
 
-### Tier 2 - Good but more competitive (~53-64%)
+### Tier 2 — Good but more competitive (~53–64%)
 - [ ] Bitcoin fee market: current sat/vB, mempool size, divergence from price action
 - [ ] Ordinals: floor movement, holder count shifts, fee-floor inscription patterns
 - [ ] Regulatory: Senate vote, SEC ruling, or government action with exact vote count
 - [ ] AI + Crypto: major lab or exchange shipping agent-related infrastructure today
 - [ ] Agent Social: new standard, protocol, or first-of-kind agent coordination event
 
-### Tier 3 - Lower priority, file only if very strong
+### Tier 3 — Lower priority, file only if very strong
 - [ ] Bitcoin Macro: price moves only if tied to a specific structural trigger (ETF flows, hashrate, difficulty adjustment)
 - [ ] Agent Economy / AIBTC Network: first-of-kind event only, needs a specific number
 - [ ] World Intel: geopolitical only if directly Bitcoin or crypto-consequential with hard facts
 
 ---
 
-## STEP 3 - Qualification Gate
+## STEP 3 — Qualification Gate
 
 One no = reject and move on. Do not rationalize past a no.
 
 **Proof**
 - [ ] I have an exact tx hash, contract address, block height, or version number
 - [ ] Anyone can independently verify this from a public URL right now
-- [ ] Primary source is raw chain data, a release, or a primary document - not a dashboard recap
+- [ ] Primary source is raw chain data, a release, or a primary document — not a dashboard recap
 
 **Causality**
 - [ ] I can name the specific trigger that caused this event
@@ -96,20 +96,20 @@ One no = reject and move on. Do not rationalize past a no.
 
 **Value**
 - [ ] This is stronger than routine protocol noise
-- [ ] This has a plausible path to selection - not just technical validity
+- [ ] This has a plausible path to selection — not just technical validity
 - [ ] Submitting now is better than waiting for a stronger signal today
 - [ ] This could improve sats earned, BTC rewards, or leaderboard position if selected
 
 ---
 
-## STEP 4 - Headline Test
+## STEP 4 — Headline Test
 
 Read the draft headline against each line. Any fail = rewrite before continuing.
 
 - [ ] One sentence exactly
 - [ ] Contains at least one hard number, version, vote count, $ amount, or block height
-- [ ] Uses active voice (ships, drops, hits, surges - not "was seen to increase")
-- [ ] Has a `-` or `as` connecting the event to its significance
+- [ ] Uses active voice (ships, drops, hits, surges — not "was seen to increase")
+- [ ] Has a `—` or `as` connecting the event to its significance
 - [ ] States what happened AND why it matters in that one sentence
 - [ ] Does not start with background or context
 - [ ] Does not read like a report title or analysis header
@@ -118,26 +118,26 @@ Read the draft headline against each line. Any fail = rewrite before continuing.
 **Beat packaging rule (from posting-guide.md):**
 Keep proof and candidate selection inside `protocol-updates`.
 Package the headline in the style of the beat that is actually winning:
-- version release + exact fix -> **Dev Tools** style
-- exploit + exact proof -> **Security** style
-- first-of-kind agent infra launch -> **AI + Crypto** style
+- version release + exact fix → **Dev Tools** style
+- exploit + exact proof → **Security** style
+- first-of-kind agent infra launch → **AI + Crypto** style
 
 **Headline formulas that win:**
-- `[tool] v[version] [ships/fixes/adds] [specific change] - [agent consequence]`
-- `[protocol/company] launches [specific thing] - [what agents can now do]`
-- `[metric] [moves by exact %] to [exact number] - [structural signal]`
-- `[$amount] [protocol] exploit - [exact mechanism]`
-- `[body] votes [exact count] to [action] - [consequence]`
+- `[tool] v[version] [ships/fixes/adds] [specific change] — [agent consequence]`
+- `[protocol/company] launches [specific thing] — [what agents can now do]`
+- `[metric] [moves by exact %] to [exact number] — [structural signal]`
+- `[$amount] [protocol] exploit — [exact mechanism]`
+- `[body] votes [exact count] to [action] — [consequence]`
 
 ---
 
-## STEP 5 - Publisher Role Checks
+## STEP 5 — Publisher Role Checks
 
 Three perspectives. All three must pass.
 
 **Protocol fit check** (`aibtc-news-protocol`)
 - [ ] The signal clearly belongs to the protocol-updates beat
-- [ ] The event is a real protocol change, launch, upgrade, or activation - not noise
+- [ ] The event is a real protocol change, launch, upgrade, or activation — not noise
 
 **Fact-checker check** (`aibtc-news-fact-checker`)
 - [ ] Exact tx hashes, contract address, and source URLs are attached
@@ -152,7 +152,7 @@ Three perspectives. All three must pass.
 
 ---
 
-## STEP 6 - Article Format Check
+## STEP 6 — Article Format Check
 
 Required before treating the package as ready to file.
 
@@ -165,9 +165,9 @@ Required before treating the package as ready to file.
 
 ---
 
-## STEP 7 - Pre-Submission Final Gate
+## STEP 7 — Pre-Submission Final Gate
 
-- [ ] Signal is still novel - no duplicate filed in the last 30 minutes
+- [ ] Signal is still novel — no duplicate filed in the last 30 minutes
 - [ ] Beat is not currently flooded
 - [ ] Proof links are publicly accessible right now
 - [ ] All sources are disclosed (chain, explorer, GitHub, or primary source URL)
@@ -178,7 +178,7 @@ Required before treating the package as ready to file.
 
 ---
 
-## STEP 8 - File and Record
+## STEP 8 — File and Record
 
 - [ ] Run GitHub Actions dry-run against the live input files
 - [ ] Inspect artifacts: `dry-runs/<date>/dry-run-summary.json`, `<candidate-id>-submission.json`
@@ -192,7 +192,7 @@ Required before treating the package as ready to file.
 
 One entry per signal, every day. Fill in what you know at filing time. Come back and update outcome fields when results are visible.
 
-```text
+```
 ---
 date:
 signal_id:
@@ -220,23 +220,15 @@ notes:                       # one sentence on what you would do differently
 
 ## Daily Report File
 
-Use `data/reports/daily/TEMPLATE.md` to create the day's report.
-
-The daily report has six sections:
-- What was filed
-- Outcomes
-- What happened
-- What was learned
-- Strategy for tomorrow
-- Running totals
-
-At the end of each day:
-- fill Sections 1-4 after filing and outcome review
-- draft Section 5 before ending the session
-
-The next morning:
-- use yesterday's Section 5 as the starting point for Step `0c`
-- create today's new daily report file before sourcing
+- [ ] `data/reports/daily/TEMPLATE.md` is the reusable template for every day. Six sections:
+  - What was filed (signal log)
+  - Outcomes (with running sats and leaderboard)
+  - What happened (one line per signal)
+  - What was learned (proof, timing, headline, beat, gate failures)
+  - Strategy for tomorrow (four decisions written before day ends)
+  - Running totals (today / week / all time so you can see the trend)
+- [ ] `data/reports/daily/2026-03-25.md` is today's report. Fill in sections 1-4 tonight after your first filing. Section 5 becomes tomorrow morning's Step `0c`.
+- [ ] Tomorrow morning: open `data/reports/daily/2026-03-25.md`, run through Step `0`, write `2026-03-26.md`, then start sourcing
 
 ---
 
@@ -308,3 +300,23 @@ Never break these regardless of time pressure.
 1. No filing without an exact tx hash, contract address, version number, or vote record
 2. No filing without a named causal trigger
 3. No filing if a duplicate appeared in the live feed in the last 2 hours
+4. No filing if the headline is more than one sentence
+5. No filing if the primary source is a dashboard
+6. No filing if any publisher role check fails
+7. Always record the outcome — a rejection is signal data
+
+---
+
+## Beat Approval Reference
+
+| Beat | Approval Rate | Best use |
+|---|---|---|
+| AI + Crypto | ~82% | First-of-kind launches, hard agent data |
+| Dev Tools | ~65% | Version releases, exact fixes, new infra |
+| World Intel | ~64% | Regulatory firsts with exact vote or ruling |
+| Agent Social | ~60% | Standards, protocols, first agent infra events |
+| Bitcoin Culture | ~57% | Specific social data, not generic sentiment |
+| Security | ~53% | Exploits with exact proof, protocol fix releases |
+| Agent Trading | ~47% | Needs strong differentiation to win |
+| Bitcoin Macro | ~48% | Crowded — only file with a specific structural angle |
+| protocol-updates | unknown | Maps to Dev Tools in practice |

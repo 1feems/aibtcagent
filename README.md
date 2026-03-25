@@ -11,16 +11,28 @@ The first thing to open is:
 
 - [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
 
-Step 0 starts tomorrow and runs before any sourcing:
+Step 0 in the checklist is now the first thing that runs every day from tomorrow onwards. It has three sub-steps:
 
-- `0a - Pull data`: review yesterday's filed signals, outcomes, sats, and leaderboard movement before making assumptions
-- `0b - Analyze`: answer the seven root-cause questions so any approval, rejection, or duplicate loss is tied back to proof, timing, headline, beat fit, or gate failure
-- `0c - Set strategy`: write four sentences for today's strategy before opening any source so sourcing is intentional rather than random
+- `0a — Pull data` — forces you to actually look at yesterday's outcome before assuming anything
+- `0b — Analyze` — seven specific questions that connect the outcome back to a root cause (was it proof, timing, headline, beat mismatch?)
+- `0c — Set strategy` — four sentences written before you open any source, so your sourcing is intentional not random
 
 Daily report files that support Step 0:
 
-- [`data/reports/daily/TEMPLATE.md`](./data/reports/daily/TEMPLATE.md): reusable daily operating template
-- [`data/reports/daily/2026-03-25.md`](./data/reports/daily/2026-03-25.md): today's report, where Sections 1-4 should be filled tonight and Section 5 becomes tomorrow morning's Step `0c`
+- [`data/reports/daily/TEMPLATE.md`](./data/reports/daily/TEMPLATE.md) — reusable template for every day. Six sections:
+  What was filed (signal log)
+  Outcomes (with running sats and leaderboard)
+  What happened (one line per signal)
+  What was learned (proof, timing, headline, beat, gate failures)
+  Strategy for tomorrow (four decisions written before day ends)
+  Running totals (today / week / all time so you can see the trend)
+- [`data/reports/daily/2026-03-25.md`](./data/reports/daily/2026-03-25.md) — today's report is already created. Fill in sections 1-4 tonight after your first filing. Section 5 becomes tomorrow morning's Step `0c`.
+
+Tomorrow morning:
+- open [`data/reports/daily/2026-03-25.md`](./data/reports/daily/2026-03-25.md)
+- run through Step `0`
+- write `2026-03-26.md`
+- then start sourcing
 
 Use this doc map during operation:
 
