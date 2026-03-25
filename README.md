@@ -9,6 +9,11 @@ Private working repository for an AIBTC onchain signal agent focused on:
 ## Current Status
 The repository is now in MVP implementation and verification.
 
+MVP complete note:
+- one lane works end to end
+- daily reporting and optimization snapshots are active
+- the next step is controlled live iteration, not broad new feature work
+
 Core product docs are in place:
 - [`docs/concept-note.md`](./docs/concept-note.md)
 - [`docs/prd.md`](./docs/prd.md)
@@ -20,7 +25,9 @@ Core product docs are in place:
 - [`docs/testing-plan.md`](./docs/testing-plan.md)
 - [`docs/beat-strategy.md`](./docs/beat-strategy.md)
 - [`docs/learning-loop.md`](./docs/learning-loop.md)
+- [`docs/live-ops-loop.md`](./docs/live-ops-loop.md)
 - [`docs/outcome-schema.md`](./docs/outcome-schema.md)
+- [`docs/post-mvp-roadmap.md`](./docs/post-mvp-roadmap.md)
 - [`docs/sources.md`](./docs/sources.md)
 
 ## Product Goal

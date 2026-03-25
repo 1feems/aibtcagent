@@ -6,7 +6,8 @@
   "scripts": {
     "check": "tsc --noEmit -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test --test-concurrency=1 tests/*.test.js"
+    "test": "npm run build && node --test --test-concurrency=1 tests/*.test.js",
+    "dry-run": "npm run build && node dist/loop/dry-run.js"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
