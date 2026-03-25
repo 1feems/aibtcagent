@@ -36,6 +36,23 @@ If the browser cannot POST to AIBTC and terminal quoting is annoying, run:
 bash tools/xverse-register/register-aibtc.sh
 ```
 
+## Manual heartbeat
+
+Open:
+
+```text
+http://127.0.0.1:4173/tools/xverse-register/heartbeat.html
+```
+
+Then click:
+
+- `Connect Xverse`
+- `Prepare Fresh Check-In`
+- `Sign Heartbeat`
+- `Submit Heartbeat`
+
+If the browser POST fails, copy the fallback curl command shown on the page and run it in a new terminal tab.
+
 ## Safety expectations
 
 - this should trigger message-signing prompts only
