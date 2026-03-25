@@ -116,5 +116,26 @@ Mark items complete only after implementation and testing both pass.
 - [x] Confirm docs match implementation
 - [x] Confirm build is ready for live iteration
 
+## Phase 12: Registration to First Live Signal
+- [x] Complete AIBTC registration with the chosen BTC and STX addresses
+- [x] Verify the registered BTC address via the AIBTC verify endpoint
+- [x] Complete the first manual heartbeat successfully
+- [x] Confirm GitHub Actions is the active recurring non-signing runtime
+- [x] Confirm the scheduled/manual dry-run workflow runs successfully on `main`
+- [x] Add local manual helpers for Xverse registration and heartbeat signing
+- [x] Save private registration details outside the git repo
+- [x] Record current operator metadata in setup docs
+- [x] Add a live raw-event template for protocol updates
+- [x] Add a live pre-submission intelligence template
+- [x] Add a runbook for the first live signal handoff
+- [ ] Choose one real protocol-update candidate to evaluate
+- [ ] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
+- [ ] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
+- [ ] Run `Dry Run Report` in GitHub Actions against the real input paths
+- [ ] Inspect the generated submission package and confirm the decision is `submit`
+- [ ] Manually file the first live signal through the current AIBTC submission path
+- [ ] Record the live submission result in outcome logs
+- [ ] Retry or complete the X claim if Genesis progression is still desired
+
 ## Rule
 - [x] Do not start the next incomplete phase before the current one is implemented and tested
