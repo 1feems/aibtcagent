@@ -8,6 +8,34 @@ Sources: `docs/prd.md`, `docs/posting-guide.md`, `docs/first-live-signal.md`, ob
 
 ---
 
+## STEP 0 - Pull, Analyze, Set Strategy
+
+Do this first every day before opening sources. It keeps the loop grounded in outcomes instead of impulse.
+
+### 0a - Pull data
+- [ ] Open yesterday's daily report in `data/reports/daily/`
+- [ ] Review what was filed, what happened, sats earned, BTC earned, and leaderboard movement
+- [ ] Check whether any pending outcomes resolved since the last review
+
+### 0b - Analyze
+- [ ] Did the result come from proof quality, timing, headline strength, beat fit, or something else?
+- [ ] If approved, what exact trait likely helped it get selected?
+- [ ] If rejected, what exact weakness most likely hurt it?
+- [ ] If duplicate-loss, could earlier sourcing or faster filing have avoided it?
+- [ ] Did the proof anchor feel exact and reproducible?
+- [ ] Did the headline sound like something a publisher would actually select?
+- [ ] Did the chosen beat match how the story is actually getting approved?
+
+### 0c - Set strategy
+Write four sentences before opening any source:
+
+- [ ] What beat or lane is most worth targeting today?
+- [ ] What source tier will be checked first?
+- [ ] What pattern should be avoided today based on yesterday's outcome?
+- [ ] What kind of signal would be worth filing today if found?
+
+---
+
 ## STEP 1 - Pre-Source Check
 
 Do this before looking for anything. Prevents wasted effort on stale or crowded signals.
@@ -187,6 +215,28 @@ leaderboard_change:          # up | down | flat | unknown
 notes:                       # one sentence on what you would do differently
 ---
 ```
+
+---
+
+## Daily Report File
+
+Use `data/reports/daily/TEMPLATE.md` to create the day's report.
+
+The daily report has six sections:
+- What was filed
+- Outcomes
+- What happened
+- What was learned
+- Strategy for tomorrow
+- Running totals
+
+At the end of each day:
+- fill Sections 1-4 after filing and outcome review
+- draft Section 5 before ending the session
+
+The next morning:
+- use yesterday's Section 5 as the starting point for Step `0c`
+- create today's new daily report file before sourcing
 
 ---
 

@@ -6,6 +6,31 @@ Private working repository for an AIBTC onchain signal agent focused on:
 - one-line newsroom submissions
 - leaderboard, reward, and reputation optimization
 
+## Start Here Every Day
+The first thing to open is:
+
+- [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
+
+Step 0 starts tomorrow and runs before any sourcing:
+
+- `0a - Pull data`: review yesterday's filed signals, outcomes, sats, and leaderboard movement before making assumptions
+- `0b - Analyze`: answer the seven root-cause questions so any approval, rejection, or duplicate loss is tied back to proof, timing, headline, beat fit, or gate failure
+- `0c - Set strategy`: write four sentences for today's strategy before opening any source so sourcing is intentional rather than random
+
+Daily report files that support Step 0:
+
+- [`data/reports/daily/TEMPLATE.md`](./data/reports/daily/TEMPLATE.md): reusable daily operating template
+- [`data/reports/daily/2026-03-25.md`](./data/reports/daily/2026-03-25.md): today's report, where Sections 1-4 should be filled tonight and Section 5 becomes tomorrow morning's Step `0c`
+
+Use this doc map during operation:
+
+- Before any work session: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `0`, then Steps `1-2`)
+- Evaluating a candidate: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Steps `3-7`) + [`docs/first-live-signal.md`](./docs/first-live-signal.md)
+- Filing: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `8`) + [`docs/live-ops-loop.md`](./docs/live-ops-loop.md)
+- Something is wrong or unclear: [`docs/prd.md`](./docs/prd.md)
+- Tracking outcomes: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) daily log + [`docs/outcome-schema.md`](./docs/outcome-schema.md)
+- Iterating strategy: [`docs/learning-loop.md`](./docs/learning-loop.md) + [`docs/beat-strategy.md`](./docs/beat-strategy.md)
+
 ## Current Status
 The repository is now in MVP implementation and verification.
 
@@ -29,6 +54,7 @@ Core product docs are in place:
 - [`docs/outcome-schema.md`](./docs/outcome-schema.md)
 - [`docs/post-mvp-roadmap.md`](./docs/post-mvp-roadmap.md)
 - [`docs/sources.md`](./docs/sources.md)
+- [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
 
 ## Product Goal
 Build an AIBTC agent that:
