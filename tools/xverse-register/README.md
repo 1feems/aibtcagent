@@ -30,6 +30,12 @@ http://127.0.0.1:4173/tools/xverse-register/
    - `Sign Both Messages`
    - `Submit Registration`
 
+If the browser cannot POST to AIBTC and terminal quoting is annoying, run:
+
+```bash
+bash tools/xverse-register/register-aibtc.sh
+```
+
 ## Safety expectations
 
 - this should trigger message-signing prompts only
