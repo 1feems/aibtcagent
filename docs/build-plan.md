@@ -16,6 +16,7 @@ Build the smallest strong version of the AIBTC Onchain Signal Agent that can eva
 - create config layout
 - create state and fixture folders
 - create workflow or runtime skeleton
+- optionally configure development aids for repo search and code analysis
 
 ### Step 3: Implement the core signal model
 - candidate signal structure
@@ -72,6 +73,9 @@ Tasks:
 - add richer runtime
 - add Paperboy only if helpful
 
+Future runtime reminder:
+- consider `agentic.hosting` only after one signal lane works, daily reports work, and outcomes show the agent is worth upgrading beyond the lowest-cost runtime
+
 ## MVP Definition
 The MVP is done when:
 - one lane works end to end
@@ -90,3 +94,17 @@ The MVP is done when:
 
 ## Implementation Principle
 Build the decision system first, then add more inputs.
+
+Useful optional build aids:
+- semantic code search for faster repo navigation
+- impact analysis before refactors
+- dead code checks as the codebase grows
+
+## End-of-Build Reminder
+After the MVP is working, consider whether external development tools should be used to improve ongoing maintenance and iteration.
+
+Examples:
+- `lgrep` for semantic code search, repo navigation, and refactor impact analysis
+- `evals-skills` for evaluation audits, fixture generation, and testing quality checks
+
+Keep both as external development tools unless there is a later reason to integrate them more closely.

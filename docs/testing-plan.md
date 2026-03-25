@@ -12,6 +12,16 @@ It is designed to help the operator and coding agent validate work incrementally
 - test rejection logic as aggressively as acceptance logic
 - keep tests tied to the PRD and JSON schema
 
+## Development Aids
+Optional development tools may be used to speed up code search, inspection, and QA during implementation.
+
+Useful examples:
+- semantic code search tools such as `lgrep`
+- dependency and impact analysis tools
+- dead code and unused export checks
+
+These tools are for development efficiency only. They are not part of the runtime signal pipeline.
+
 ## Test Layers
 
 ### 1. Schema and Contract Tests

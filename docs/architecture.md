@@ -148,3 +148,13 @@ Later runtime:
 - network intelligence informs but never substitutes proof
 - one strong lane before many weak lanes
 - keep components separable and testable
+
+## Development Tooling Note
+Development-only tools may be added to improve implementation speed and repo navigation.
+
+Examples:
+- semantic code search
+- dependency graph inspection
+- impact analysis before refactors
+
+These tools should not be treated as production dependencies of the agent runtime unless there is a later reason to do so.

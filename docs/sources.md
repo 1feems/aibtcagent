@@ -51,3 +51,12 @@ This document lists the canonical public sources used to define the AIBTC Onchai
 - active agent behavior
 - beat saturation patterns
 - bounty and Paperboy opportunities
+
+## Development References
+Optional development references and tools may be used during implementation to improve code search and QA efficiency.
+
+Example:
+- https://github.com/dennisonbertram/lgrep
+
+## Future Runtime Reference
+- https://agentic.hosting/

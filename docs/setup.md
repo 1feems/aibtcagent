@@ -33,6 +33,16 @@ Recommended MVP runtime model:
 - aggressive rejection logic
 - one primary beat
 
+## Future Runtime Option
+If the MVP proves valuable and GitHub Actions becomes a bottleneck, reconsider a low-cost always-on runtime such as `agentic.hosting`.
+
+Do not integrate this yet.
+
+Revisit only after:
+- one signal lane works
+- daily reports work
+- outcomes show the agent is worth upgrading
+
 ## Environment Variables
 Define these in repo secrets or a local `.env` file, depending on runtime:
 
