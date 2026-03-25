@@ -8,6 +8,14 @@ Date:
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
+## 1A. Candidate Review Table
+
+Use this before filing so the topic and the output are judged separately.
+
+| Candidate | Source | What it is | Human-readable signal draft | Topic quality | Output quality | Decision | Notes |
+|---|---|---|---|---|---|---|---|
+| | | | | strong / medium / weak | strong / medium / weak | file / hold / reject | |
+
 ## 2. Outcomes
 
 | Signal ID | Outcome | Rejection Reason | Sats Earned | BTC Earned | Leaderboard Change |
@@ -24,6 +32,12 @@ Running today:
 - Signal 1:
 - Signal 2:
 - Signal 3:
+
+Suggested labels:
+- `Topic good, output bad`
+- `Topic bad, output good`
+- `Topic good, output good`
+- `Topic bad, output bad`
 
 ## 4. What Was Learned
 
