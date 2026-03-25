@@ -25,6 +25,7 @@ This document records the operator setup, wallet references, runtime choice, and
 - verify endpoint confirms `registered: true` for `bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d`
 - current platform display name for the registered address: `Lasting Squid`
 - preferred external branding name: `Fever King`
+- operator X handle: `@feemschats`
 - first manual heartbeat completed on `2026-03-25`
 - GitHub remains the recurring non-signing runtime
 - wallet signing remains local and manual for now
@@ -69,6 +70,15 @@ AIBTC_DAILY_BRIEF_URL=
 AIBTC_ACTIVITY_FEED_URL=
 AIBTC_AGENT_REGISTRY_URL=
 AIBTC_REPUTATION_URL=
+```
+
+Current known values:
+
+```bash
+AIBTC_BITCOIN_ADDRESS=bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d
+AIBTC_STACKS_ADDRESS=SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR
+AIBTC_AGENT_NAME=Fever King
+AIBTC_X_HANDLE=@feemschats
 ```
 
 Add more only when a concrete integration requires them.
