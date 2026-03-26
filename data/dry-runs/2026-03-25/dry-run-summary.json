@@ -1,0 +1,13 @@
+{
+  "kind": "dry_run_summary",
+  "generatedAt": "2026-03-25T16:38:21.797Z",
+  "reportDate": "2026-03-25",
+  "rawPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/live-inputs/protocol-update-2026-03-25-002.json",
+  "preSubmissionPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/live-inputs/pre-submission-2026-03-25-002.json",
+  "candidateId": "protocol-update-2026-03-25-003",
+  "submissionStatus": "submit",
+  "serializedSubmissionPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/dry-runs/2026-03-25/protocol-update-2026-03-25-003-submission.json",
+  "reportMarkdownPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/reports/daily/2026-03-25.md",
+  "reportJsonPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/reports/daily/2026-03-25.json",
+  "optimizationPath": "/Users/feems/Desktop/agentic workflows/aibtcagent/data/experiments/optimization/2026-03-25.json"
+}

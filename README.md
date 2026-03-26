@@ -34,6 +34,28 @@ Tomorrow morning:
 - write `2026-03-26.md`
 - then start sourcing
 
+## New Session Prompt
+When starting a fresh chat window, point the agent here and use this prompt:
+
+`We need more candidate signals for today. Follow the repo checklist/runbook for the day. Start with docs/signal-sourcing-checklist.md, use docs/first-live-signal.md when evaluating filing readiness, and return only the strongest candidates with file/hold/reject decisions and short reasons.`
+
+If one signal has already been filed today, use this version:
+
+`We already filed today's first signal. We need more candidate signals for today. Follow the repo checklist/runbook for the day, use the current GitHub candidate table as context, and return only the strongest remaining candidates with file/hold/reject decisions and short reasons.`
+
+If there is a pending filed signal and a held follow-up candidate, use this morning prompt:
+
+`README.md is current. Start with README.md, then follow docs/signal-sourcing-checklist.md from Step 0. First, review the pending filed signal and update its outcome if approved, rejected, brief-included, duplicate-loss, or still pending. Then review the held candidate, decide whether it stays on hold or becomes fileable, and search for additional strong candidates for today. Return only the strongest candidates with file/hold/reject decisions and short reasons.`
+
+Current reference context for the latest filed signal cycle:
+
+- Pending filed signal ID: `f7ff2432-2040-41f2-8bce-f59c267cb606`
+- Filed candidate package: [`data/dry-runs/2026-03-25/protocol-update-2026-03-25-003-submission.json`](./data/dry-runs/2026-03-25/protocol-update-2026-03-25-003-submission.json)
+- Raw input: [`data/live-inputs/protocol-update-2026-03-25-002.json`](./data/live-inputs/protocol-update-2026-03-25-002.json)
+- Pre-submission input: [`data/live-inputs/pre-submission-2026-03-25-002.json`](./data/live-inputs/pre-submission-2026-03-25-002.json)
+- Daily shortlist/report: [`data/reports/daily/2026-03-25.md`](./data/reports/daily/2026-03-25.md)
+- Follow-up candidate on hold: `x402-sponsor-relay-v1.22.1`
+
 Use this doc map during operation:
 
 - Before any work session: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `0`, then Steps `1-2`)
@@ -93,7 +115,7 @@ tests/   node-based integration and behavior tests
 ```
 
 The current implementation covers:
-- one production-style `protocol-updates` lane
+- one production-style `dev-tools` lane (internally called `protocol-updates`)
 - strict validation and pre-submission gating
 - filesystem-backed memory and outcome tracking
 - daily reporting in markdown and JSON

@@ -1,0 +1,16 @@
+{
+  "kind": "candidate",
+  "recordedAt": "2026-03-25T15:57:46.253Z",
+  "candidate": {
+    "candidateId": "protocol-update-2026-03-25-001",
+    "detectedAt": "2026-03-25T13:56:52.000Z",
+    "beat": "protocol-updates",
+    "category": "protocol-change",
+    "summary": "A newly deployed sBTC DCA vault contract executed its first live swap shortly after launch.",
+    "significance": "The contract appears live before broad dashboard visibility because it moved from deployment to plan creation and first execution within the same day.",
+    "causality": "A user created a DCA plan on the new vault and then called execute-dca through the Bitflow USDCx swap router, producing the contract's first live swap execution.",
+    "detectionMethod": "raw-query",
+    "usesDashboardAsPrimarySource": false,
+    "likelyDuplicate": false
+  }
+}

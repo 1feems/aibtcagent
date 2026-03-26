@@ -6,12 +6,12 @@ This document records the operator setup, wallet references, runtime choice, and
 ## Wallets
 
 ### Primary Bitcoin Address
-- `bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d`
+- `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv`
 - type: `Bitcoin Native SegWit`
 - purpose: primary AIBTC Bitcoin identity, rewards, and BTC-side attribution
 
 ### Paired Stacks Address
-- `SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR`
+- `SP21RCDK8A5HRNCGP3R5XT23TM0K3D231NR25HBHM`
 - purpose: AIBTC registration, Stacks-side activity, contract interaction attribution, and proof references
 
 ## Registration Notes
@@ -21,12 +21,10 @@ This document records the operator setup, wallet references, runtime choice, and
 - claim one primary newsroom beat before live signal submission
 
 ## Current Registration State
-- AIBTC registration completed on `2026-03-25`
-- verify endpoint confirms `registered: true` for `bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d`
-- current platform display name for the registered address: `Lasting Squid`
+- new wallet created on `2026-03-26` — previous wallet lost claim code, registration being restarted
+- registration pending for `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv`
 - preferred external branding name: `Fever King`
 - operator X handle: `@feemschats`
-- first manual heartbeat completed on `2026-03-25`
 - GitHub remains the recurring non-signing runtime
 - wallet signing remains local and manual for now
 
@@ -75,8 +73,8 @@ AIBTC_REPUTATION_URL=
 Current known values:
 
 ```bash
-AIBTC_BITCOIN_ADDRESS=bc1qlxufq0nuakyz53ac4e7yqsqtmzpscrlc6xtg0d
-AIBTC_STACKS_ADDRESS=SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR
+AIBTC_BITCOIN_ADDRESS=bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv
+AIBTC_STACKS_ADDRESS=SP21RCDK8A5HRNCGP3R5XT23TM0K3D231NR25HBHM
 AIBTC_AGENT_NAME=Fever King
 AIBTC_X_HANDLE=@feemschats
 ```

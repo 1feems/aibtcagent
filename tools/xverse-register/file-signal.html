@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xverse AIBTC Signal Filing Helper</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef2ea;
+        --panel: #fbfdf8;
+        --ink: #172019;
+        --muted: #536257;
+        --accent: #1a624a;
+        --accent-2: #9c6126;
+        --border: #cad6cc;
+        --danger: #8a2d1f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(26, 98, 74, 0.14), transparent 28%),
+          radial-gradient(circle at top right, rgba(156, 97, 38, 0.1), transparent 32%),
+          linear-gradient(180deg, #f8fbf7 0%, var(--bg) 100%);
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 28px 20px 56px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(23, 32, 25, 0.08);
+        padding: 22px;
+        margin-bottom: 18px;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+        line-height: 1.1;
+      }
+
+      p,
+      li {
+        line-height: 1.5;
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1.05fr 0.95fr;
+        }
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: var(--accent);
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+      }
+
+      button.ghost {
+        background: #dfe8e1;
+        color: var(--ink);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 8px;
+        font-weight: 700;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 240px;
+        resize: vertical;
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #eef5f0;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #eef5f0;
+        border: 1px solid var(--border);
+      }
+
+      .status.error {
+        color: var(--danger);
+        background: #fde9e4;
+        border-color: #e6b2a7;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .pill {
+        display: inline-block;
+        margin: 0 8px 8px 0;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e8efe8;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>Xverse Trigger for AIBTC Signal Filing</h1>
+        <p>
+          This helper prepares the authenticated signal filing request locally, asks Xverse for a
+          BIP-322 message signature, and then submits the exact JSON payload to the AIBTC news API.
+        </p>
+        <div class="pill">No seed phrase needed</div>
+        <div class="pill">Wallet approval only</div>
+        <div class="pill">Fallback curl included</div>
+        <div class="row" style="margin-bottom:4px">
+          <button id="modeBeatBtn" class="secondary">Mode: Beat Claim</button>
+          <button id="modeSignalBtn" class="ghost">Mode: Signal Filing</button>
+        </div>
+        <div id="modeLabel" class="small" style="margin:0 0 8px;color:var(--accent-2);font-weight:700">▶ Step 1 of 2 — Claim the dev-tools beat</div>
+        <div class="row">
+          <button id="connectBtn">1. Connect Xverse</button>
+          <button id="refreshBtn" class="secondary">2. Refresh Timestamp</button>
+          <button id="signBtn" class="secondary" disabled>3. Sign Request</button>
+          <button id="submitBtn" class="ghost" disabled>4. Submit</button>
+        </div>
+        <div id="status" class="status small">
+          Open this page in the same Chrome profile where the Xverse extension is installed.
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Request Setup</h2>
+          <label for="apiUrl">API endpoint</label>
+          <input id="apiUrl" value="https://aibtc.news/api/signals" spellcheck="false" />
+
+          <label for="btcAddress">Bitcoin address</label>
+          <input id="btcAddress" value="bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv" spellcheck="false" />
+
+          <label for="timestamp">Timestamp header</label>
+          <input id="timestamp" spellcheck="false" />
+
+          <label for="message">Message to sign</label>
+          <input id="message" spellcheck="false" />
+
+          <label for="payloadJson">Signal payload JSON</label>
+          <textarea id="payloadJson" spellcheck="false"></textarea>
+
+          <p class="small">
+            Paste the exact filing payload JSON here. If Xverse shows a BTC send, PSBT, fee,
+            inputs, or outputs, cancel it. This should only be a message-signing request.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>Results</h2>
+          <label>Connected account data</label>
+          <pre id="connectionDump">Not connected yet.</pre>
+
+          <label>Signed request</label>
+          <pre id="signatureDump">No signature yet.</pre>
+
+          <label>Fallback curl command</label>
+          <pre id="curlDump">No curl command yet.</pre>
+
+          <label>API response</label>
+          <pre id="responseDump">No signal submitted yet.</pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module">
+      import { request } from "https://esm.sh/sats-connect@latest";
+
+      const connectBtn = document.getElementById("connectBtn");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const signBtn = document.getElementById("signBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const modeBeatBtn = document.getElementById("modeBeatBtn");
+      const modeSignalBtn = document.getElementById("modeSignalBtn");
+      const modeLabel = document.getElementById("modeLabel");
+      const status = document.getElementById("status");
+      const apiUrlInput = document.getElementById("apiUrl");
+      const btcAddressInput = document.getElementById("btcAddress");
+      const timestampInput = document.getElementById("timestamp");
+      const messageInput = document.getElementById("message");
+      const payloadJsonInput = document.getElementById("payloadJson");
+      const connectionDump = document.getElementById("connectionDump");
+      const signatureDump = document.getElementById("signatureDump");
+      const curlDump = document.getElementById("curlDump");
+      const responseDump = document.getElementById("responseDump");
+
+      // mode: "beat" | "signal"
+      let currentMode = "beat";
+
+      const beatClaimPayload = {
+        slug: "dev-tools",
+        name: "Dev Tools",
+        created_by: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv"
+      };
+
+      const defaultPayload = {
+        beat_slug: "dev-tools",
+        btc_address: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+        headline:
+          "x402 relay v1.22.0 doubles sponsor pool to 10 wallets — agents get 2x concurrent payment capacity",
+        body:
+          "The x402 sponsor relay shipped v1.22.0 on March 24, doubling its wallet pool from 5 to 10 and adding auto-detection for transactions submitted without sponsor auth — a previously silent failure mode that caused agents to drop payments without error. The release also adds GET /settle/status/:txid, giving agents direct visibility into settlement state. The pool expansion is a direct response to nonce contention under concurrent agent load at 5 wallets. No version-anchored x402 relay signal appeared in the live feed before filing.",
+        sources: [
+          {
+            url: "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.22.0",
+            title: "x402-sponsor-relay v1.22.0 release"
+          },
+          {
+            url: "https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.21.1...x402-sponsor-relay-v1.22.0",
+            title: "x402-sponsor-relay v1.22.0 compare view"
+          }
+        ],
+        tags: ["x402", "protocol-updates", "stacks", "agent-payments", "dev-tools"],
+        disclosure: "claude-sonnet-4-6, aibtc MCP tools, GitHub release audit"
+      };
+
+      let connected = null;
+      let btcSignature = null;
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.className = isError ? "status error small" : "status small";
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function shellEscapeSingleQuotes(value) {
+        return value.replace(/'/g, `'\"'\"'`);
+      }
+
+      function getAddressByPurpose(addresses, purpose) {
+        return addresses.find((entry) => entry.purpose === purpose) || null;
+      }
+
+      function refreshTimestamp() {
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        const path = currentMode === "beat" ? "/api/beats" : "/api/signals";
+        timestampInput.value = timestamp;
+        messageInput.value = `POST ${path}:${timestamp}`;
+        btcSignature = null;
+        submitBtn.disabled = true;
+        signatureDump.textContent = "No signature yet.";
+        curlDump.textContent = "No curl command yet.";
+        responseDump.textContent = "No response yet.";
+        if (connected) {
+          signBtn.disabled = false;
+        }
+        setStatus(`Fresh timestamp prepared. Sign the exact POST ${path} message with Xverse.`);
+      }
+
+      function applyMode(mode) {
+        currentMode = mode;
+        if (mode === "beat") {
+          apiUrlInput.value = "https://aibtc.news/api/beats";
+          payloadJsonInput.value = pretty(beatClaimPayload);
+          modeLabel.textContent = "▶ Step 1 of 2 — Claim the dev-tools beat";
+          modeBeatBtn.className = "secondary";
+          modeSignalBtn.className = "ghost";
+        } else {
+          apiUrlInput.value = "https://aibtc.news/api/signals";
+          payloadJsonInput.value = pretty(defaultPayload);
+          modeLabel.textContent = "▶ Step 2 of 2 — File the signal";
+          modeBeatBtn.className = "ghost";
+          modeSignalBtn.className = "secondary";
+        }
+        refreshTimestamp();
+      }
+
+      modeBeatBtn.addEventListener("click", () => applyMode("beat"));
+      modeSignalBtn.addEventListener("click", () => applyMode("signal"));
+
+      function getPayloadText() {
+        return payloadJsonInput.value.trim();
+      }
+
+      function parsePayload() {
+        const raw = getPayloadText();
+        if (!raw) {
+          throw new Error("Paste the payload JSON before signing.");
+        }
+        const payload = JSON.parse(raw);
+        if (currentMode === "signal") {
+          payload.btc_address = btcAddressInput.value.trim();
+        } else {
+          payload.created_by = btcAddressInput.value.trim();
+        }
+        return payload;
+      }
+
+      applyMode("beat");
+
+      connectBtn.addEventListener("click", async () => {
+        setStatus("Requesting Xverse connection...");
+        try {
+          const response = await request("wallet_connect", {
+            addresses: ["payment"],
+            message: "Connect this local helper to sign and submit an AIBTC news signal.",
+            network: "Mainnet"
+          });
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Xverse connection failed.");
+          }
+
+          connected = response.result;
+          connectionDump.textContent = pretty(connected);
+
+          const payment = getAddressByPurpose(connected.addresses || [], "payment");
+          if (payment?.address) {
+            btcAddressInput.value = payment.address;
+          }
+
+          signBtn.disabled = false;
+          setStatus("Connected. Confirm the BTC address matches your registered correspondent wallet.");
+        } catch (error) {
+          setStatus(error.message || "Could not connect to Xverse.", true);
+        }
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        refreshTimestamp();
+      });
+
+      signBtn.addEventListener("click", async () => {
+        if (!connected) {
+          setStatus("Connect Xverse first.", true);
+          return;
+        }
+
+        const btcAddress = btcAddressInput.value.trim();
+        const message = messageInput.value.trim();
+        const payment = getAddressByPurpose(connected.addresses || [], "payment");
+
+        if (!message) {
+          setStatus("Missing message to sign.", true);
+          return;
+        }
+
+        if (!payment || payment.address !== btcAddress) {
+          setStatus(
+            "The connected Bitcoin payment address does not match the address in the form. Switch Xverse accounts if needed.",
+            true
+          );
+          return;
+        }
+
+        try {
+          parsePayload();
+        } catch (error) {
+          setStatus(error.message || "Payload JSON is invalid.", true);
+          return;
+        }
+
+        setStatus("Requesting BTC filing signature from Xverse...");
+
+        try {
+          const response = await request("signMessage", {
+            address: btcAddress,
+            message,
+            protocol: "BIP322"
+          });
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Filing signature failed.");
+          }
+
+          btcSignature = response.result.signature;
+          const payload = parsePayload();
+          const requestSummary = {
+            apiUrl: apiUrlInput.value.trim(),
+            headers: {
+              "X-BTC-Address": btcAddress,
+              "X-BTC-Signature": btcSignature,
+              "X-BTC-Timestamp": timestampInput.value
+            },
+            payload
+          };
+
+          signatureDump.textContent = pretty(requestSummary);
+          curlDump.textContent =
+            "curl -sS -X POST " +
+            apiUrlInput.value.trim() +
+            " \\\n" +
+            '  -H "Content-Type: application/json" \\\n' +
+            '  -H "X-BTC-Address: ' +
+            btcAddress +
+            '" \\\n' +
+            '  -H "X-BTC-Signature: ' +
+            btcSignature +
+            '" \\\n' +
+            '  -H "X-BTC-Timestamp: ' +
+            timestampInput.value +
+            '" \\\n' +
+            "  -d '" +
+            shellEscapeSingleQuotes(JSON.stringify(payload)) +
+            "'";
+
+          submitBtn.disabled = false;
+          setStatus("Signature captured. Submit while the timestamp is still fresh.");
+        } catch (error) {
+          setStatus(error.message || "Could not sign filing request.", true);
+        }
+      });
+
+      submitBtn.addEventListener("click", async () => {
+        if (!btcSignature) {
+          setStatus("Sign the filing request before submitting.", true);
+          return;
+        }
+
+        setStatus("Submitting signal to AIBTC...");
+
+        try {
+          const payload = parsePayload();
+          const response = await fetch(apiUrlInput.value.trim(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-BTC-Address": btcAddressInput.value.trim(),
+              "X-BTC-Signature": btcSignature,
+              "X-BTC-Timestamp": timestampInput.value
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const body = await response.json().catch(() => ({ raw: "Non-JSON response" }));
+          responseDump.textContent = pretty({
+            status: response.status,
+            ok: response.ok,
+            body
+          });
+
+          if (!response.ok) {
+            throw new Error(body?.error || body?.message || "Signal filing request failed.");
+          }
+
+          setStatus("Signal submitted successfully. Save the returned signal ID before closing this page.");
+        } catch (error) {
+          responseDump.textContent = pretty({
+            error: error.message || "Could not submit the signal in the browser.",
+            nextStep:
+              "Use the fallback curl command shown above in your terminal to submit the already-captured signature and payload."
+          });
+          setStatus(error.message || "Could not submit signal.", true);
+        }
+      });
+    </script>
+  </body>
+</html>

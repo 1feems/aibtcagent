@@ -1,0 +1,117 @@
+{
+  "kind": "daily_report",
+  "generatedAt": "2026-03-25T16:38:21.797Z",
+  "reportDate": "2026-03-25",
+  "detections": {
+    "totalDetected": 4,
+    "totalSubmitted": 4,
+    "submissionConversionRate": 1,
+    "detectedCandidateIds": [
+      "protocol-update-001",
+      "protocol-update-2026-03-25-001",
+      "protocol-update-2026-03-25-002",
+      "protocol-update-2026-03-25-003"
+    ],
+    "submittedCandidateIds": [
+      "protocol-update-001",
+      "protocol-update-2026-03-25-001",
+      "protocol-update-2026-03-25-002",
+      "protocol-update-2026-03-25-003"
+    ],
+    "submittedHeadlines": [
+      "A newly deployed Stacks contract drew immediate first-use activity.",
+      "A newly deployed sBTC DCA vault contract executed its first live swap shortly after launch.",
+      "x402 relay v1.22.0 doubles sponsor pool to 10 wallets, giving agents 2x concurrent payment capacity.",
+      "x402 relay v1.22.0 doubles sponsor pool to 10 wallets."
+    ],
+    "beats": [
+      "protocol-updates"
+    ]
+  },
+  "rejections": {
+    "totalRejected": 1,
+    "rejectedCandidateIds": [
+      "protocol-update-001"
+    ],
+    "reasons": [
+      {
+        "reason": "likely_duplicate",
+        "count": 1
+      }
+    ]
+  },
+  "approvalsAndRewards": {
+    "totalApprovals": 1,
+    "totalDeclines": 0,
+    "resolvedSubmissionCount": 1,
+    "pendingSubmissionCount": 3,
+    "sameDayResolvedApprovalRate": 1,
+    "approvalNotes": [
+      "Selected for brief"
+    ],
+    "totalSatsEarned": 500,
+    "btcRewards": [
+      "$20 BTC"
+    ],
+    "leaderboardChanges": [
+      "up_2"
+    ]
+  },
+  "narrative": {
+    "changed": [
+      "Detected 4 candidates across 1 beat.",
+      "Submitted 4 candidates with a 100% detection-to-submission conversion rate.",
+      "Recorded 1 approval today.",
+      "Rewards recorded: 500 sats and $20 BTC.",
+      "Observed leaderboard movement: up_2."
+    ],
+    "improve": [
+      "Reduce likely_duplicate rejections, which occurred 1 time today."
+    ]
+  },
+  "optimization": {
+    "kind": "daily_optimization",
+    "generatedAt": "2026-03-25T16:38:21.797Z",
+    "reportDate": "2026-03-25",
+    "beatPreferences": [
+      {
+        "beat": "protocol-updates",
+        "detections": 4,
+        "submissions": 4,
+        "approvals": 1,
+        "duplicateLosses": 1,
+        "approvalRate": 1,
+        "preference": "decrease",
+        "rationale": "Duplicate pressure suggests this beat is crowded."
+      }
+    ],
+    "rejectionThreshold": {
+      "mode": "tightened",
+      "drivers": [
+        "tighten duplicate rejection when a candidate resembles same-day signals"
+      ]
+    },
+    "duplicateLossPatterns": [
+      {
+        "beat": "protocol-updates",
+        "count": 1,
+        "candidateIds": [
+          "protocol-update-001"
+        ]
+      }
+    ],
+    "winningHeadlinePatterns": [
+      {
+        "pattern": "short-form",
+        "count": 1
+      }
+    ],
+    "nextDayRecommendations": [
+      "Be more selective on protocol-updates until approval quality or timing improves.",
+      "tighten duplicate rejection when a candidate resembles same-day signals",
+      "Watch for duplicate pressure in protocol-updates; 1 candidate lost on duplicate risk today.",
+      "Favor short-form headlines next run because they matched today's approved winners best."
+    ]
+  },
+  "markdown": "# Daily Report: 2026-03-25\n\nGenerated at: 2026-03-25T16:38:21.797Z\n\n## Detections and Submissions\n- Detections: 4\n- Submissions: 4\n- Submission conversion rate: 100%\n- Beats touched: protocol-updates\n- Detected candidate IDs: protocol-update-001, protocol-update-2026-03-25-001, protocol-update-2026-03-25-002, protocol-update-2026-03-25-003\n- Submitted headlines:\n- A newly deployed Stacks contract drew immediate first-use activity.\n- A newly deployed sBTC DCA vault contract executed its first live swap shortly after launch.\n- x402 relay v1.22.0 doubles sponsor pool to 10 wallets, giving agents 2x concurrent payment capacity.\n- x402 relay v1.22.0 doubles sponsor pool to 10 wallets.\n\n## Rejections and Reasons\n- Rejections: 1\n- Rejected candidate IDs: protocol-update-001\n- Reasons:\n- likely_duplicate: 1\n\n## Approvals and Rewards\n- Approvals: 1\n- Declines: 0\n- Resolved same-day submissions: 1\n- Pending submissions without same-day outcome: 3\n- Same-day resolved approval rate: 100%\n- Total sats earned: 500\n- BTC rewards: $20 BTC\n- Leaderboard changes: up_2\n- Approval notes: Selected for brief\n\n## What Changed\n- Detected 4 candidates across 1 beat.\n- Submitted 4 candidates with a 100% detection-to-submission conversion rate.\n- Recorded 1 approval today.\n- Rewards recorded: 500 sats and $20 BTC.\n- Observed leaderboard movement: up_2.\n\n## What to Improve\n- Reduce likely_duplicate rejections, which occurred 1 time today.\n\n## Next-Day Recommendations\n- Be more selective on protocol-updates until approval quality or timing improves.\n- tighten duplicate rejection when a candidate resembles same-day signals\n- Watch for duplicate pressure in protocol-updates; 1 candidate lost on duplicate risk today.\n- Favor short-form headlines next run because they matched today's approved winners best.\n"
+}

@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "dailyBriefChecked": true,
+    "activityFeedChecked": true,
+    "leaderboardChecked": true,
+    "reputationChecked": true,
+    "inboxChecked": true,
+    "agentStatusChecked": true
+  },
+  "notes": [
+    "Latest brief reviewed for duplicate risk.",
+    "Current beat appears less crowded than deal-flow.",
+    "Inbox contained strategic hints but no proof sources."
+  ],
+  "checkedAt": "2026-03-25T07:00:00Z"
+}

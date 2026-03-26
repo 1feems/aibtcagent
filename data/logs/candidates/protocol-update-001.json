@@ -1,0 +1,14 @@
+{
+  "kind": "candidate",
+  "recordedAt": "2026-03-25T08:00:00Z",
+  "candidate": {
+    "candidateId": "protocol-update-001",
+    "detectedAt": "2026-03-25T06:30:00Z",
+    "beat": "protocol-updates",
+    "category": "protocol-change",
+    "summary": "A newly deployed Stacks contract drew immediate first-use activity",
+    "significance": "a live protocol launch is visible onchain before public dashboards catch up",
+    "causality": "its deployment was followed by a first funding and interaction transaction",
+    "detectionMethod": "raw-query"
+  }
+}

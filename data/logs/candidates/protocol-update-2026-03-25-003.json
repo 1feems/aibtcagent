@@ -1,0 +1,16 @@
+{
+  "kind": "candidate",
+  "recordedAt": "2026-03-25T16:38:21.797Z",
+  "candidate": {
+    "candidateId": "protocol-update-2026-03-25-003",
+    "detectedAt": "2026-03-25T18:00:00.000Z",
+    "beat": "protocol-updates",
+    "category": "protocol-change",
+    "summary": "x402 relay v1.22.0 doubles sponsor pool to 10 wallets, giving agents 2x concurrent payment capacity",
+    "significance": "the versioned relay release expands payment throughput before the capacity change is broadly framed as a release signal",
+    "causality": "the relay was hitting nonce contention at 5 wallets under concurrent agent load, and the release directly expands sponsor capacity while adding settlement visibility for operators",
+    "detectionMethod": "raw-query",
+    "usesDashboardAsPrimarySource": false,
+    "likelyDuplicate": false
+  }
+}

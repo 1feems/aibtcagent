@@ -1,5 +1,5 @@
 {
-  "id": "protocol-update-2026-03-25-003",
+  "id": "protocol-update-2026-03-25-002",
   "detectedAt": "2026-03-25T18:00:00.000Z",
   "chain": "github",
   "summary": "x402 relay v1.22.0 doubles sponsor pool to 10 wallets, giving agents 2x concurrent payment capacity",

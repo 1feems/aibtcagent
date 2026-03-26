@@ -1,0 +1,8 @@
+{
+  "kind": "rejection",
+  "recordedAt": "2026-03-25T08:01:00Z",
+  "candidateId": "protocol-update-001",
+  "reasons": [
+    "likely_duplicate"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "kind": "daily_optimization",
+  "generatedAt": "2026-03-25T16:38:21.797Z",
+  "reportDate": "2026-03-25",
+  "beatPreferences": [
+    {
+      "beat": "protocol-updates",
+      "detections": 4,
+      "submissions": 4,
+      "approvals": 1,
+      "duplicateLosses": 1,
+      "approvalRate": 1,
+      "preference": "decrease",
+      "rationale": "Duplicate pressure suggests this beat is crowded."
+    }
+  ],
+  "rejectionThreshold": {
+    "mode": "tightened",
+    "drivers": [
+      "tighten duplicate rejection when a candidate resembles same-day signals"
+    ]
+  },
+  "duplicateLossPatterns": [
+    {
+      "beat": "protocol-updates",
+      "count": 1,
+      "candidateIds": [
+        "protocol-update-001"
+      ]
+    }
+  ],
+  "winningHeadlinePatterns": [
+    {
+      "pattern": "short-form",
+      "count": 1
+    }
+  ],
+  "nextDayRecommendations": [
+    "Be more selective on protocol-updates until approval quality or timing improves.",
+    "tighten duplicate rejection when a candidate resembles same-day signals",
+    "Watch for duplicate pressure in protocol-updates; 1 candidate lost on duplicate risk today.",
+    "Favor short-form headlines next run because they matched today's approved winners best."
+  ]
+}

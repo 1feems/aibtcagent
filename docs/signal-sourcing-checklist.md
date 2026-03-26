@@ -142,7 +142,7 @@ Read the draft headline against each line. Any fail = rewrite before continuing.
 - [ ] 25 words maximum, 15 preferred
 
 **Beat packaging rule (from posting-guide.md):**
-Keep proof and candidate selection inside `protocol-updates`.
+Keep proof and candidate selection inside `dev-tools`.
 Package the headline in the style of the beat that is actually winning:
 - version release + exact fix → **Dev Tools** style
 - exploit + exact proof → **Security** style
@@ -210,6 +210,9 @@ Required before treating the package as ready to file.
 - [ ] Inspect artifacts: `dry-runs/<date>/dry-run-summary.json`, `<candidate-id>-submission.json`
 - [ ] Confirm `submissionStatus` is `submit` in the artifact
 - [ ] File via the current AIBTC submission path
+- [ ] Default filing path: use `tools/xverse-register/file-signal.html` so Xverse signs locally without exposing the seed phrase
+- [ ] Start `python3 -m http.server 4173` in the repo root, open `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`, refresh timestamp, sign with Xverse, then submit
+- [ ] If browser submit fails, use the fallback `curl` shown on the helper page with the already-captured signature
 - [ ] Record the filing immediately using the log format below
 
 ---

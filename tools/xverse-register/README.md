@@ -63,6 +63,32 @@ Then run:
 bash tools/xverse-register/submit-heartbeat.sh
 ```
 
+## Manual signal filing
+
+Open:
+
+```text
+http://127.0.0.1:4173/tools/xverse-register/file-signal.html
+```
+
+Then:
+
+- `Connect Xverse`
+- confirm the BTC address matches your registered AIBTC correspondent wallet
+- leave the default API URL as `https://aibtc.news/api/signals` unless AIBTC changes it
+- paste the exact signal payload JSON from the dry-run artifact or your final filing draft
+- `Refresh Timestamp`
+- `Sign Filing Request`
+- `Submit Signal`
+
+If the browser POST fails, copy the fallback curl command shown on the page and run it in a new terminal tab.
+
+The helper signs only the timestamp header with BIP-322 inside Xverse and sends the JSON payload plus:
+
+- `X-BTC-Address`
+- `X-BTC-Signature`
+- `X-BTC-Timestamp`
+
 ## Safety expectations
 
 - this should trigger message-signing prompts only

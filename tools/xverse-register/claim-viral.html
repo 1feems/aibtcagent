@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIBTC Viral Claim Helper</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #edf3ef;
+        --panel: #fcfffb;
+        --ink: #15211a;
+        --muted: #4d5e54;
+        --accent: #165b45;
+        --accent-2: #8c5b23;
+        --border: #c8d7cd;
+        --danger: #8a2d1f;
+        --success: #145c35;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(22, 91, 69, 0.15), transparent 28%),
+          radial-gradient(circle at top right, rgba(140, 91, 35, 0.12), transparent 30%),
+          linear-gradient(180deg, #f7fbf8 0%, var(--bg) 100%);
+      }
+      main { max-width: 920px; margin: 0 auto; padding: 30px 20px 56px; }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(20, 33, 26, 0.08);
+        padding: 22px;
+        margin-bottom: 18px;
+      }
+      h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+      p, li { line-height: 1.5; }
+      .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: var(--accent);
+      }
+      button.secondary { background: var(--accent-2); }
+      button.ghost { background: #dde8e1; color: var(--ink); }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      label { display: block; margin: 14px 0 8px; font-weight: 700; }
+      input, textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #eef5f1;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #eef5f1;
+        border: 1px solid var(--border);
+      }
+      .status.error { color: var(--danger); background: #fde9e4; border-color: #e6b2a7; }
+      .status.success { color: var(--success); background: #e2f5eb; border-color: #a7d9bc; }
+      .small { color: var(--muted); font-size: 0.95rem; }
+      .code-highlight {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        color: var(--accent);
+        background: #e2f5eb;
+        border: 2px solid #a7d9bc;
+        border-radius: 10px;
+        padding: 10px 18px;
+        display: inline-block;
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>AIBTC Viral Claim Helper</h1>
+        <p>
+          Two steps: first, get your real claim code (sign a message with Xverse). Then tweet with
+          that code and submit the tweet URL here to reach Level 2 (Genesis).
+        </p>
+        <p class="small">
+          <strong>Why do you need this?</strong> Your tweet used an incorrect claim code. This tool
+          retrieves your real registered code so you can tweet again with the correct one.
+        </p>
+      </section>
+
+      <!-- Step 1: Get claim code -->
+      <section class="panel">
+        <h2>Step 1 — Get Your Real Claim Code</h2>
+        <label for="btcAddress">Bitcoin address</label>
+        <input id="btcAddress" value="bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv" spellcheck="false" />
+
+        <label for="signMessage">Message to sign (read-only)</label>
+        <input id="signMessage" readonly spellcheck="false" />
+
+        <div class="row">
+          <button id="connectBtn">1. Connect Xverse</button>
+          <button id="signBtn" disabled>2. Sign &amp; Get Code</button>
+        </div>
+        <div id="stepOneStatus" class="status small">
+          Open this page in the Chrome profile where your Xverse extension is installed.
+        </div>
+
+        <label style="margin-top:16px;">Fallback — run this in terminal to get your code</label>
+        <pre id="getCodeCurlDump">Sign first to generate this command.</pre>
+
+        <div id="claimCodeBox" style="display:none; margin-top:16px;">
+          <label>Your claim code</label>
+          <div id="claimCodeDisplay" class="code-highlight"></div>
+          <p class="small" style="margin-top:8px;">
+            Copy this code. You need to include it in your tweet (see Step 2).
+          </p>
+        </div>
+      </section>
+
+      <!-- Step 2: Tweet instructions -->
+      <section class="panel">
+        <h2>Step 2 — Tweet With Your Code</h2>
+        <p>Post a tweet that includes all of these:</p>
+        <ul>
+          <li>Your claim code (shown above after Step 1)</li>
+          <li>Your display name: <strong>Lasting Squid</strong></li>
+          <li>The word <strong>AIBTC</strong></li>
+          <li>Tag <strong>@aibtcdev</strong></li>
+        </ul>
+        <p class="small">
+          Example: <em>Joining @aibtcdev because I believe BTC will be the currency of AIs. Lasting Squid AIBTC [YOUR-CODE]</em>
+        </p>
+        <p class="small">
+          After tweeting, paste the tweet URL below and submit.
+        </p>
+      </section>
+
+      <!-- Step 3: Submit claim -->
+      <section class="panel">
+        <h2>Step 3 — Submit Your Tweet URL</h2>
+        <label for="tweetUrl">Tweet URL</label>
+        <input id="tweetUrl" type="url" placeholder="https://x.com/yourhandle/status/..." spellcheck="false" />
+
+        <div class="row">
+          <button id="submitClaimBtn" class="secondary">Submit Claim</button>
+        </div>
+        <div id="stepThreeStatus" class="status small">
+          Enter your tweet URL and click Submit Claim.
+        </div>
+
+        <label style="margin-top:18px;">API response</label>
+        <pre id="responseDump">No claim submitted yet.</pre>
+      </section>
+
+      <!-- Fallback curl -->
+      <section class="panel">
+        <h2>Fallback — curl Command</h2>
+        <p class="small">
+          If the browser submit fails, run this in your terminal after getting your claim code:
+        </p>
+        <pre id="curlDump">Run Steps 1–2 first to generate the curl command.</pre>
+      </section>
+    </main>
+
+    <script type="module">
+      import { request } from "https://esm.sh/sats-connect@latest";
+
+      const connectBtn = document.getElementById("connectBtn");
+      const signBtn = document.getElementById("signBtn");
+      const submitClaimBtn = document.getElementById("submitClaimBtn");
+      const btcAddressInput = document.getElementById("btcAddress");
+      const signMessageInput = document.getElementById("signMessage");
+      const tweetUrlInput = document.getElementById("tweetUrl");
+      const stepOneStatus = document.getElementById("stepOneStatus");
+      const stepThreeStatus = document.getElementById("stepThreeStatus");
+      const claimCodeBox = document.getElementById("claimCodeBox");
+      const claimCodeDisplay = document.getElementById("claimCodeDisplay");
+      const responseDump = document.getElementById("responseDump");
+      const curlDump = document.getElementById("curlDump");
+      const getCodeCurlDump = document.getElementById("getCodeCurlDump");
+
+      let connected = null;
+      let claimCode = null;
+
+      function updateSignMessage() {
+        const addr = btcAddressInput.value.trim();
+        signMessageInput.value = `Regenerate claim code for ${addr}`;
+      }
+
+      updateSignMessage();
+      btcAddressInput.addEventListener("input", updateSignMessage);
+
+      function setStatus(el, message, type = "info") {
+        el.textContent = message;
+        el.className = type === "error" ? "status error small"
+          : type === "success" ? "status success small"
+          : "status small";
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function shellEscape(value) {
+        return value.replace(/'/g, `'\"'\"'`);
+      }
+
+      function updateCurl() {
+        const addr = btcAddressInput.value.trim();
+        const url = tweetUrlInput.value.trim();
+        if (!claimCode || !url) {
+          curlDump.textContent = "Complete Steps 1–2 and enter a tweet URL to generate this command.";
+          return;
+        }
+        const payload = { tweetUrl: url, btcAddress: addr };
+        curlDump.textContent =
+          "curl -sS -X POST https://aibtc.com/api/claims/viral \\\n" +
+          '  -H "Content-Type: application/json" \\\n' +
+          "  -d '" + shellEscape(JSON.stringify(payload)) + "'";
+      }
+
+      tweetUrlInput.addEventListener("input", updateCurl);
+
+      connectBtn.addEventListener("click", async () => {
+        setStatus(stepOneStatus, "Requesting Xverse connection...");
+        try {
+          const response = await request("wallet_connect", {
+            addresses: ["payment"],
+            message: "Connect to retrieve your AIBTC claim code.",
+            network: "Mainnet"
+          });
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Xverse connection failed.");
+          }
+          connected = response.result;
+          const payment = (connected.addresses || []).find(a => a.purpose === "payment");
+          if (payment?.address) {
+            btcAddressInput.value = payment.address;
+            updateSignMessage();
+          }
+          signBtn.disabled = false;
+          setStatus(stepOneStatus, "Connected. Confirm the Bitcoin address matches your registered agent, then sign.");
+        } catch (error) {
+          setStatus(stepOneStatus, error.message || "Could not connect to Xverse.", "error");
+        }
+      });
+
+      signBtn.addEventListener("click", async () => {
+        if (!connected) {
+          setStatus(stepOneStatus, "Connect Xverse first.", "error");
+          return;
+        }
+
+        const btcAddress = btcAddressInput.value.trim();
+        const message = signMessageInput.value;
+        const payment = (connected.addresses || []).find(a => a.purpose === "payment");
+
+        if (!payment || payment.address !== btcAddress) {
+          setStatus(stepOneStatus, "Connected address does not match the address in the form. Switch Xverse accounts if needed.", "error");
+          return;
+        }
+
+        setStatus(stepOneStatus, "Requesting BIP-137 signature from Xverse...");
+
+        try {
+          const signResponse = await request("signMessage", {
+            address: btcAddress,
+            message,
+            protocol: "BIP322"
+          });
+
+          if (signResponse.status !== "success") {
+            throw new Error(signResponse.error?.message || "Signing failed.");
+          }
+
+          const bitcoinSignature = signResponse.result.signature;
+          const btcPublicKey = signResponse.result.publicKey
+            || (connected.addresses || []).find(a => a.purpose === "payment")?.publicKey
+            || "";
+          const codePayload = { btcAddress, bitcoinSignature };
+          if (btcPublicKey) codePayload.btcPublicKey = btcPublicKey;
+          getCodeCurlDump.textContent =
+            "curl -sS -X POST https://aibtc.com/api/claims/code \\\n" +
+            '  -H "Content-Type: application/json" \\\n' +
+            "  -d '" + shellEscape(JSON.stringify(codePayload)) + "'";
+          setStatus(stepOneStatus, "Signature captured. Copy the curl command below and run it in terminal to get your claim code.", "success");
+        } catch (error) {
+          setStatus(stepOneStatus, error.message || "Could not retrieve claim code.", "error");
+        }
+      });
+
+      submitClaimBtn.addEventListener("click", async () => {
+        const tweetUrl = tweetUrlInput.value.trim();
+        const btcAddress = btcAddressInput.value.trim();
+
+        if (!tweetUrl) {
+          setStatus(stepThreeStatus, "Enter your tweet URL first.", "error");
+          return;
+        }
+
+        setStatus(stepThreeStatus, "Submitting claim to AIBTC...");
+
+        try {
+          const payload = { tweetUrl, btcAddress };
+          const response = await fetch("https://aibtc.com/api/claims/viral", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const body = await response.json().catch(() => ({ raw: "Non-JSON response" }));
+          responseDump.textContent = pretty({ status: response.status, ok: response.ok, body });
+
+          if (!response.ok) {
+            throw new Error(body?.error || body?.message || "Claim submission failed.");
+          }
+
+          setStatus(stepThreeStatus, "Claim submitted successfully! You are now Level 2 (Genesis).", "success");
+        } catch (error) {
+          responseDump.textContent = pretty({
+            error: error.message || "Could not submit claim.",
+            nextStep: "Use the fallback curl command shown at the bottom of this page."
+          });
+          setStatus(stepThreeStatus, error.message || "Could not submit claim.", "error");
+        }
+      });
+    </script>
+  </body>
+</html>

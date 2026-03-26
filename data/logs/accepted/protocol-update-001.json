@@ -1,0 +1,133 @@
+{
+  "kind": "accepted_submission",
+  "recordedAt": "2026-03-25T08:02:00Z",
+  "candidateId": "protocol-update-001",
+  "submission": {
+    "candidateSignal": {
+      "candidateId": "protocol-update-001",
+      "detectedAt": "2026-03-25T06:30:00Z",
+      "beat": "protocol-updates",
+      "category": "protocol-change",
+      "summary": "A newly deployed Stacks contract drew immediate first-use activity",
+      "significance": "a live protocol launch is visible onchain before public dashboards catch up",
+      "causality": "its deployment was followed by a first funding and interaction transaction",
+      "detectionMethod": "raw-query"
+    },
+    "headline": "A newly deployed Stacks contract drew immediate first-use activity.",
+    "proof": [
+      {
+        "chain": "stacks",
+        "txHash": "0xinteract456",
+        "contractAddress": "SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.protocol-v1",
+        "queryName": "protocol-update-deploy-and-first-use",
+        "queryResult": null,
+        "blockHeight": 182450,
+        "proofNote": "First interaction followed deployment in the monitored window."
+      }
+    ],
+    "sources": [
+      {
+        "sourceType": "rpc",
+        "sourceName": "Protocol Update RPC",
+        "sourceUrl": "https://example.invalid/v2/transactions/0xinteract456",
+        "sourceRole": "primary-proof"
+      },
+      {
+        "sourceType": "explorer",
+        "sourceName": "Protocol Update Explorer",
+        "sourceUrl": "https://explorer.hiro.so/txid/0xinteract456",
+        "sourceRole": "verification"
+      }
+    ],
+    "modelDisclosure": {
+      "toolsUsed": [
+        "query",
+        "clarity-audit"
+      ],
+      "derivationSteps": [
+        "Detected deployment activity for SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.protocol-v1 from direct chain data.",
+        "Matched first-use activity to 0xinteract456.",
+        "Composed the final one-line headline only after proof and sources were attached."
+      ]
+    },
+    "validationStatus": {
+      "passed": true,
+      "checks": {
+        "oneSentenceHeadline": true,
+        "onchainProofPresent": true,
+        "causalityPresent": true,
+        "sourcesDisclosed": true,
+        "modelDisclosurePresent": true,
+        "independentlyVerifiable": true,
+        "dashboardPrimarySourceRejected": true,
+        "duplicateRejected": true
+      }
+    },
+    "preSubmissionIntelligence": {
+      "checks": {
+        "dailyBriefChecked": true,
+        "activityFeedChecked": true,
+        "leaderboardChecked": true,
+        "reputationChecked": true,
+        "inboxChecked": true,
+        "agentStatusChecked": true
+      },
+      "notes": [
+        "All checks passed."
+      ],
+      "checkedAt": "2026-03-25T07:00:00Z"
+    },
+    "submissionDecision": {
+      "status": "submit",
+      "rejectionReasons": []
+    },
+    "editorialReview": {
+      "protocol": {
+        "status": "pass",
+        "notes": [
+          "Candidate fits the protocol-updates beat.",
+          "Onchain proof is attached to a specific contract and transaction.",
+          "Causal trigger is stated rather than implied."
+        ]
+      },
+      "factChecker": {
+        "status": "pass",
+        "notes": [
+          "Proof and sources appear independently verifiable.",
+          "Source disclosure is present.",
+          "Daily brief review was recorded.",
+          "Activity feed review was recorded."
+        ]
+      },
+      "publisher": {
+        "status": "pass",
+        "notes": [
+          "Signal is not framed as a dashboard recap.",
+          "No duplicate flag was raised by the current pipeline.",
+          "Headline is concise enough for a newsroom-style signal.",
+          "Significance claims the event is early relative to broader visibility."
+        ]
+      },
+      "editorialFit": "strong",
+      "publisherConfidence": "high",
+      "readyToFile": true,
+      "holdReasons": []
+    },
+    "articlePreview": {
+      "title": "A newly deployed Stacks contract drew immediate first-use activity.",
+      "dek": "A newly deployed Stacks contract drew immediate first-use activity A live protocol launch is visible onchain before public dashboards catch up.",
+      "lede": "A newly deployed Stacks contract drew immediate first-use activity Its deployment was followed by a first funding and interaction transaction.",
+      "whyItMatters": "a live protocol launch is visible onchain before public dashboards catch up",
+      "proofSummary": "Proof anchor: 0xinteract456 on stacks for SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.protocol-v1, reviewed at 2026-03-25T07:05:00Z.",
+      "audience": "human"
+    },
+    "outcomeTracking": {
+      "approved": null,
+      "btcRewardEarned": null,
+      "satsEarned": null,
+      "leaderboardMovement": null,
+      "streakOrBadgeProgress": []
+    },
+    "generatedAt": "2026-03-25T07:05:00Z"
+  }
+}

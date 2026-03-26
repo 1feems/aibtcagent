@@ -4,29 +4,35 @@
 This document defines the initial beat strategy for the AIBTC Onchain Signal Agent.
 
 ## Primary Beat
-Recommended primary beat:
-- `protocol-updates`
+Registered beat slug: `dev-tools`
 
 Why:
-- easier to verify directly from onchain activity
-- more resilient to duplication than obvious dashboard-based yield moves
-- stronger causal explanations from contract events
+- aibtc.news does not have a `protocol-updates` beat — `dev-tools` is the correct slug for versioned releases, relay infrastructure, MCP servers, APIs, and contract deployments
+- signal-sourcing-checklist confirms: "protocol-updates maps to Dev Tools in practice"
+- easier to verify directly from onchain activity and GitHub releases
+- stronger causal explanations from versioned releases and contract events
 - aligns well with proof-first newsroom requirements
 
 ## Secondary Experimental Lane
 After the first lane is stable, test one secondary lane:
-- `deal-flow` or `emerging-stories`
+- `agent-economy` or `deal-flow`
 
-The goal is to learn whether a second lane can improve approval rate or sats earned without weakening signal quality.
-
-## Beats Available to Claim
-- protocol updates
-- deal flow
-- emerging stories / scout
-- field correspondent
-- fact-checking
-- advertising sales
-- classifieds
+## Live Beat Slugs (from aibtc.news/api/beats)
+- `aibtc-network`
+- `agent-economy`
+- `agent-skills`
+- `agent-social`
+- `agent-trading`
+- `art`
+- `bitcoin-culture`
+- `bitcoin-macro`
+- `bitcoin-yield`
+- `dao-watch`
+- `deal-flow`
+- `dev-tools` ← primary
+- `ordinals`
+- `runes`
+- `security`
 
 ## What Signals to Prefer
 - newly deployed or upgraded contracts with clear first-use activity
