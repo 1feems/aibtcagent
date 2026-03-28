@@ -4,6 +4,22 @@
     "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.25.0",
     "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.24.0",
     "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.23.0",
-    "aibtcdev/mcp-server:mcp-server-v1.46.0"
+    "aibtcdev/mcp-server:mcp-server-v1.46.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.23.1",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.22.2",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.22.1",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.22.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.21.1",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.21.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.20.2",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.20.1",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.20.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.19.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.18.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.17.4",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.17.3",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.17.2",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.17.1",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.17.0"
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "kind": "daily_optimization",
+  "generatedAt": "2026-03-28T14:02:41.238Z",
+  "reportDate": "2026-03-28",
+  "beatPreferences": [
+    {
+      "beat": "protocol-updates",
+      "detections": 1,
+      "submissions": 0,
+      "approvals": 0,
+      "duplicateLosses": 0,
+      "approvalRate": null,
+      "preference": "hold",
+      "rationale": "Outcome data is still limited, so keep the current focus steady."
+    }
+  ],
+  "rejectionThreshold": {
+    "mode": "standard",
+    "drivers": [
+      "keep current rejection thresholds unchanged until more outcome data lands"
+    ]
+  },
+  "duplicateLossPatterns": [],
+  "winningHeadlinePatterns": [],
+  "nextDayRecommendations": [
+    "Hold the current setup steady and gather another day of data before adjusting the loop."
+  ]
+}

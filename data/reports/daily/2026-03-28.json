@@ -1,0 +1,92 @@
+{
+  "kind": "daily_report",
+  "generatedAt": "2026-03-28T14:02:41.238Z",
+  "reportDate": "2026-03-28",
+  "detections": {
+    "totalDetected": 1,
+    "totalSubmitted": 0,
+    "submissionConversionRate": 0,
+    "detectedCandidateIds": [
+      "x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28"
+    ],
+    "submittedCandidateIds": [],
+    "submittedHeadlines": [],
+    "beats": [
+      "protocol-updates"
+    ]
+  },
+  "rejections": {
+    "totalRejected": 1,
+    "rejectedCandidateIds": [
+      "x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28"
+    ],
+    "reasons": [
+      {
+        "reason": "agent_status_not_checked",
+        "count": 1
+      },
+      {
+        "reason": "inbox_not_checked",
+        "count": 1
+      },
+      {
+        "reason": "leaderboard_not_checked",
+        "count": 1
+      },
+      {
+        "reason": "reputation_not_checked",
+        "count": 1
+      }
+    ]
+  },
+  "approvalsAndRewards": {
+    "totalApprovals": 0,
+    "totalDeclines": 0,
+    "resolvedSubmissionCount": 0,
+    "pendingSubmissionCount": 0,
+    "sameDayResolvedApprovalRate": null,
+    "approvalNotes": [],
+    "totalSatsEarned": 0,
+    "btcRewards": [],
+    "leaderboardChanges": []
+  },
+  "narrative": {
+    "changed": [
+      "Detected 1 candidate across 1 beat."
+    ],
+    "improve": [
+      "Convert validated detections into submission-ready packages faster.",
+      "Reduce agent_status_not_checked rejections, which occurred 1 time today.",
+      "Record a leaderboard observation each day so momentum can be measured."
+    ]
+  },
+  "optimization": {
+    "kind": "daily_optimization",
+    "generatedAt": "2026-03-28T14:02:41.238Z",
+    "reportDate": "2026-03-28",
+    "beatPreferences": [
+      {
+        "beat": "protocol-updates",
+        "detections": 1,
+        "submissions": 0,
+        "approvals": 0,
+        "duplicateLosses": 0,
+        "approvalRate": null,
+        "preference": "hold",
+        "rationale": "Outcome data is still limited, so keep the current focus steady."
+      }
+    ],
+    "rejectionThreshold": {
+      "mode": "standard",
+      "drivers": [
+        "keep current rejection thresholds unchanged until more outcome data lands"
+      ]
+    },
+    "duplicateLossPatterns": [],
+    "winningHeadlinePatterns": [],
+    "nextDayRecommendations": [
+      "Hold the current setup steady and gather another day of data before adjusting the loop."
+    ]
+  },
+  "markdown": "# Daily Report: 2026-03-28\n\nGenerated at: 2026-03-28T14:02:41.238Z\n\n## Detections and Submissions\n- Detections: 1\n- Submissions: 0\n- Submission conversion rate: 0%\n- Beats touched: protocol-updates\n- Detected candidate IDs: x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28\n- Submitted headlines:\n- None recorded\n\n## Rejections and Reasons\n- Rejections: 1\n- Rejected candidate IDs: x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28\n- Reasons:\n- agent_status_not_checked: 1\n- inbox_not_checked: 1\n- leaderboard_not_checked: 1\n- reputation_not_checked: 1\n\n## Approvals and Rewards\n- Approvals: 0\n- Declines: 0\n- Resolved same-day submissions: 0\n- Pending submissions without same-day outcome: 0\n- Same-day resolved approval rate: n/a\n- Total sats earned: 0\n- BTC rewards: none\n- Leaderboard changes: none\n- Approval notes: none\n\n## What Changed\n- Detected 1 candidate across 1 beat.\n\n## What to Improve\n- Convert validated detections into submission-ready packages faster.\n- Reduce agent_status_not_checked rejections, which occurred 1 time today.\n- Record a leaderboard observation each day so momentum can be measured.\n\n## Next-Day Recommendations\n- Hold the current setup steady and gather another day of data before adjusting the loop.\n"
+}

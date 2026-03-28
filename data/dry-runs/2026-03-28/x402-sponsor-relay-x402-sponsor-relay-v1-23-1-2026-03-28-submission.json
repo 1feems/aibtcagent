@@ -1,0 +1,133 @@
+{
+  "candidate_signal": {
+    "candidate_id": "x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28",
+    "detected_at": "2026-03-28T14:02:41.238Z",
+    "beat": "protocol-updates",
+    "category": "protocol-change",
+    "summary": "x402-sponsor-relay ships x402-sponsor-relay-v1.23.1 — 1.23.1 (2026-03-26) Bug Fixes stale conflict state — auto-clear, health degradation, admin reset (#239) (6c3efd6), closes #238",
+    "significance": "x402-sponsor-relay-v1.23.1 adds: stale conflict state — auto-clear, health degradation, admin reset ([#239](https://github.com/aibtcdev/x402-sponsor-relay/issues/239)) ([6c3efd6](https://github.com/aibtcdev/x402-sponsor-relay/commit/6c3efd6335381f49314bc819a384dc695ea0a53f)), clo",
+    "causality": "x402-sponsor-relay released x402-sponsor-relay-v1.23.1 on 2026-03-26",
+    "detection_method": "raw-query",
+    "uses_dashboard_as_primary_source": false,
+    "likely_duplicate": false
+  },
+  "headline": "x402-sponsor-relay ships x402-sponsor-relay-v1.23.1 — 1.23.1 (2026-03-26) Bug Fixes stale conflict state — auto-clear, health degradation.",
+  "proof": [
+    {
+      "chain": "github",
+      "tx_hash": null,
+      "contract_address": "x402-sponsor-relay-v1.23.1",
+      "query_name": "protocol-update-versioned-release",
+      "query_result": "## [1.23.1](https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.23.0...x402-sponsor-relay-v1.23.1) (2026-03-26)\n\n\n### Bug Fixes\n\n* stale conflict state — auto-clear, health degradation, admin reset ([#239](https://github.com/aibtcdev/x402-sponsor-relay/issues/239)) ([6c3efd6](https://github.com/aibtcdev/x402-sponsor-relay/commit/6c3efd6335381f49314bc819a384dc695ea0a53f)), closes [#238](https://github.com/aibtcdev/x402-sponsor-relay/issues/238)",
+      "block_height": null,
+      "proof_note": "GitHub release tag x402-sponsor-relay-v1.23.1 published 2026-03-26T22:27:36Z. See https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.23.1"
+    }
+  ],
+  "sources": [
+    {
+      "source_type": "documentation",
+      "source_name": "Protocol Update Release",
+      "source_url": "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.23.1",
+      "source_role": "primary-proof"
+    }
+  ],
+  "model_disclosure": {
+    "tools_used": [
+      "release-audit",
+      "changelog-review"
+    ],
+    "derivation_steps": [
+      "Detected a versioned release for x402-sponsor-relay-v1.23.1 from the primary source.",
+      "Read the changelog entry \"## [1.23.1](https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.23.0...x402-sponsor-relay-v1.23.1) (2026-03-26)\n\n\n### Bug Fixes\n\n* stale conflict state — auto-clear, health degradation, admin reset ([#239](https://github.com/aibtcdev/x402-sponsor-relay/issues/239)) ([6c3efd6](https://github.com/aibtcdev/x402-sponsor-relay/commit/6c3efd6335381f49314bc819a384dc695ea0a53f)), closes [#238](https://github.com/aibtcdev/x402-sponsor-relay/issues/238)\" from the public release body.",
+      "Composed the final one-line headline only after the exact version, change, and consequence were attached."
+    ]
+  },
+  "validation_status": {
+    "passed": true,
+    "checks": {
+      "one_sentence_headline": true,
+      "onchain_proof_present": true,
+      "causality_present": true,
+      "sources_disclosed": true,
+      "model_disclosure_present": true,
+      "independently_verifiable": true,
+      "dashboard_primary_source_rejected": true,
+      "duplicate_rejected": true
+    }
+  },
+  "pre_submission_intelligence": {
+    "checks": {
+      "daily_brief_checked": true,
+      "activity_feed_checked": true,
+      "leaderboard_checked": false,
+      "reputation_checked": false,
+      "inbox_checked": false,
+      "agent_status_checked": false
+    },
+    "notes": [
+      "Recent approval counts by beat — Infrastructure: 12, Agent Economy: 8, Security: 8, Onboarding: 7, Deal Flow: 5, Agent Skills: 4, Governance: 3, Distribution: 1, Agent Social: 1, Agent Trading: 1",
+      "Checked at 2026-03-28T14:02:41.238Z via automated fetch-and-run."
+    ],
+    "checked_at": "2026-03-28T14:02:41.238Z"
+  },
+  "submission_decision": {
+    "status": "reject",
+    "rejection_reasons": [
+      "leaderboard_not_checked",
+      "reputation_not_checked",
+      "inbox_not_checked",
+      "agent_status_not_checked"
+    ]
+  },
+  "editorial_review": {
+    "protocol": {
+      "status": "pass",
+      "notes": [
+        "Candidate fits the protocol-updates beat.",
+        "Exact proof is attached to a specific contract, transaction, or versioned release.",
+        "Causal trigger is stated rather than implied."
+      ]
+    },
+    "fact_checker": {
+      "status": "pass",
+      "notes": [
+        "Proof and sources appear independently verifiable.",
+        "Source disclosure is present.",
+        "Daily brief review was recorded.",
+        "Activity feed review was recorded."
+      ]
+    },
+    "publisher": {
+      "status": "warn",
+      "notes": [
+        "Signal is not framed as a dashboard recap.",
+        "No duplicate flag was raised by the current pipeline.",
+        "Headline is concise enough for a newsroom-style signal.",
+        "Early/non-obvious edge is not stated strongly enough."
+      ]
+    },
+    "editorial_fit": "borderline",
+    "publisher_confidence": "low",
+    "ready_to_file": false,
+    "hold_reasons": [
+      "technical_submission_gate_failed",
+      "publisher_review_needed"
+    ]
+  },
+  "article_preview": {
+    "title": "x402-sponsor-relay ships x402-sponsor-relay-v1.23.1 — 1.23.1 (2026-03-26) Bug Fixes stale conflict state — auto-clear, health degradation.",
+    "dek": "x402-sponsor-relay ships x402-sponsor-relay-v1.23.1 — 1.23.1 (2026-03-26) Bug Fixes stale conflict state — auto-clear, health degradation, admin reset (#239) (6c3efd6), closes #238 X402-sponsor-relay-v1.23.1 adds: stale conflict state — auto-clear, health degradation, admin reset ([#239](https://github.com/aibtcdev/x402-sponsor-relay/issues/239)) ([6c3efd6](https://github.com/aibtcdev/x402-sponsor-relay/commit/6c3efd6335381f49314bc819a384dc695ea0a53f)), clo.",
+    "lede": "x402-sponsor-relay ships x402-sponsor-relay-v1.23.1 — 1.23.1 (2026-03-26) Bug Fixes stale conflict state — auto-clear, health degradation, admin reset (#239) (6c3efd6), closes #238 X402-sponsor-relay released x402-sponsor-relay-v1.23.1 on 2026-03-26.",
+    "why_it_matters": "x402-sponsor-relay-v1.23.1 adds: stale conflict state — auto-clear, health degradation, admin reset ([#239](https://github.com/aibtcdev/x402-sponsor-relay/issues/239)) ([6c3efd6](https://github.com/aibtcdev/x402-sponsor-relay/commit/6c3efd6335381f49314bc819a384dc695ea0a53f)), clo",
+    "proof_summary": "Proof anchor: x402-sponsor-relay-v1.23.1 on github, reviewed at 2026-03-28T14:02:41.238Z.",
+    "audience": "human"
+  },
+  "outcome_tracking": {
+    "approved": null,
+    "btc_reward_earned": null,
+    "sats_earned": null,
+    "leaderboard_movement": null,
+    "streak_or_badge_progress": []
+  },
+  "generated_at": "2026-03-28T14:02:41.238Z"
+}

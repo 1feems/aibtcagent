@@ -1,0 +1,13 @@
+{
+  "kind": "dry_run_summary",
+  "generatedAt": "2026-03-28T14:02:41.238Z",
+  "reportDate": "2026-03-28",
+  "rawPath": "/home/runner/work/aibtcagent/aibtcagent/data/live-inputs/x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28.json",
+  "preSubmissionPath": "/home/runner/work/aibtcagent/aibtcagent/data/live-inputs/pre-submission-2026-03-28-auto.json",
+  "candidateId": "x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28",
+  "submissionStatus": "reject",
+  "serializedSubmissionPath": "/home/runner/work/aibtcagent/aibtcagent/data/dry-runs/2026-03-28/x402-sponsor-relay-x402-sponsor-relay-v1-23-1-2026-03-28-submission.json",
+  "reportMarkdownPath": "/home/runner/work/aibtcagent/aibtcagent/data/reports/daily/2026-03-28.md",
+  "reportJsonPath": "/home/runner/work/aibtcagent/aibtcagent/data/reports/daily/2026-03-28.json",
+  "optimizationPath": "/home/runner/work/aibtcagent/aibtcagent/data/experiments/optimization/2026-03-28.json"
+}
