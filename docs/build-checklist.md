@@ -160,8 +160,8 @@ Mark items complete only after implementation and testing both pass.
 - [x] Mark signals resolved when terminal (approved/rejected); re-check submitted signals each run
 - [x] Add `npm run check-outcomes` script
 - [x] Add `.github/workflows/check-outcomes.yml` — runs 12:00 and 20:00 UTC, commits results
-- [ ] Set `AIBTC_BITCOIN_ADDRESS` as a GitHub repo variable (Settings → Variables)
-- [ ] Verify first automated outcome check runs and commits files
+- [x] Set `AIBTC_BITCOIN_ADDRESS` as a GitHub repo variable (Settings → Variables)
+- [x] Verify first automated outcome check runs and commits files
 
 ## Phase 15: Live Source Fetcher
 - [x] Add `data/config/monitored-repos.json` — repos to watch (x402-sponsor-relay, mcp-server, agent-tools-ts)
@@ -175,16 +175,18 @@ Mark items complete only after implementation and testing both pass.
 - [x] Remove daily schedule from `dry-run-report.yml` (now manual-only)
 - [x] Fix `dry-run-report.yml` to not wipe `data/outcomes/` on each run
 - [ ] Add more repos to `data/config/monitored-repos.json` as needed
-- [ ] Verify first automated fetch-and-run produces candidates and commits them
+- [x] Verify first automated fetch-and-run produces candidates and commits them
 
 ## Phase 16: Deploy and Verify Automation
 These are the remaining steps to make the agent fully live. Do these in order.
 
 ### 16a — Push and activate
-- [ ] Push all changes to `main` branch on GitHub
-- [ ] Set `AIBTC_BITCOIN_ADDRESS` = `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv` in repo Settings → Variables (not Secrets)
-- [ ] Manually trigger `Fetch and Run` workflow and confirm it finds releases and commits files
-- [ ] Manually trigger `Check Outcomes` workflow and confirm it writes outcome files and commits them
+- [x] Push all changes to `main` branch on GitHub (commit edf664c)
+- [x] Fix test harness issue in `tests/memory.test.js` — passes with existing log files
+- [x] `npm run check` and `npm test` both pass
+- [x] Set `AIBTC_BITCOIN_ADDRESS` = `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv` in repo Settings → Secrets and variables → Actions → Variables → New repository variable
+- [x] Manually trigger `Fetch and Run` workflow and confirm it finds releases and commits files
+- [x] Manually trigger `Check Outcomes` workflow and confirm it writes outcome files and commits them
 
 ### 16b — Verify the learning loop has data
 - [ ] Confirm `data/outcomes/approvals/` has at least one outcome file after checker runs
