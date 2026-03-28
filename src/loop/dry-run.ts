@@ -8,7 +8,12 @@ import {
 } from "../newsroom/index.js";
 import { generateAndSaveDailyOptimizationSnapshot } from "./index.js";
 import { generateAndSaveDailyReport } from "../reporting/index.js";
-import { runProtocolUpdateLane, type ProtocolUpdateRawEvent } from "../signals/index.js";
+import {
+  runGeneralNewsLane,
+  runProtocolUpdateLane,
+  type GeneralNewsRawEvent,
+  type ProtocolUpdateRawEvent
+} from "../signals/index.js";
 import {
   logAcceptedSubmission,
   logDetectedCandidate,
@@ -86,12 +91,20 @@ async function writeJsonFile(filePath: string, data: unknown): Promise<string> {
   return absolutePath;
 }
 
+function isGeneralNewsRawEvent(
+  value: ProtocolUpdateRawEvent | GeneralNewsRawEvent
+): value is GeneralNewsRawEvent {
+  return "sourcePublication" in value && "articleUrl" in value;
+}
+
 export async function runDryRun(config: DryRunConfig): Promise<DryRunSummary> {
-  const rawEvent = await readJsonFile<ProtocolUpdateRawEvent>(config.rawPath);
+  const rawEvent = await readJsonFile<ProtocolUpdateRawEvent | GeneralNewsRawEvent>(config.rawPath);
   const preSubmissionRaw = await readJsonFile<Parameters<typeof buildPreSubmissionIntelligence>[0]>(
     config.preSubmissionPath
   );
-  const subject = runProtocolUpdateLane(rawEvent).subject;
+  const subject = isGeneralNewsRawEvent(rawEvent)
+    ? runGeneralNewsLane(rawEvent).subject
+    : runProtocolUpdateLane(rawEvent).subject;
   const validation = validateSubject(subject);
   const intelligence = buildPreSubmissionIntelligence({
     ...preSubmissionRaw,

@@ -1,6 +1,11 @@
 import { resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
-import { fetchNewReleases, buildLivePreSubmission } from "../sources/index.js";
+import {
+  fetchNewReleases,
+  fetchNewsFeedEvents,
+  fetchApiSnapshots,
+  buildLivePreSubmission
+} from "../sources/index.js";
 import { runDryRun } from "./dry-run.js";
 
 async function main(): Promise<void> {
@@ -9,11 +14,18 @@ async function main(): Promise<void> {
 
   process.stdout.write(`[fetch-and-run] starting at ${now}\n`);
 
-  // 1. Fetch new GitHub releases and save as raw event JSONs
-  const newEventPaths = await fetchNewReleases(now);
+  // 1. Fetch new GitHub releases and news-feed candidates, plus direct API snapshots
+  const [releasePaths, feedPaths, snapshotPaths] = await Promise.all([
+    fetchNewReleases(now),
+    fetchNewsFeedEvents(now),
+    fetchApiSnapshots(now)
+  ]);
+  const newEventPaths = [...releasePaths, ...feedPaths];
 
   if (newEventPaths.length === 0) {
-    process.stdout.write("[fetch-and-run] no new releases — exiting\n");
+    process.stdout.write(
+      `[fetch-and-run] no new candidate events — saved ${snapshotPaths.length} snapshot(s) and exiting\n`
+    );
     return;
   }
 
@@ -46,7 +58,7 @@ async function main(): Promise<void> {
   const submitCount = results.filter((r) => r.status === "submit").length;
   const rejectCount = results.filter((r) => r.status === "reject").length;
   process.stdout.write(
-    `[fetch-and-run] done — ${submitCount} ready to file, ${rejectCount} rejected\n`
+    `[fetch-and-run] done — ${submitCount} ready to file, ${rejectCount} rejected, ${snapshotPaths.length} snapshots saved\n`
   );
 }
 

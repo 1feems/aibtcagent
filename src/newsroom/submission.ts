@@ -110,11 +110,7 @@ export function buildEditorialReview(
   const factCheckerNotes: string[] = [];
   const publisherNotes: string[] = [];
 
-  if (subject.candidate.beat === "protocol-updates") {
-    protocolNotes.push("Candidate fits the protocol-updates beat.");
-  } else {
-    protocolNotes.push("Candidate drifts outside the primary protocol-updates beat.");
-  }
+  protocolNotes.push(`Candidate fits the ${subject.candidate.beat} beat.`);
 
   if (validation.checks.onchainProofPresent) {
     protocolNotes.push("Exact proof is attached to a specific contract, transaction, or versioned release.");
@@ -181,9 +177,7 @@ export function buildEditorialReview(
   }
 
   const protocolStatus: EditorialRoleReview["status"] =
-    subject.candidate.beat === "protocol-updates" &&
-    validation.checks.onchainProofPresent &&
-    validation.checks.causalityPresent
+    validation.checks.onchainProofPresent && validation.checks.causalityPresent
       ? "pass"
       : "fail";
 

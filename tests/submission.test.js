@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
-import { runProtocolUpdateLane } from "../dist/signals/index.js";
+import { runGeneralNewsLane, runProtocolUpdateLane } from "../dist/signals/index.js";
 import {
   buildEditorialReview,
   buildSubmissionDecision,
@@ -66,6 +66,27 @@ function createReleaseProtocolEvent() {
       compare:
         "https://github.com/aibtcdev/x402-sponsor-relay/compare/x402-sponsor-relay-v1.21.1...x402-sponsor-relay-v1.22.0"
     }
+  };
+}
+
+function createGeneralNewsEvent() {
+  return {
+    id: "general-news-001",
+    detectedAt: "2026-03-28T12:00:00Z",
+    beat: "security",
+    sourcePublication: "Chainalysis",
+    articleUrl: "https://www.chainalysis.com/blog/test-incident/",
+    publishedAt: "2026-03-28T11:30:00Z",
+    namedEntity: "OpenClaw",
+    hardNumber: "$2.7M",
+    summary: "OpenClaw exposed 40K+ instances to remote code execution",
+    significance: "The security issue matters because a named agent framework now has a measurable exposure window before most operators patch exposed deployments",
+    causalTrigger: "A published security writeup tied exposed deployments to a concrete remote code execution path",
+    agentConsequence: "Agents should patch exposed deployments and review wallet or credential handling before the exploit pattern spreads",
+    proofUrl: "https://www.chainalysis.com/blog/test-incident/",
+    proofNote: "The linked writeup names the affected software, exposure count, and exploit path",
+    usesDashboardAsPrimarySource: false,
+    likelyDuplicate: false
   };
 }
 
@@ -192,4 +213,21 @@ test("submission payload supports versioned release-style protocol updates", () 
   assert.equal(payload.submissionDecision.status, "submit");
   assert.equal(payload.editorialReview.readyToFile, true);
   assert.equal(payload.articlePreview.proofSummary.includes("x402-sponsor-relay-v1.22.0"), true);
+});
+
+test("submission payload supports general-news candidates from feeds and reports", () => {
+  const subject = runGeneralNewsLane(createGeneralNewsEvent()).subject;
+  const validation = validateSubject(subject);
+  const payload = buildSubmissionPayload(
+    subject,
+    validation,
+    createPreSubmission(),
+    "2026-03-28T12:05:00Z"
+  );
+
+  assert.equal(payload.submissionDecision.status, "submit");
+  assert.equal(payload.editorialReview.protocol.status, "pass");
+  assert.equal(payload.editorialReview.readyToFile, true);
+  assert.equal(payload.sources[0].sourceRole, "primary-proof");
+  assert.equal(payload.articlePreview.proofSummary.includes("Chainalysis"), true);
 });
