@@ -1,0 +1,28 @@
+{
+  "filedSignals": [
+    {
+      "signalId": "8be9f1ad-d00d-4e43-9fb8-b0cecd879faa",
+      "candidateId": "protocol-update-2026-03-28-001",
+      "headline": "x402 relay ships v1.24.0 + v1.25.0 same evening — bad payloads rejected early, gap txs queued before burning nonces",
+      "beat": "infrastructure",
+      "filedAt": "2026-03-28T04:00:00Z",
+      "resolved": false
+    },
+    {
+      "signalId": "0585da60-6467-4fa0-aad3-f48113ed9b2d",
+      "candidateId": null,
+      "headline": null,
+      "beat": null,
+      "filedAt": null,
+      "resolved": false
+    },
+    {
+      "signalId": "72f6b724-6f18-407f-adca-c78612d23c2b",
+      "candidateId": "protocol-update-2026-03-27-001",
+      "headline": "x402-sponsor-relay v1.23.0 ships circuit breaker + payment queue — degraded relay now refuses nonce assignment instead of silently dropping payments",
+      "beat": "infrastructure",
+      "filedAt": "2026-03-27T00:00:00Z",
+      "resolved": false
+    }
+  ]
+}

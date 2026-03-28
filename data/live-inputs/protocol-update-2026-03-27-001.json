@@ -1,0 +1,24 @@
+{
+  "id": "protocol-update-2026-03-27-001",
+  "detectedAt": "2026-03-27T00:00:00.000Z",
+  "chain": "github",
+  "summary": "x402-sponsor-relay v1.23.0 ships circuit breaker gate, gap-fill admin endpoint, observable nonce health with degraded signal, and full payment queue backed by RPC gateway and chainhook webhook",
+  "significance": "before v1.23.0 a degraded relay accepted nonce assignments and silently dropped payments; the circuit breaker changes the failure mode so nonce assignment is gated behind a health check — agents monitoring the health signal can stop sending before losing submissions",
+  "causalTrigger": "relay was accepting nonce assignments under degraded state and silently dropping payments; v1.23.0 adds a circuit breaker that refuses nonce assignment when unhealthy and a payment queue so payments can be recovered rather than lost",
+  "usesDashboardAsPrimarySource": false,
+  "likelyDuplicate": false,
+  "versionNumber": "x402-sponsor-relay-v1.23.0",
+  "releaseDate": "2026-03-26T20:29:11Z",
+  "changelogEntry": "circuit breaker gate blocks nonce assignment when relay is unhealthy; per-wallet nonce gap-fill admin endpoint; observable nonce state with degraded health signal; payment queue backed by RPC gateway, sender nonce cache, and chainhook webhook; three companion fixes for nonce cascade, in-flight dedup gaps, and sender address double-encoding error",
+  "commits": {
+    "d8aab0b": "circuit breaker",
+    "75d7136": "gap-fill endpoint",
+    "0868b97": "observable nonce + degraded health",
+    "671c6ae": "RPC gateway + payment queue + chainhook webhook"
+  },
+  "proofNote": "GitHub release tag x402-sponsor-relay-v1.23.0 published 2026-03-26T20:29:11Z with four commits. No version-anchored v1.23.0 signal in the live feed before filing.",
+  "clusterRisk": "d4d28a6a (approved 2026-03-27T03:33Z, Agent Trading) covers x402 relay nonce cascade fix and mentions circuit breaker resets — filing v1.23.0 under Dev Tools with payment queue and resilience architecture as lead angle to differentiate from agent behavior framing",
+  "sourceUrls": {
+    "release": "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.23.0"
+  }
+}

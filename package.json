@@ -7,7 +7,10 @@
     "check": "tsc --noEmit -p tsconfig.json",
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test --test-concurrency=1 tests/*.test.js",
-    "dry-run": "npm run build && node dist/loop/dry-run.js"
+    "dry-run": "npm run build && node dist/loop/dry-run.js",
+    "paperboy": "npm run build && node dist/loop/paperboy-run.js",
+    "check-outcomes": "npm run build && node dist/outcomes/checker.js",
+    "fetch-and-run": "npm run build && node dist/loop/fetch-and-run.js"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

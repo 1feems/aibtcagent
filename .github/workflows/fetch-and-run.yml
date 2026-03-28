@@ -1,0 +1,61 @@
+name: Fetch and Run
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Clean per-run logs
+        run: |
+          rm -rf data/logs/accepted \
+                 data/logs/candidates \
+                 data/logs/leaderboard \
+                 data/logs/rejections \
+                 data/reports \
+                 data/experiments/optimization \
+                 data/dry-runs
+
+      - name: Fetch new releases and run pipeline
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AIBTC_BITCOIN_ADDRESS: ${{ vars.AIBTC_BITCOIN_ADDRESS }}
+        run: npm run fetch-and-run
+
+      - name: Upload dry run artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: aibtc-fetch-and-run-artifacts
+          path: |
+            data/dry-runs
+            data/reports
+            data/live-inputs
+            data/experiments/optimization
+          if-no-files-found: warn
+
+      - name: Commit new candidates and state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/live-inputs/ data/state/fetched-releases.json data/dry-runs/ data/reports/ data/experiments/
+          git diff --cached --quiet && echo "no changes" || git commit -m "chore: fetch new releases and run pipeline [skip ci]"
+          git push

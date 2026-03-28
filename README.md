@@ -86,6 +86,12 @@ Interpretation rules:
 ## Approval Check
 Never mark a signal as approved just because submission succeeded or a model inferred that it probably won.
 
+Approval is only the first gate. The real target is `published`:
+- `approved` = passed editorial review and appears in the approved feed
+- `published` = selected by the publisher for the daily brief/news page
+
+Treat `published` as the primary win condition because that is the outcome we are optimizing for.
+
 Use live evidence only, in this order:
 
 1. Check the approved feed:
@@ -120,13 +126,13 @@ If one signal has already been filed today, use this version:
 
 If there is a pending filed signal and a held follow-up candidate, use this morning prompt:
 
-`README.md is current. Start with README.md, then follow docs/signal-sourcing-checklist.md from Step 0. First, review the pending filed signal and update its outcome if approved, rejected, brief-included, duplicate-loss, or still pending. Use the README Approval Check rules and live evidence only. Do not guess. Then review the held candidate, decide whether it stays on hold or becomes fileable, and search for additional strong candidates for today. Return only the strongest candidates with file/hold/reject decisions and short reasons.`
+`README.md is current. Start with README.md, then follow docs/signal-sourcing-checklist.md from Step 0. First, review the pending filed signal and update its outcome if approved, published, rejected, duplicate-loss, or still pending. Use the README Approval Check rules and live evidence only. Do not guess. Then review the held candidate, decide whether it stays on hold or becomes fileable, and search for additional strong candidates for today. Return only the strongest candidates with file/hold/reject decisions and short reasons.`
 
 Current reference context for the latest filed signal cycle:
 
-- Last filed signal ID: `8be9f1ad-d00d-4e43-9fb8-b0cecd879faa` — **submitted** (2026-03-28T04:30Z, pending review)
-- Previous approved: `0585da60-6467-4fa0-aad3-f48113ed9b2d` — **approved** (confirmed 2026-03-28)
-- Previous approved: `72f6b724-6f18-407f-adca-c78612d23c2b` — **approved** (confirmed 2026-03-27T04:38Z)
+- Last filed signal ID: `8be9f1ad-d00d-4e43-9fb8-b0cecd879faa` — **approved** (confirmed 2026-03-28, publication still pending)
+- Previous approved: `0585da60-6467-4fa0-aad3-f48113ed9b2d` — **approved / not published** (confirmed 2026-03-28)
+- Previous approved: `72f6b724-6f18-407f-adca-c78612d23c2b` — **approved / not published** (confirmed 2026-03-27T04:38Z)
 - Today's candidate package: [`data/dry-runs/2026-03-28/protocol-update-2026-03-28-001-submission.json`](./data/dry-runs/2026-03-28/protocol-update-2026-03-28-001-submission.json)
 - Daily shortlist/report: [`data/reports/daily/2026-03-28.md`](./data/reports/daily/2026-03-28.md)
 - Yesterday's report: [`data/reports/daily/2026-03-27.md`](./data/reports/daily/2026-03-27.md)
@@ -135,14 +141,62 @@ Candidates remaining today (2026-03-28):
 
 | Candidate | Decision | Beat | Notes |
 |---|---|---|---|
-| `x402-sponsor-relay-v1.24.0 + v1.25.0` | **FILED** | Infrastructure | Signal ID 8be9f1ad. Submitted 2026-03-28T04:30Z. Pending review. |
-| `mcp-server-v1.46.0` | **HOLD** | Infrastructure | zest_enable_collateral — ships actual tool (not just PR). File after 8be9f1ad outcome. |
-| `x402-sponsor-relay-v1.26.0` | **HOLD** | Infrastructure | Dashboard redesign only. File if beat stays open and 8be9f1ad approved. |
+| `x402-sponsor-relay-v1.24.0 + v1.25.0` | **FILED/APPROVED** | Infrastructure | Signal ID 8be9f1ad. Approved 2026-03-28. Publication pending. |
+| `mcp-server-v1.46.0` | **COVERED** | Infrastructure | zest_enable_collateral — approved by two other agents (ef0426d2, 2d7c964b). Do not re-file. |
+| `x402-sponsor-relay-v1.26.0` | **HOLD** | Infrastructure | Dashboard redesign only. File tomorrow if no stronger candidate exists. |
 
-## What Gets Approved vs Brief-Included
+## What Gets Approved vs Published
 Learned from live signals analysis (2026-03-28). Approval rate on the live feed: ~13%.
 
-**Approved = passed editorial review. Brief-included = selected for the daily compiled brief. These are different outcomes.**
+**Approved = passed editorial review. Published = selected by the publisher for the daily compiled brief/news page. These are different outcomes.**
+
+### Signals must be news articles
+Every signal is a news article — not a status update, not a competition recap, not a pipeline announcement, not a changelog dump. It must report something that happened, explain why it matters, and tell agents what to do differently. The standard is journalistic: claim → evidence → implication → action. If it would not belong in The Block or CoinDesk, it does not belong here.
+
+More specifically: the stories that make the site are usually **operator-facing intelligence articles**.
+
+They do not just say that something exists. They explain:
+- the concrete failure mode, threat, release, or capability change
+- how it works mechanically
+- why AIBTC agents are exposed
+- what agents should do now
+
+Use this structure:
+- `event or risk`
+- `mechanism`
+- `agent exposure`
+- `operator action`
+
+If a candidate cannot support that structure, it is probably not a real news article.
+
+### Examples of real article shapes
+These are the kinds of stories that fit the standard:
+
+- `sBTC Nonce Drift After Context Compaction Can Cause Silent Double-Sends in Agent Loops`
+- `$137M Lost in Q1 2026 — Private Key Compromise Overtakes Smart Contract Bugs as Top DeFi Threat`
+- `Bitflow Audit Documents Unfixed Unverified Pool Risk — Token Poisoning Possible for Stacks Agents`
+- `Prompt Injection via External Content Confirmed as Live Crypto Wallet Drain Vector for AI Agents`
+
+Why these qualify:
+- each leads with a specific development or risk
+- each explains the mechanism, not just the outcome
+- each ties the issue directly to agent operations
+- each ends with actionable guidance
+
+### Examples of things that are NOT news articles
+Do not file these by themselves:
+
+- beat member counts
+- correspondent totals without a stronger thesis
+- leaderboard snapshots without a real development
+- skills page counts
+- bounty board stats with no concrete operational consequence
+- raw release notes
+- version bumps with no meaningful new agent capability
+- "dashboard redesign" stories
+- generic market observations
+
+These can appear as supporting evidence inside an article, but they are not enough to be the article.
 
 ### Top rejection reasons (in order of frequency)
 1. **"Signal does not cover aibtc network activity"** — the #1 killer. External BTC price, ETFs, geopolitics, other-chain news all get this. Only internal network events qualify: agent transactions, skill releases, infrastructure changes, onboarding, governance actions, relay/MCP/agent-news releases.
@@ -151,23 +205,51 @@ Learned from live signals analysis (2026-03-28). Approval rate on the live feed:
 4. **Empty or truncated body** — content cuts off mid-sentence = instant reject.
 5. **Wrong beat** — filing external news under Infrastructure, or filing internal metrics under Agent Economy when it belongs on Distribution.
 
-### What gets brief-included (not just approved)
-The daily brief picks the **most comprehensive story per beat slot**. Single-release signals get approved but often lose the brief slot to a multi-release story.
+### What gets published (not just approved)
+The daily brief/news page picks the **most comprehensive story per beat slot**. Single-release signals get approved but often lose the publication slot to a broader, more complete story.
 
-**Pattern that wins the brief slot:** cover two releases that shipped the same day as one story.
-- Precedent: `cf40c472` covered x402 relay v1.35.0 + v1.35.1 in one signal → brief_included
-- Precedent: `2f48f5ed` covered two HODLMM PR merges together → brief_included
-- Our single-release signals (72f6b724, 0585da60) got approved but not brief_included because another agent filed a broader x402 story
+**Patterns that win publication slots:**
+- cover two releases that shipped the same day as one story
+- lead with the strongest agent consequence, not the changelog detail
+- file the version that gives the publisher the most complete beat story in one slot
+- prefer stories that read like finished news articles, not internal status updates
+
+Precedents:
+- `cf40c472` covered x402 relay v1.35.0 + v1.35.1 in one signal → published
+- `2f48f5ed` covered two HODLMM PR merges together → published
+- Our single-release signals (72f6b724, 0585da60) got approved but not published because another agent filed a broader x402 story
 
 **Apply this rule:** if two related releases shipped within 12 hours of each other, file them as one signal.
 
-### Beat status as of 2026-03-28
-- `infrastructure` — open, 0 approvals today (our primary lane)
-- `agent-skills` — flooded (daily limit hit)
-- `deal-flow` — flooded (daily limit hit)
-- `governance` — open
-- `onboarding` — open
-- `agent-economy` — open but competitive
+### Publisher alignment rules
+If the goal is to end up on the news page, prefer candidates that match what the publisher actually prints:
+
+- one strong story per beat slot, not the second-best angle on the same beat
+- complete narratives with claim → proof → implication → action
+- operator-facing intelligence with a concrete mechanism
+- stories with a clear reason they matter today, not just "version shipped"
+- angles that are legible to a broader AIBTC reader, not only to repo maintainers
+- signals that can plausibly beat other approved candidates on completeness
+
+De-prioritize:
+- beat saturation summaries without a real event
+- skills catalog milestones without a specific operational hook
+- dashboard-only releases
+- narrow refactors with weak agent consequence
+- follow-up fixes that feel like patch notes unless they can be bundled into a stronger same-day story
+- any candidate likely to be approved but overshadowed by a broader version of the same story
+
+### Beat status as of 2026-03-28 (end of day)
+- `infrastructure` — 9 approved today, crowded but our signal is among them
+- `security` — 9+ approved, very crowded
+- `agent-economy` — 8 approved, crowded
+- `onboarding` — 5 approved
+- `governance` — 3 approved
+- `deal-flow` — 3 approved
+- `agent-trading` — 3 approved
+- `agent-skills` — 2 approved
+- `agent-social` — 2 approved
+- `distribution` — 0 approved (1 registered correspondent total)
 
 ### Beat slug reference (post v1.17.0 restructuring)
 `dev-tools` no longer exists. Use `infrastructure` for relay/MCP/agent-news releases.
@@ -223,8 +305,30 @@ Core product docs are in place:
 Build an AIBTC agent that:
 - detects non-obvious onchain events early
 - verifies causality with public proof
-- submits only newsroom-quality one-line signals
-- learns from approvals, rewards, activity, and published briefs over time
+- submits only news articles, never status updates or changelog dumps
+- learns from approvals, publication outcomes, rewards, activity, and published briefs over time
+
+## Non-Negotiable Format Rule
+Every submission is a news article.
+
+That is not optional.
+
+Do not submit:
+- status updates
+- pipeline notes
+- competition recaps
+- changelog summaries
+- internal progress logs
+- dashboard observations without a real news hook
+- beat-count summaries without a concrete development
+- leaderboard snapshots without a clear operator consequence
+- skill-directory milestones unless they unlock a real new workflow or risk
+
+Only submit a candidate if it can stand as a publishable news article with:
+- a clear claim
+- exact proof
+- a real-world implication
+- a reason the reader should care today
 
 ## MVP Direction
 The first build focuses on:

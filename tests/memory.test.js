@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
 import { buildSubmissionPayload } from "../dist/newsroom/index.js";
@@ -51,112 +52,108 @@ function createSubmissionPayload() {
   return buildSubmissionPayload(subject, validation, preSubmission, "2026-03-25T07:05:00Z");
 }
 
-test("memory layer logs detected candidates", async () => {
-  const subject = createSubject();
-  await logDetectedCandidate(subject.candidate, "2026-03-25T08:00:00Z");
+test("memory layer writes records without touching repo state", { concurrency: false }, async () => {
+  const originalCwd = process.cwd();
+  const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-memory-"));
 
-  const saved = await readFile(
-    resolve(process.cwd(), "data/logs/candidates/protocol-update-001.json"),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+  process.chdir(tempDir);
 
-  assert.equal(parsed.kind, "candidate");
-  assert.equal(parsed.candidate.candidateId, "protocol-update-001");
-});
+  try {
+    const subject = createSubject();
+    await logDetectedCandidate(subject.candidate, "2026-03-25T08:00:00Z");
 
-test("memory layer refuses to overwrite an existing candidate log", async () => {
-  const subject = createSubject();
+    const candidateSaved = await readFile(
+      resolve(process.cwd(), "data/logs/candidates/protocol-update-001.json"),
+      "utf8"
+    );
+    const candidateParsed = JSON.parse(candidateSaved);
 
-  await assert.rejects(
-    () => logDetectedCandidate(subject.candidate, "2026-03-25T08:00:00Z"),
-    /Refusing to overwrite existing log file/
-  );
-});
+    assert.equal(candidateParsed.kind, "candidate");
+    assert.equal(candidateParsed.candidate.candidateId, "protocol-update-001");
 
-test("memory layer logs rejections and reasons", async () => {
-  await logRejectedCandidate(
-    "protocol-update-001",
-    ["likely_duplicate"],
-    "2026-03-25T08:01:00Z"
-  );
+    await assert.rejects(
+      () => logDetectedCandidate(subject.candidate, "2026-03-25T08:00:00Z"),
+      /Refusing to overwrite existing log file/
+    );
 
-  const saved = await readFile(
-    resolve(process.cwd(), "data/logs/rejections/protocol-update-001.json"),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+    await logRejectedCandidate(
+      "protocol-update-001",
+      ["likely_duplicate"],
+      "2026-03-25T08:01:00Z"
+    );
 
-  assert.equal(parsed.kind, "rejection");
-  assert.equal(parsed.reasons[0], "likely_duplicate");
-});
+    const rejectionSaved = await readFile(
+      resolve(process.cwd(), "data/logs/rejections/protocol-update-001.json"),
+      "utf8"
+    );
+    const rejectionParsed = JSON.parse(rejectionSaved);
 
-test("memory layer logs accepted submissions", async () => {
-  await logAcceptedSubmission(
-    "protocol-update-001",
-    createSubmissionPayload(),
-    "2026-03-25T08:02:00Z"
-  );
+    assert.equal(rejectionParsed.kind, "rejection");
+    assert.equal(rejectionParsed.reasons[0], "likely_duplicate");
 
-  const saved = await readFile(
-    resolve(process.cwd(), "data/logs/accepted/protocol-update-001.json"),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+    await logAcceptedSubmission(
+      "protocol-update-001",
+      createSubmissionPayload(),
+      "2026-03-25T08:02:00Z"
+    );
 
-  assert.equal(parsed.kind, "accepted_submission");
-  assert.equal(parsed.submission.headline.length > 0, true);
-});
+    const acceptedSaved = await readFile(
+      resolve(process.cwd(), "data/logs/accepted/protocol-update-001.json"),
+      "utf8"
+    );
+    const acceptedParsed = JSON.parse(acceptedSaved);
 
-test("memory layer logs approval outcomes", async () => {
-  await logApprovalOutcome(
-    "protocol-update-001",
-    true,
-    "Selected for brief",
-    "2026-03-25T08:03:00Z"
-  );
+    assert.equal(acceptedParsed.kind, "accepted_submission");
+    assert.equal(acceptedParsed.submission.headline.length > 0, true);
 
-  const saved = await readFile(
-    resolve(process.cwd(), "data/outcomes/approvals/protocol-update-001.json"),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+    await logApprovalOutcome(
+      "protocol-update-001",
+      true,
+      "Selected for brief",
+      "2026-03-25T08:03:00Z"
+    );
 
-  assert.equal(parsed.kind, "approval_outcome");
-  assert.equal(parsed.approved, true);
-});
+    const approvalSaved = await readFile(
+      resolve(process.cwd(), "data/outcomes/approvals/protocol-update-001.json"),
+      "utf8"
+    );
+    const approvalParsed = JSON.parse(approvalSaved);
 
-test("memory layer logs sats and BTC outcomes", async () => {
-  await logRewardOutcome("protocol-update-001", 500, "$20 BTC", "2026-03-25T08:04:00Z");
+    assert.equal(approvalParsed.kind, "approval_outcome");
+    assert.equal(approvalParsed.approved, true);
 
-  const saved = await readFile(
-    resolve(process.cwd(), "data/outcomes/rewards/protocol-update-001.json"),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+    await logRewardOutcome("protocol-update-001", 500, "$20 BTC", "2026-03-25T08:04:00Z");
 
-  assert.equal(parsed.kind, "reward_outcome");
-  assert.equal(parsed.satsEarned, 500);
-  assert.equal(parsed.btcRewardEarned, "$20 BTC");
-});
+    const rewardSaved = await readFile(
+      resolve(process.cwd(), "data/outcomes/rewards/protocol-update-001.json"),
+      "utf8"
+    );
+    const rewardParsed = JSON.parse(rewardSaved);
 
-test("memory layer logs leaderboard and beat observations", async () => {
-  await logLeaderboardObservation(
-    "protocol-updates",
-    "up_2",
-    ["Beat remained less crowded than deal-flow."],
-    "2026-03-25T08:05:00Z"
-  );
+    assert.equal(rewardParsed.kind, "reward_outcome");
+    assert.equal(rewardParsed.satsEarned, 500);
+    assert.equal(rewardParsed.btcRewardEarned, "$20 BTC");
 
-  const saved = await readFile(
-    resolve(
-      process.cwd(),
-      "data/logs/leaderboard/protocol-updates-2026-03-25T08-05-00Z.json"
-    ),
-    "utf8"
-  );
-  const parsed = JSON.parse(saved);
+    await logLeaderboardObservation(
+      "protocol-updates",
+      "up_2",
+      ["Beat remained less crowded than deal-flow."],
+      "2026-03-25T08:05:00Z"
+    );
 
-  assert.equal(parsed.kind, "leaderboard_observation");
-  assert.equal(parsed.beat, "protocol-updates");
+    const leaderboardSaved = await readFile(
+      resolve(
+        process.cwd(),
+        "data/logs/leaderboard/protocol-updates-2026-03-25T08-05-00Z.json"
+      ),
+      "utf8"
+    );
+    const leaderboardParsed = JSON.parse(leaderboardSaved);
+
+    assert.equal(leaderboardParsed.kind, "leaderboard_observation");
+    assert.equal(leaderboardParsed.beat, "protocol-updates");
+  } finally {
+    process.chdir(originalCwd);
+    await rm(tempDir, { recursive: true, force: true });
+  }
 });

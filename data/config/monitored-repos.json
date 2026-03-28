@@ -1,0 +1,8 @@
+{
+  "repos": [
+    { "owner": "aibtcdev", "repo": "x402-sponsor-relay", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "mcp-server", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "infrastructure" }
+  ],
+  "lookbackHours": 48
+}

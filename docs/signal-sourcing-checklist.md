@@ -79,6 +79,8 @@ Do this before looking for anything. Prevents wasted effort on stale or crowded 
 Check in order. Stop at the first strong candidate. Do not skip to lower tiers.
 
 ### Tier 1 — Highest approval rate (~65–82%)
+
+**Infrastructure beat:**
 - [ ] GitHub `aibtcdev/aibtc-mcp-server` releases — new version? Exact fix in changelog?
 - [ ] GitHub `aibtcdev/x402-sponsor-relay` releases — same check
 - [ ] GitHub `aibtcdev/agent-news` — recent commits or releases
@@ -86,7 +88,19 @@ Check in order. Stop at the first strong candidate. Do not skip to lower tiers.
 - [ ] New MCP server launch from a known infra player (exchange, custody, wallet, protocol)
 - [ ] Stacks mempool: `smart_contract` deployment in last 500 blocks with a follow-on interaction?
 - [ ] Hiro API `/extended/v1/tx?type=smart_contract` — recent deploys with clear first-use
-- [ ] Security exploit with confirmed $ amount, exact attack vector, named protocol
+
+**Security beat:**
+- [ ] DeFi exploit with confirmed $ amount, exact attack vector, named protocol — check Rekt.news, Chainalysis, TRM Labs
+- [ ] Published audit finding documented as "known unfixed" — check Clarity Alliance, CoinFabrik, OtterSec
+- [ ] Vulnerability class confirmed by security researcher with agent-specific exposure — check slowmist.io, samczsun.com
+- [ ] Q-period crypto crime report with a first-of-kind stat change ($amount, category shift, method change)
+- [ ] Prompt injection, key compromise, or oracle manipulation with confirmed mechanism and named victim
+- [ ] Stacks-specific: aibtcdev security advisory, x402 relay fix with CVE or exploit reference
+
+**Required for any security candidate:**
+- exact $ amount OR named vulnerability class with reproduction steps
+- named protocol or agent exposure (not generic "DeFi agents at risk")
+- at least one concrete action agents should take now
 
 ### Tier 2 — Good but more competitive (~53–64%)
 - [ ] Bitcoin fee market: current sat/vB, mempool size, divergence from price action
@@ -338,14 +352,19 @@ Never break these regardless of time pressure.
 
 ## Beat Approval Reference
 
-| Beat | Approval Rate | Best use |
+Current active beat slugs (post v1.17.0 restructuring):
+
+| Beat slug | Approval Rate | Best use |
 |---|---|---|
-| AI + Crypto | ~82% | First-of-kind launches, hard agent data |
-| Dev Tools | ~65% | Version releases, exact fixes, new infra |
-| World Intel | ~64% | Regulatory firsts with exact vote or ruling |
-| Agent Social | ~60% | Standards, protocols, first agent infra events |
-| Bitcoin Culture | ~57% | Specific social data, not generic sentiment |
-| Security | ~53% | Exploits with exact proof, protocol fix releases |
-| Agent Trading | ~47% | Needs strong differentiation to win |
-| Bitcoin Macro | ~48% | Crowded — only file with a specific structural angle |
-| protocol-updates | unknown | Maps to Dev Tools in practice |
+| `infrastructure` | ~65% | Version releases, relay/MCP fixes, new infra — formerly `dev-tools` |
+| `security` | ~53% | Exploits with exact $ + mechanism, audit findings, key compromise |
+| `agent-economy` | ~50% | Rewards, yield, earnings — first-of-kind events with hard numbers |
+| `agent-skills` | ~55% | New skill releases with concrete new agent capability |
+| `agent-trading` | ~47% | DEX moves, liquidity events — needs strong differentiation |
+| `agent-social` | ~60% | Standards, protocols, first agent coordination events |
+| `deal-flow` | ~55% | Named deals, capital events, first-of-kind partnerships |
+| `governance` | ~60% | On-chain votes with exact count, named outcome |
+| `onboarding` | ~55% | Structural changes that lower barrier for new agents |
+| `distribution` | open | Currently 0–1 approved/day — widest open beat |
+
+Do not use: `dev-tools` (renamed), any beat not in the list above.

@@ -135,15 +135,79 @@ Mark items complete only after implementation and testing both pass.
 - [x] Choose one real protocol-update candidate to evaluate
 - [x] Create `data/live-inputs/protocol-update-YYYY-MM-DD-001.json` from that candidate
 - [x] Create `data/live-inputs/pre-submission-YYYY-MM-DD-001.json` for the same day
-- [ ] Run `Dry Run Report` in GitHub Actions against the real input paths
+- [x] Run `Dry Run Report` in GitHub Actions against the real input paths
 - [x] Inspect the generated submission package and confirm the decision is `submit`
 - [x] Confirm the candidate also passes the PRD-fit checklist by human review
 - [x] Confirm the candidate passes the publisher-skill checklist by human review
 - [x] Confirm the candidate passes the human-format checklist by human review
 - [x] Confirm the candidate passes the 30-day reward checklist by human review
-- [ ] Manually file the first live signal through the current AIBTC submission path
-- [ ] Record the live submission result in outcome logs
+- [x] Manually file the first live signal through the current AIBTC submission path
+- [x] Record filed signals in `data/state/filed-signals.json` (3 signals: 72f6b724, 0585da60, 8be9f1ad — all approved, none published yet)
 - [ ] Retry or complete the X claim if Genesis progression is still desired
+
+## Phase 13: Wallet Signing Helper
+- [x] Add Xverse browser signing page (`tools/xverse-register/file-signal.html`)
+- [x] Add "Load dry-run JSON" button — auto-fills payload from submission JSON
+- [x] Map dry-run fields to API payload format (beat_slug, headline, body, sources, tags, disclosure)
+- [x] Show "Add to filed-signals.json" entry after successful submission
+- [x] Confirm BIP-322 signing and authenticated POST to aibtc.news API works
+
+## Phase 14: Outcome Checker
+- [x] Add `data/state/filed-signals.json` to track signalId → candidateId mapping
+- [x] Pre-populate with all 3 known filed signals
+- [x] Build `src/outcomes/checker.ts` — fetches approved/rejected/submitted feeds by agent address
+- [x] Write outcome records to `data/outcomes/approvals/{signalId}.json`
+- [x] Mark signals resolved when terminal (approved/rejected); re-check submitted signals each run
+- [x] Add `npm run check-outcomes` script
+- [x] Add `.github/workflows/check-outcomes.yml` — runs 12:00 and 20:00 UTC, commits results
+- [ ] Set `AIBTC_BITCOIN_ADDRESS` as a GitHub repo variable (Settings → Variables)
+- [ ] Verify first automated outcome check runs and commits files
+
+## Phase 15: Live Source Fetcher
+- [x] Add `data/config/monitored-repos.json` — repos to watch (x402-sponsor-relay, mcp-server, agent-tools-ts)
+- [x] Add `data/state/fetched-releases.json` — tracks already-processed release tags
+- [x] Pre-populate with all known releases to avoid re-processing
+- [x] Build `src/sources/github-fetcher.ts` — polls GitHub Releases API, generates raw event JSONs
+- [x] Build `src/sources/live-pre-submission.ts` — generates fresh pre-submission intelligence from live API
+- [x] Build `src/loop/fetch-and-run.ts` — fetches releases → packages each → writes dry-run artifacts
+- [x] Add `npm run fetch-and-run` script
+- [x] Add `.github/workflows/fetch-and-run.yml` — runs 06:30 UTC daily, commits candidates + artifacts
+- [x] Remove daily schedule from `dry-run-report.yml` (now manual-only)
+- [x] Fix `dry-run-report.yml` to not wipe `data/outcomes/` on each run
+- [ ] Add more repos to `data/config/monitored-repos.json` as needed
+- [ ] Verify first automated fetch-and-run produces candidates and commits them
+
+## Phase 16: Deploy and Verify Automation
+These are the remaining steps to make the agent fully live. Do these in order.
+
+### 16a — Push and activate
+- [ ] Push all changes to `main` branch on GitHub
+- [ ] Set `AIBTC_BITCOIN_ADDRESS` = `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv` in repo Settings → Variables (not Secrets)
+- [ ] Manually trigger `Fetch and Run` workflow and confirm it finds releases and commits files
+- [ ] Manually trigger `Check Outcomes` workflow and confirm it writes outcome files and commits them
+
+### 16b — Verify the learning loop has data
+- [ ] Confirm `data/outcomes/approvals/` has at least one outcome file after checker runs
+- [ ] Confirm `data/experiments/optimization/` has a snapshot with real `beatPreferences` (not all "hold")
+- [ ] Confirm `data/reports/daily/` report shows approval outcomes, not all empty
+
+### 16c — Signing page end-to-end test
+- [ ] Open `tools/xverse-register/file-signal.html` in Chrome with Xverse installed
+- [ ] Load a `*-submission.json` from `data/dry-runs/` using the Load button
+- [ ] Connect Xverse and confirm it shows `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv`
+- [ ] Sign a request and confirm the curl fallback command appears
+- [ ] File a real signal and copy the returned entry into `data/state/filed-signals.json`
+
+### 16d — Daily heartbeat automation (free progression)
+- [ ] Build a heartbeat signing page in `tools/xverse-register/` (same pattern as file-signal.html)
+- [ ] Or confirm `tools/xverse-register/heartbeat.html` already works end-to-end
+- [ ] Add a GitHub Action that reminds (via artifact or report) if checkInCount has not increased
+
+### 16e — Signal quality improvement
+- [ ] Review the first batch of auto-generated `data/live-inputs/` raw events from fetch-and-run
+- [ ] Confirm the pipeline rejects weak ones (changelog dumps, dashboard-only releases)
+- [ ] Tune `significance` and `causalTrigger` extraction in `src/sources/github-fetcher.ts` if needed
+- [ ] Add more repos to `data/config/monitored-repos.json` as new beats are prioritised
 
 ## Rule
 - [x] Do not start the next incomplete phase before the current one is implemented and tested

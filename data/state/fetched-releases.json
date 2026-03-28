@@ -1,0 +1,9 @@
+{
+  "processedReleases": [
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.26.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.25.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.24.0",
+    "aibtcdev/x402-sponsor-relay:x402-sponsor-relay-v1.23.0",
+    "aibtcdev/mcp-server:mcp-server-v1.46.0"
+  ]
+}

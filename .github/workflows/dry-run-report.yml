@@ -11,8 +11,6 @@ on:
         description: "Pre-submission intelligence JSON path"
         required: false
         default: "data/fixtures/pre-submission-intelligence.json"
-  schedule:
-    - cron: "15 1 * * *"
 
 jobs:
   dry-run:
@@ -37,8 +35,6 @@ jobs:
                  data/logs/candidates \
                  data/logs/leaderboard \
                  data/logs/rejections \
-                 data/outcomes/approvals \
-                 data/outcomes/rewards \
                  data/reports \
                  data/experiments/optimization \
                  data/dry-runs \
