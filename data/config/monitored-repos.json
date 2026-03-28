@@ -2,7 +2,10 @@
   "repos": [
     { "owner": "aibtcdev", "repo": "x402-sponsor-relay", "beat": "infrastructure" },
     { "owner": "aibtcdev", "repo": "mcp-server", "beat": "infrastructure" },
-    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "infrastructure" }
+    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "agent-news", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "landing-page", "beat": "infrastructure" },
+    { "owner": "stacks-network", "repo": "stacks-core", "beat": "infrastructure" }
   ],
   "lookbackHours": 48
 }

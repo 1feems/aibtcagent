@@ -201,15 +201,15 @@ These are the remaining steps to make the agent fully live. Do these in order.
 - [ ] File a real signal and copy the returned entry into `data/state/filed-signals.json`
 
 ### 16d — Daily heartbeat automation (free progression)
-- [ ] Build a heartbeat signing page in `tools/xverse-register/` (same pattern as file-signal.html)
-- [ ] Or confirm `tools/xverse-register/heartbeat.html` already works end-to-end
-- [ ] Add a GitHub Action that reminds (via artifact or report) if checkInCount has not increased
+- [x] Build a heartbeat signing page in `tools/xverse-register/` (same pattern as file-signal.html)
+- [x] Or confirm `tools/xverse-register/heartbeat.html` already works end-to-end
+- [x] Add a GitHub Action that reminds (via artifact or report) if checkInCount has not increased
 
 ### 16e — Signal quality improvement
-- [ ] Review the first batch of auto-generated `data/live-inputs/` raw events from fetch-and-run
-- [ ] Confirm the pipeline rejects weak ones (changelog dumps, dashboard-only releases)
-- [ ] Tune `significance` and `causalTrigger` extraction in `src/sources/github-fetcher.ts` if needed
-- [ ] Add more repos to `data/config/monitored-repos.json` as new beats are prioritised
+- [x] Review the first batch of auto-generated `data/live-inputs` raw events from fetch-and-run
+- [x] Confirm the pipeline rejects weak ones (changelog dumps, dashboard-only releases)
+- [x] Tune `significance` and `causalTrigger` extraction in `src/sources/github-fetcher.ts` if needed
+- [x] Add more repos to `data/config/monitored-repos.json` as new beats are prioritised
 
 ## Rule
 - [x] Do not start the next incomplete phase before the current one is implemented and tested

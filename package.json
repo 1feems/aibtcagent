@@ -10,7 +10,8 @@
     "dry-run": "npm run build && node dist/loop/dry-run.js",
     "paperboy": "npm run build && node dist/loop/paperboy-run.js",
     "check-outcomes": "npm run build && node dist/outcomes/checker.js",
-    "fetch-and-run": "npm run build && node dist/loop/fetch-and-run.js"
+    "fetch-and-run": "npm run build && node dist/loop/fetch-and-run.js",
+    "heartbeat-reminder": "npm run build && node dist/ops/heartbeat-reminder.js"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

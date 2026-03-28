@@ -34,6 +34,43 @@ interface GithubRelease {
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+const HIGH_SIGNAL_KEYWORDS = [
+  "mandatory",
+  "breaking",
+  "security",
+  "exploit",
+  "vulnerability",
+  "fix",
+  "nonce",
+  "queue",
+  "relay",
+  "signer",
+  "consensus",
+  "activation",
+  "migration",
+  "wallet",
+  "payment",
+  "settlement",
+  "stuck",
+  "outage",
+  "health",
+  "circuit breaker",
+  "api",
+  "deploy"
+];
+
+const LOW_SIGNAL_KEYWORDS = [
+  "readme",
+  "docs",
+  "documentation",
+  "typo",
+  "lint",
+  "test",
+  "ci",
+  "chore",
+  "refactor"
+];
+
 function releaseKey(owner: string, repo: string, tag: string): string {
   return `${owner}/${repo}:${tag}`;
 }
@@ -52,35 +89,111 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+function truncate(value: string, length: number): string {
+  return value.length <= length ? value : value.slice(0, length).trim();
+}
+
+function parseBullets(body: string): string[] {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^[-*]\s+/.test(line))
+    .map((line) => stripMarkdown(line.replace(/^[-*]\s+/, "")))
+    .filter((line) => line.length > 8);
+}
+
+function includesAny(text: string, keywords: string[]): boolean {
+  const normalized = text.toLowerCase();
+  return keywords.some((keyword) => normalized.includes(keyword));
+}
+
+function isWeakRelease(release: GithubRelease): boolean {
+  const combined = stripMarkdown(
+    [release.name ?? "", release.body ?? "", release.tag_name].filter(Boolean).join(" ")
+  ).toLowerCase();
+
+  const hasHighSignal = includesAny(combined, HIGH_SIGNAL_KEYWORDS);
+  const hasOnlyLowSignal = includesAny(combined, LOW_SIGNAL_KEYWORDS) && !hasHighSignal;
+  const body = stripMarkdown(release.body ?? "");
+
+  if (hasOnlyLowSignal) {
+    return true;
+  }
+
+  if (body.length < 40 && !hasHighSignal) {
+    return true;
+  }
+
+  if (!hasHighSignal && !/\b\d[\d.,]*\b/.test(combined)) {
+    return true;
+  }
+
+  return false;
+}
+
+function inferOperatorConsequence(release: GithubRelease, repoName: string): string {
+  const combined = stripMarkdown([release.name ?? "", release.body ?? ""].join(" "));
+  const normalized = combined.toLowerCase();
+
+  if (normalized.includes("mandatory") || normalized.includes("activation")) {
+    return "operators should upgrade before the activation window or risk breakage";
+  }
+  if (normalized.includes("nonce") || normalized.includes("queue")) {
+    return "agents should review transaction ordering and retry behavior before the old flow burns nonce slots";
+  }
+  if (normalized.includes("security") || normalized.includes("vulnerability") || normalized.includes("exploit")) {
+    return "operators should patch exposed deployments before the security issue reaches production";
+  }
+  if (normalized.includes("wallet") || normalized.includes("signer")) {
+    return "operators should review wallet and signer changes before the release reaches live workflows";
+  }
+  if (normalized.includes("api")) {
+    return "integrators should review API changes before the release breaks dependent tooling";
+  }
+  if (normalized.includes("health") || normalized.includes("outage") || normalized.includes("circuit breaker")) {
+    return "operators should review reliability changes before the next failure mode hits production";
+  }
+
+  return `${repoName} changed in a way operators may need to review before their next production run`;
+}
+
 function extractSummary(release: GithubRelease, repoName: string): string {
-  const body = release.body ?? "";
-  const clean = stripMarkdown(body);
-  const firstSentence = clean.split(/[.!?]\s+/)[0]?.trim() ?? "";
-  const base = firstSentence.length > 30 ? firstSentence : clean.slice(0, 160).trim();
-  return `${repoName} ships ${release.tag_name} — ${base || "new release"}`.slice(0, 280);
+  const title = stripMarkdown(release.name ?? release.tag_name);
+  const bullets = parseBullets(release.body ?? "");
+  const keyChange = bullets.find((bullet) => includesAny(bullet, HIGH_SIGNAL_KEYWORDS)) ?? bullets[0] ?? "";
+  const cleanTitle = title.length > 8 ? title : release.tag_name;
+
+  if (keyChange) {
+    return truncate(`${repoName} ships ${cleanTitle} — ${keyChange}`, 280);
+  }
+
+  const body = stripMarkdown(release.body ?? "");
+  const firstSentence = body.split(/[.!?]\s+/)[0]?.trim() ?? "";
+  const base = firstSentence.length > 25 ? firstSentence : body;
+  return truncate(`${repoName} ships ${cleanTitle} — ${base || "new release"}`, 280);
 }
 
 function extractSignificance(release: GithubRelease, version: string, repoName: string): string {
-  const body = release.body ?? "";
-  const bullets = body.match(/^[-*]\s+.+/gm) ?? [];
-  const top = bullets
-    .slice(0, 3)
-    .map((b) => b.replace(/^[-*]\s+/, "").trim())
-    .filter((b) => b.length > 5);
+  const bullets = parseBullets(release.body ?? "");
+  const keyBullets = bullets.filter((bullet) => includesAny(bullet, HIGH_SIGNAL_KEYWORDS));
+  const consequence = inferOperatorConsequence(release, repoName);
 
-  if (top.length > 0) {
-    return `${version} adds: ${top.join("; ")}`.slice(0, 280);
+  if (keyBullets.length > 0) {
+    return truncate(`${version} changes ${keyBullets.slice(0, 2).join("; ")} — ${consequence}`, 280);
   }
 
-  const clean = stripMarkdown(body).slice(0, 200).trim();
-  return clean.length > 20
-    ? clean
-    : `${repoName} ${version} — review release notes for agent-relevant changes`;
+  const clean = stripMarkdown(release.body ?? "");
+  if (clean.length > 20) {
+    return truncate(`${clean} — ${consequence}`, 280);
+  }
+
+  return truncate(`${repoName} ${version} shipped and ${consequence}`, 280);
 }
 
 function extractCausalTrigger(release: GithubRelease, repoName: string): string {
   const date = release.published_at?.slice(0, 10) ?? "unknown date";
-  return `${repoName} released ${release.tag_name} on ${date}`.slice(0, 280);
+  const consequence = inferOperatorConsequence(release, repoName);
+  return truncate(`${repoName} published ${release.tag_name} on ${date}, prompting review because ${consequence}`, 280);
 }
 
 function buildRawEvent(
@@ -197,6 +310,12 @@ export async function fetchNewReleases(now: string): Promise<string[]> {
       const publishedAt = release.published_at ? new Date(release.published_at) : null;
       if (publishedAt && publishedAt < cutoff) {
         seen.add(key);
+        continue;
+      }
+
+      if (isWeakRelease(release)) {
+        seen.add(key);
+        process.stdout.write(`[fetcher] skipping weak release: ${release.tag_name}\n`);
         continue;
       }
 
