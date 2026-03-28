@@ -194,10 +194,10 @@ These are the remaining steps to make the agent fully live. Do these in order.
 - [x] Confirm `data/reports/daily/` report shows approval outcomes, not all empty
 
 ### 16c — Signing page end-to-end test
-- [ ] Open `tools/xverse-register/file-signal.html` in Chrome with Xverse installed
-- [ ] Load a `*-submission.json` from `data/dry-runs/` using the Load button
-- [ ] Connect Xverse and confirm it shows `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv`
-- [ ] Sign a request and confirm the curl fallback command appears
+- [x] Open `tools/xverse-register/file-signal.html` in Chrome with Xverse installed
+- [x] Load a `*-submission.json` from `data/dry-runs/` using the Load button
+- [x] Connect Xverse and confirm it shows `bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv`
+- [x] Sign a request and confirm the curl fallback command appears
 - [ ] File a real signal and copy the returned entry into `data/state/filed-signals.json`
 
 ### 16d — Daily heartbeat automation (free progression)
