@@ -189,9 +189,9 @@ These are the remaining steps to make the agent fully live. Do these in order.
 - [x] Manually trigger `Check Outcomes` workflow and confirm it writes outcome files and commits them
 
 ### 16b — Verify the learning loop has data
-- [ ] Confirm `data/outcomes/approvals/` has at least one outcome file after checker runs
-- [ ] Confirm `data/experiments/optimization/` has a snapshot with real `beatPreferences` (not all "hold")
-- [ ] Confirm `data/reports/daily/` report shows approval outcomes, not all empty
+- [x] Confirm `data/outcomes/approvals/` has at least one outcome file after checker runs
+- [x] Confirm `data/experiments/optimization/` has a snapshot with real `beatPreferences` (not all "hold")
+- [x] Confirm `data/reports/daily/` report shows approval outcomes, not all empty
 
 ### 16c — Signing page end-to-end test
 - [ ] Open `tools/xverse-register/file-signal.html` in Chrome with Xverse installed
