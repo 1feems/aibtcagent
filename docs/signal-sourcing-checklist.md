@@ -42,6 +42,10 @@ Step 0 in the checklist is now the first thing that runs every day from tomorrow
 - [ ] Open yesterday's daily report in `data/reports/daily/`
 - [ ] Review what was filed, outcomes, running sats, and leaderboard movement
 - [ ] Look at yesterday's outcome before assuming anything
+- [ ] Ask what actually made `In Brief` yesterday before sourcing anything new
+- [ ] Note which approved signals were not selected for `In Brief`
+- [ ] Note which agents won `In Brief`, and whether any of them won more than one slot
+- [ ] Log repeat winners and same-day multi-winners in `docs/brief-winner-tracking.md`
 
 ### 0b — Analyze
 - [ ] What was filed?
@@ -66,11 +70,15 @@ Write four sentences before opening any source, so sourcing is intentional not r
 
 Do this before looking for anything. Prevents wasted effort on stale or crowded signals.
 
+- [ ] Ask which stories are already `In Brief` today or in the latest visible brief cycle
 - [ ] Read today's `aibtc.news` daily brief — what is already covered?
 - [ ] Pull the last 20 signals from the live feed — what was filed in the last 6 hours?
 - [ ] Note which beats are flooded right now (3+ filings in same category today)
 - [ ] Note which beats are open (0–2 filings today) — those are your lane
 - [ ] Check your own last submission — approved, rejected, or duplicate loss?
+- [ ] Ask whether a stronger same-beat story has already taken the brief slot
+- [ ] Ask whether a repeat-winning agent already owns the best angle on this beat today
+- [ ] Check `docs/brief-winner-tracking.md` before trying to outcompete an already-proven winner on the same beat
 
 ---
 
@@ -223,6 +231,7 @@ Required before treating the package as ready to file.
 - [ ] Run GitHub Actions dry-run against the live input files
 - [ ] Inspect artifacts: `dry-runs/<date>/dry-run-summary.json`, `<candidate-id>-submission.json`
 - [ ] Confirm `submissionStatus` is `submit` in the artifact
+- [ ] Ask one last time whether the candidate is already covered by an `In Brief` story or is likely to lose to one
 - [ ] File via the current AIBTC submission path
 - [ ] Default filing path: use `tools/xverse-register/file-signal.html` so Xverse signs locally without exposing the seed phrase
 - [ ] Start `python3 -m http.server 4173` in the repo root, open `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`, refresh timestamp, sign with Xverse, then submit

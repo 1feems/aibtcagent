@@ -2,8 +2,6 @@ name: Fetch and Run
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "30 6 * * *"
 
 permissions:
   contents: write

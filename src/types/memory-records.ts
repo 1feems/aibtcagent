@@ -26,6 +26,9 @@ export interface ApprovalOutcomeRecord {
   recordedAt: string;
   candidateId: string;
   approved: boolean;
+  published?: boolean;
+  signalId?: string | null;
+  status?: "approved" | "rejected" | "submitted" | "unknown";
   note: string | null;
 }
 

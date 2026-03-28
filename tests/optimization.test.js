@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
@@ -52,6 +52,28 @@ function createSubmission(subject, generatedAt) {
   return buildSubmissionPayload(subject, validation, preSubmission, generatedAt);
 }
 
+async function seedTrainingData() {
+  await mkdir("data/training", { recursive: true });
+  await writeFile(
+    "data/training/in-brief.jsonl",
+    `${JSON.stringify({
+      label: "in_brief",
+      headline: "x402 relay ships before competitors adjust — nonce failures no longer burn retries",
+      reason_tags: ["broader_same_beat_story", "publication_ready"]
+    })}\n`,
+    "utf8"
+  );
+  await writeFile(
+    "data/training/rejected.jsonl",
+    `${JSON.stringify({
+      label: "rejected",
+      headline: "Infrastructure update improves system stability",
+      reason_tags: ["not_article_shaped", "missing_concrete_specificity"]
+    })}\n`,
+    "utf8"
+  );
+}
+
 test(
   "optimization loop adjusts beat preference, thresholds, and recommendations from outcomes",
   { concurrency: false },
@@ -62,6 +84,8 @@ test(
     process.chdir(tempDir);
 
     try {
+      await seedTrainingData();
+
       const winner = createSubject(
         "protocol-update-opt-001",
         "A newly deployed Stacks contract drew immediate first-use activity before public dashboards caught up",
@@ -90,7 +114,8 @@ test(
         winner.candidate.candidateId,
         true,
         "Selected for brief",
-        "2026-03-25T09:00:00Z"
+        "2026-03-25T09:00:00Z",
+        { published: true, status: "approved" }
       );
 
       await logRejectedCandidate(
@@ -108,6 +133,7 @@ test(
       assert.equal(snapshot.beatPreferences.length, 1);
       assert.equal(snapshot.beatPreferences[0].beat, "protocol-updates");
       assert.equal(snapshot.beatPreferences[0].preference, "decrease");
+      assert.equal(snapshot.beatPreferences[0].published, 1);
       assert.equal(snapshot.beatPreferences[0].duplicateLosses, 1);
       assert.equal(snapshot.rejectionThreshold.mode, "tightened");
       assert.match(snapshot.rejectionThreshold.drivers[0], /tighten duplicate rejection/i);
@@ -124,6 +150,8 @@ test(
       );
       assert.ok(snapshot.nextDayRecommendations.some((line) => /protocol-updates/.test(line)));
       assert.ok(snapshot.nextDayRecommendations.some((line) => /headline/i.test(line)));
+      assert.ok(snapshot.trainingWinningTags.length > 0);
+      assert.ok(snapshot.trainingRejectionTags.length > 0);
 
       const saved = JSON.parse(await readFile(savedTo, "utf8"));
       assert.equal(saved.kind, "daily_optimization");
@@ -145,6 +173,8 @@ test(
     process.chdir(tempDir);
 
     try {
+      await seedTrainingData();
+
       const priorDayWinner = createSubject(
         "protocol-update-opt-previous",
         "A newly deployed Stacks contract drew immediate first-use activity before public dashboards caught up",
@@ -171,7 +201,8 @@ test(
         priorDayWinner.candidate.candidateId,
         true,
         "Selected for brief",
-        "2026-03-25T09:00:00Z"
+        "2026-03-25T09:00:00Z",
+        { status: "approved" }
       );
 
       const { snapshot } = await generateAndSaveDailyOptimizationSnapshot(
@@ -182,8 +213,10 @@ test(
       assert.equal(snapshot.beatPreferences.length, 1);
       assert.equal(snapshot.beatPreferences[0].beat, "protocol-updates");
       assert.equal(snapshot.beatPreferences[0].approvals, 1);
-      assert.equal(snapshot.beatPreferences[0].preference, "increase");
+      assert.equal(snapshot.beatPreferences[0].published, 0);
+      assert.equal(snapshot.beatPreferences[0].preference, "hold");
       assert.equal(snapshot.beatPreferences[0].approvalRate, null);
+      assert.equal(snapshot.beatPreferences[0].publicationRate, null);
     } finally {
       process.chdir(originalCwd);
       await rm(tempDir, { recursive: true, force: true });

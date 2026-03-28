@@ -10,12 +10,24 @@ Private working repository for an AIBTC onchain signal agent focused on:
 The first thing to open is:
 
 - [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
+- [`docs/rejection-rules.md`](./docs/rejection-rules.md)
+- [`docs/brief-win-rules.md`](./docs/brief-win-rules.md)
+- [`docs/training-dataset.md`](./docs/training-dataset.md)
+- [`docs/brief-winner-tracking.md`](./docs/brief-winner-tracking.md)
+- [`docs/agent-training-system.md`](./docs/agent-training-system.md)
 
 Step 0 in the checklist is now the first thing that runs every day from tomorrow onwards. It has three sub-steps:
 
 - `0a — Pull data` — forces you to actually look at yesterday's outcome before assuming anything
 - `0b — Analyze` — seven specific questions that connect the outcome back to a root cause (was it proof, timing, headline, beat mismatch?)
 - `0c — Set strategy` — four sentences written before you open any source, so your sourcing is intentional not random
+
+Before picking new candidates, always ask:
+
+- what actually made `In Brief`
+- which approved signals did not make `In Brief`
+- whether a stronger same-beat story has already taken the slot
+- which agents are winning repeatedly, especially if they land multiple `In Brief` slots in one cycle
 
 Daily report files that support Step 0:
 
@@ -33,6 +45,67 @@ Tomorrow morning:
 - run through Step `0`
 - write `2026-03-27.md`
 - then start sourcing
+
+## Daily Agent Runtime
+
+Use these commands in order:
+
+1. `npm run daily-learn`
+   - checks outcomes
+   - refreshes training-aware pre-submission memory
+   - writes optimization snapshot
+   - writes daily report
+2. `npm run fetch-and-run`
+   - fetches live candidates
+   - runs dry-run evaluation
+   - saves submission-ready artifacts for the strongest candidates
+
+If you only run one command in the morning, run `npm run daily-learn`.
+
+For the full autonomous repo-side loop, run:
+
+- `npm run agent-daily`
+
+That command now:
+- checks outcomes
+- auto-labels resolved outcomes into training memory
+- snapshots brief winners
+- fetches and dry-runs live candidates
+- writes a ranked queue to `data/queues/<date>.json`
+- writes a filing queue to `data/filing-queue/<date>.json`
+
+To approve the top queued filing for manual submission:
+
+- `npm run approve-filing -- --date YYYY-MM-DD --candidate <candidate-id> --decision approve --reviewed-by <name>`
+
+That writes a ready artifact to:
+
+- `data/filing-ready/YYYY-MM-DD/<candidate-id>.json`
+
+Use that artifact with [`tools/xverse-register/file-signal.html`](./tools/xverse-register/file-signal.html) for the actual signed submission step.
+
+## Scheduled Runtime
+
+The repo now schedules the autonomous loop through GitHub Actions:
+
+- [`.github/workflows/agent-daily.yml`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/.github/workflows/agent-daily.yml)
+
+Current schedule:
+
+- daily at `06:15 UTC`
+
+What runs on that schedule:
+
+1. `npm run agent-daily`
+2. outcome checks
+3. training-memory refresh
+4. brief-winner snapshot
+5. candidate fetch + dry-run
+6. ranked queue generation
+7. filing-queue generation
+8. commit back updated agent memory and artifacts
+
+The older `fetch-and-run` and `check-outcomes` workflows are still available as manual tools, but they are no longer the scheduled path.
 
 ## Daily Check-In
 Do this every day in addition to signal work. Check-ins are free and count toward engagement achievements.
@@ -147,6 +220,12 @@ Candidates remaining today (2026-03-28):
 
 ## What Gets Approved vs Published
 Learned from live signals analysis (2026-03-28). Approval rate on the live feed: ~13%.
+
+For the live rejection taxonomy and agent training rules, use:
+
+- [`docs/rejection-rules.md`](./docs/rejection-rules.md)
+- [`docs/brief-win-rules.md`](./docs/brief-win-rules.md)
+- [`docs/training-dataset.md`](./docs/training-dataset.md)
 
 **Approved = passed editorial review. Published = selected by the publisher for the daily compiled brief/news page. These are different outcomes.**
 

@@ -10,6 +10,9 @@
     "dry-run": "npm run build && node dist/loop/dry-run.js",
     "paperboy": "npm run build && node dist/loop/paperboy-run.js",
     "check-outcomes": "npm run build && node dist/outcomes/checker.js",
+    "daily-learn": "npm run build && node dist/loop/daily-learn.js",
+    "agent-daily": "npm run build && node dist/agent/run-daily.js",
+    "approve-filing": "npm run build && node dist/filing/approve.js",
     "fetch-and-run": "npm run build && node dist/loop/fetch-and-run.js",
     "heartbeat-reminder": "npm run build && node dist/ops/heartbeat-reminder.js"
   },

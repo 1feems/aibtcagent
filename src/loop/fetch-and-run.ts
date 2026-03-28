@@ -8,8 +8,14 @@ import {
 } from "../sources/index.js";
 import { runDryRun } from "./dry-run.js";
 
-async function main(): Promise<void> {
-  const now = new Date().toISOString();
+export async function runFetchAndRun(
+  now = new Date().toISOString()
+): Promise<{
+  now: string;
+  reportDate: string;
+  snapshotPaths: string[];
+  results: Array<{ path: string; status: string }>;
+}> {
   const reportDate = now.slice(0, 10);
 
   process.stdout.write(`[fetch-and-run] starting at ${now}\n`);
@@ -26,7 +32,7 @@ async function main(): Promise<void> {
     process.stdout.write(
       `[fetch-and-run] no new candidate events — saved ${snapshotPaths.length} snapshot(s) and exiting\n`
     );
-    return;
+    return { now, reportDate, snapshotPaths, results: [] };
   }
 
   // 2. Build live pre-submission intelligence from the current approved feed
@@ -60,6 +66,12 @@ async function main(): Promise<void> {
   process.stdout.write(
     `[fetch-and-run] done — ${submitCount} ready to file, ${rejectCount} rejected, ${snapshotPaths.length} snapshots saved\n`
   );
+
+  return { now, reportDate, snapshotPaths, results };
+}
+
+async function main(): Promise<void> {
+  await runFetchAndRun();
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : null;

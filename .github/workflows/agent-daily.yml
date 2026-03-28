@@ -1,0 +1,70 @@
+name: Agent Daily
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-daily
+  cancel-in-progress: false
+
+jobs:
+  agent-daily:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run autonomous daily loop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AIBTC_BITCOIN_ADDRESS: ${{ vars.AIBTC_BITCOIN_ADDRESS }}
+        run: npm run agent-daily
+
+      - name: Upload agent artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: aibtc-agent-daily-artifacts
+          path: |
+            data/dry-runs
+            data/reports
+            data/live-inputs
+            data/experiments/optimization
+            data/queues
+            data/filing-queue
+            data/state
+            data/outcomes
+          if-no-files-found: warn
+
+      - name: Commit agent memory and queues
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            data/dry-runs/ \
+            data/reports/ \
+            data/live-inputs/ \
+            data/experiments/optimization/ \
+            data/queues/ \
+            data/filing-queue/ \
+            data/outcomes/ \
+            data/training/ \
+            data/state/ \
+            data/logs/ \
+            README.md
+          git diff --cached --quiet && echo "no changes" || git commit -m "chore: run autonomous daily agent loop [skip ci]"
+          git push

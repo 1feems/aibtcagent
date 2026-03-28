@@ -26,14 +26,15 @@ npm run dry-run -- --raw data/live-inputs/protocol-update-YYYY-MM-DD.json --pre 
 ```
 
 ## GitHub Path
-- use `.github/workflows/dry-run-report.yml` for scheduled or manual dry runs
+- use `.github/workflows/agent-daily.yml` for the scheduled autonomous loop
+- use `.github/workflows/dry-run-report.yml` for manual dry runs
 - keep Claude/Codex for manual optimization review, not the recurring execution path
 - recurring non-signing runtime is now GitHub Actions
 - keep heartbeat and any wallet-signing steps local and manual until the signing strategy changes
 
 ## Active Runtime Split
 - GitHub Actions:
-  - scheduled dry runs
+  - scheduled `agent-daily`
   - manual dry runs with chosen input paths
   - CI and report artifact generation
 - Local manual operator flow:

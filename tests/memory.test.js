@@ -110,7 +110,8 @@ test("memory layer writes records without touching repo state", { concurrency: f
       "protocol-update-001",
       true,
       "Selected for brief",
-      "2026-03-25T08:03:00Z"
+      "2026-03-25T08:03:00Z",
+      { published: true, status: "approved", signalId: "signal-123" }
     );
 
     const approvalSaved = await readFile(
@@ -121,6 +122,9 @@ test("memory layer writes records without touching repo state", { concurrency: f
 
     assert.equal(approvalParsed.kind, "approval_outcome");
     assert.equal(approvalParsed.approved, true);
+    assert.equal(approvalParsed.published, true);
+    assert.equal(approvalParsed.status, "approved");
+    assert.equal(approvalParsed.signalId, "signal-123");
 
     await logRewardOutcome("protocol-update-001", 500, "$20 BTC", "2026-03-25T08:04:00Z");
 

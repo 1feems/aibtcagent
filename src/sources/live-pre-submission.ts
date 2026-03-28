@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { PreSubmissionRawInput } from "../intelligence/pre-submission.js";
+import { loadTrainingMemory } from "../learning/index.js";
 
 const API_BASE = "https://aibtc.news/api";
 
@@ -41,8 +42,20 @@ function buildBeatSaturationNote(approvals: ApprovedSignal[]): string {
 }
 
 export async function buildLivePreSubmission(now: string): Promise<string> {
-  const approvals = await fetchRecentApprovals();
+  const [approvals, trainingMemory] = await Promise.all([
+    fetchRecentApprovals(),
+    loadTrainingMemory()
+  ]);
   const beatNote = buildBeatSaturationNote(approvals);
+  const trainingWinNote = trainingMemory.winningTags[0]
+    ? `Historical brief winners frequently carry the tag "${trainingMemory.winningTags[0].tag}" (${trainingMemory.winningTags[0].count} examples).`
+    : "Historical brief-winning tags unavailable";
+  const trainingRejectNote = trainingMemory.rejectionTags[0]
+    ? `Historical rejects frequently carry the tag "${trainingMemory.rejectionTags[0].tag}" (${trainingMemory.rejectionTags[0].count} examples).`
+    : "Historical rejection tags unavailable";
+  const trainingHeadlineNote = trainingMemory.winningHeadlinePatterns[0]
+    ? `Historical winning headline pattern: ${trainingMemory.winningHeadlinePatterns[0].pattern} (${trainingMemory.winningHeadlinePatterns[0].count}).`
+    : "Historical winning headline patterns unavailable";
 
   const raw: PreSubmissionRawInput = {
     dailyBriefChecked: approvals.length > 0,
@@ -51,7 +64,13 @@ export async function buildLivePreSubmission(now: string): Promise<string> {
     reputationChecked: false,
     inboxChecked: false,
     agentStatusChecked: false,
-    notes: [beatNote, `Checked at ${now} via automated fetch-and-run.`],
+    notes: [
+      beatNote,
+      trainingWinNote,
+      trainingRejectNote,
+      trainingHeadlineNote,
+      `Checked at ${now} via automated fetch-and-run.`
+    ],
     checkedAt: now
   };
 

@@ -3,8 +3,10 @@ export interface BeatPreferenceAdjustment {
   detections: number;
   submissions: number;
   approvals: number;
+  published: number;
   duplicateLosses: number;
   approvalRate: number | null;
+  publicationRate: number | null;
   preference: "increase" | "hold" | "decrease";
   rationale: string;
 }
@@ -25,6 +27,11 @@ export interface WinningHeadlinePattern {
   count: number;
 }
 
+export interface TrainingReasonTag {
+  tag: string;
+  count: number;
+}
+
 export interface DailyOptimizationSnapshot {
   kind: "daily_optimization";
   reportDate: string;
@@ -33,5 +40,7 @@ export interface DailyOptimizationSnapshot {
   rejectionThreshold: RejectionThresholdAdjustment;
   duplicateLossPatterns: DuplicateLossPattern[];
   winningHeadlinePatterns: WinningHeadlinePattern[];
+  trainingWinningTags: TrainingReasonTag[];
+  trainingRejectionTags: TrainingReasonTag[];
   nextDayRecommendations: string[];
 }

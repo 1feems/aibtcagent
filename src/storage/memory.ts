@@ -84,13 +84,21 @@ export async function logApprovalOutcome(
   candidateId: string,
   approved: boolean,
   note: string | null,
-  recordedAt: string
+  recordedAt: string,
+  options: {
+    published?: boolean;
+    signalId?: string | null;
+    status?: "approved" | "rejected" | "submitted" | "unknown";
+  } = {}
 ): Promise<void> {
   const record: ApprovalOutcomeRecord = {
     kind: "approval_outcome",
     recordedAt,
     candidateId,
     approved,
+    published: options.published,
+    signalId: options.signalId ?? null,
+    status: options.status,
     note
   };
 

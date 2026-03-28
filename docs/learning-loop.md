@@ -11,6 +11,12 @@ This document defines how the AIBTC Onchain Signal Agent learns over time to max
 ## Core Goal
 The agent should optimize for making money and building reputation at the same time.
 
+Important clarification:
+
+- model-weight retraining is not implemented in this repo
+- repo-based behavioral training is implemented through logs, labeled examples, optimization snapshots, and daily reports
+- the runtime should learn from those files automatically before opening new candidate work
+
 Primary optimization targets:
 - approved newsroom signals
 - sats earned

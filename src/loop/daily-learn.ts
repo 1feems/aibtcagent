@@ -1,0 +1,85 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { runOutcomeChecker } from "../outcomes/index.js";
+import { generateAndSaveDailyOptimizationSnapshot } from "./optimization.js";
+import { generateAndSaveDailyReport } from "../reporting/index.js";
+import { buildLivePreSubmission } from "../sources/index.js";
+import { loadTrainingMemory } from "../learning/index.js";
+
+interface DailyLearnConfig {
+  reportDate: string;
+  generatedAt: string;
+  refreshPreSubmission: boolean;
+}
+
+function parseArgs(argv: string[]): DailyLearnConfig {
+  const parsed = new Map<string, string>();
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (!token.startsWith("--")) {
+      continue;
+    }
+
+    const key = token.slice(2);
+    const next = argv[index + 1];
+    if (!next || next.startsWith("--")) {
+      parsed.set(key, "true");
+      continue;
+    }
+
+    parsed.set(key, next);
+    index += 1;
+  }
+
+  const now = new Date().toISOString();
+
+  return {
+    reportDate: parsed.get("date") ?? now.slice(0, 10),
+    generatedAt: parsed.get("generated-at") ?? now,
+    refreshPreSubmission: parsed.get("refresh-pre") !== "false"
+  };
+}
+
+export async function runDailyLearn(argv: string[] = process.argv.slice(2)): Promise<void> {
+  const config = parseArgs(argv);
+
+  process.stdout.write(`[daily-learn] starting for ${config.reportDate}\n`);
+
+  await runOutcomeChecker();
+  process.stdout.write("[daily-learn] outcome check complete\n");
+
+  const trainingMemory = await loadTrainingMemory();
+  process.stdout.write(
+    `[daily-learn] training memory loaded — ${trainingMemory.winningTags.length} winning tags, ${trainingMemory.rejectionTags.length} rejection tags\n`
+  );
+
+  if (config.refreshPreSubmission) {
+    const preSubmissionPath = await buildLivePreSubmission(config.generatedAt);
+    process.stdout.write(`[daily-learn] pre-submission memory refreshed at ${preSubmissionPath}\n`);
+  }
+
+  const { savedTo: optimizationPath } = await generateAndSaveDailyOptimizationSnapshot(
+    config.reportDate,
+    config.generatedAt
+  );
+  process.stdout.write(`[daily-learn] optimization snapshot saved to ${optimizationPath}\n`);
+
+  const { savedTo: reportPath, savedJsonTo: reportJsonPath } = await generateAndSaveDailyReport(
+    config.reportDate,
+    config.generatedAt
+  );
+  process.stdout.write(`[daily-learn] daily report saved to ${reportPath}\n`);
+  process.stdout.write(`[daily-learn] daily report JSON saved to ${reportJsonPath}\n`);
+}
+
+async function main(): Promise<void> {
+  await runDailyLearn();
+}
+
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : null;
+const currentModulePath = resolve(fileURLToPath(import.meta.url));
+
+if (invokedPath === currentModulePath) {
+  void main();
+}

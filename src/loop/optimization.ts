@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { loadTrainingMemory } from "../learning/index.js";
 import type {
   AcceptedSubmissionRecord,
   ApprovalOutcomeRecord,
@@ -170,6 +171,7 @@ function buildBeatPreferences(
   const detectionCounts = new Map<string, number>();
   const submissionCounts = new Map<string, number>();
   const approvalCounts = new Map<string, number>();
+  const publicationCounts = new Map<string, number>();
   const resolvedSubmissionCounts = new Map<string, number>();
   const duplicateLossCounts = new Map<string, number>();
   const approvalsByCandidateId = new Map(approvals.map((record) => [record.candidateId, record]));
@@ -202,6 +204,9 @@ function buildBeatPreferences(
     if (approval.approved) {
       approvalCounts.set(beat, (approvalCounts.get(beat) ?? 0) + 1);
     }
+    if (approval.published) {
+      publicationCounts.set(beat, (publicationCounts.get(beat) ?? 0) + 1);
+    }
   }
 
   for (const duplicateLoss of duplicateLossPatterns) {
@@ -216,8 +221,25 @@ function buildBeatPreferences(
       const submissionsForBeat = submissionCounts.get(beat) ?? 0;
       const resolvedSubmissionsForBeat = resolvedSubmissionCounts.get(beat) ?? 0;
       const approvalsForBeat = approvalCounts.get(beat) ?? 0;
+      const publishedForBeat = publicationCounts.get(beat) ?? 0;
       const duplicateLossesForBeat = duplicateLossCounts.get(beat) ?? 0;
       const approvalRate = formatRatio(approvalsForBeat, resolvedSubmissionsForBeat);
+      const publicationRate = formatRatio(publishedForBeat, resolvedSubmissionsForBeat);
+
+      if (publishedForBeat > 0 && duplicateLossesForBeat === 0) {
+        return {
+          beat,
+          detections: detectionsForBeat,
+          submissions: submissionsForBeat,
+          approvals: approvalsForBeat,
+          published: publishedForBeat,
+          duplicateLosses: duplicateLossesForBeat,
+          approvalRate,
+          publicationRate,
+          preference: "increase" as const,
+          rationale: "Published wins landed without duplicate losses."
+        };
+      }
 
       if (approvalsForBeat > 0 && duplicateLossesForBeat === 0) {
         return {
@@ -225,10 +247,12 @@ function buildBeatPreferences(
           detections: detectionsForBeat,
           submissions: submissionsForBeat,
           approvals: approvalsForBeat,
+          published: publishedForBeat,
           duplicateLosses: duplicateLossesForBeat,
           approvalRate,
-          preference: "increase" as const,
-          rationale: "Approvals landed without duplicate losses."
+          publicationRate,
+          preference: "hold" as const,
+          rationale: "Approvals landed, but no compiled-brief win is recorded yet."
         };
       }
 
@@ -241,12 +265,14 @@ function buildBeatPreferences(
           detections: detectionsForBeat,
           submissions: submissionsForBeat,
           approvals: approvalsForBeat,
+          published: publishedForBeat,
           duplicateLosses: duplicateLossesForBeat,
           approvalRate,
+          publicationRate,
           preference: "decrease" as const,
           rationale: duplicateLossesForBeat > 0
             ? "Duplicate pressure suggests this beat is crowded."
-            : "Submissions failed to convert into approvals."
+            : "Submissions failed to convert into approvals or published wins."
         };
       }
 
@@ -255,8 +281,10 @@ function buildBeatPreferences(
         detections: detectionsForBeat,
         submissions: submissionsForBeat,
         approvals: approvalsForBeat,
+        published: publishedForBeat,
         duplicateLosses: duplicateLossesForBeat,
         approvalRate,
+        publicationRate,
         preference: "hold" as const,
         rationale: "Outcome data is still limited, so keep the current focus steady."
       };
@@ -276,6 +304,10 @@ function buildThresholdAdjustment(
     resolvedSubmissions.filter((record) => approvalsByCandidateId.get(record.candidateId)?.approved === true).length,
     resolvedSubmissions.length
   );
+  const resolvedPublicationRate = formatRatio(
+    resolvedSubmissions.filter((record) => approvalsByCandidateId.get(record.candidateId)?.published === true).length,
+    resolvedSubmissions.length
+  );
 
   if (duplicateLossPatterns.some((pattern) => pattern.count > 0)) {
     drivers.push("tighten duplicate rejection when a candidate resembles same-day signals");
@@ -287,6 +319,15 @@ function buildThresholdAdjustment(
 
   if (proofOrCausalityFailures > 0 || (resolvedApprovalRate !== null && resolvedApprovalRate < 0.5)) {
     drivers.push("tighten proof and causality thresholds when approval rate slips");
+  }
+
+  if (
+    resolvedPublicationRate !== null &&
+    resolvedApprovalRate !== null &&
+    resolvedApprovalRate >= 0.5 &&
+    resolvedPublicationRate < 0.25
+  ) {
+    drivers.push("tighten publisher-fit thresholds when approvals are landing but brief wins are scarce");
   }
 
   if (drivers.length === 0) {
@@ -305,9 +346,11 @@ function buildNextDayRecommendations(
   const decreasedBeat = snapshot.beatPreferences.find((beat) => beat.preference === "decrease");
   const topDuplicateLoss = snapshot.duplicateLossPatterns[0];
   const topHeadlinePattern = snapshot.winningHeadlinePatterns[0];
+  const topWinningTag = snapshot.trainingWinningTags[0];
+  const topRejectionTag = snapshot.trainingRejectionTags[0];
 
   if (increasedBeat) {
-    recommendations.push(`Lean harder into ${increasedBeat.beat}; it is the strongest beat from today's outcomes.`);
+    recommendations.push(`Lean harder into ${increasedBeat.beat}; it produced the strongest published outcome today.`);
   }
 
   if (decreasedBeat) {
@@ -330,6 +373,18 @@ function buildNextDayRecommendations(
     );
   }
 
+  if (topWinningTag) {
+    recommendations.push(
+      `Bias toward candidates with ${topWinningTag.tag}; it is the most common tag in the historical in-brief training set.`
+    );
+  }
+
+  if (topRejectionTag) {
+    recommendations.push(
+      `Reject or rewrite candidates that look like ${topRejectionTag.tag}; it is the most common reject pattern in training data.`
+    );
+  }
+
   if (recommendations.length === 0) {
     recommendations.push("Hold the current setup steady and gather another day of data before adjusting the loop.");
   }
@@ -342,13 +397,14 @@ export async function generateDailyOptimizationSnapshot(
   generatedAt: string,
   options: OptimizationOptions = {}
 ): Promise<DailyOptimizationSnapshot> {
-  const [allDetections, allSubmissions, detections, rejections, submissions, approvals] = await Promise.all([
+  const [allDetections, allSubmissions, detections, rejections, submissions, approvals, trainingMemory] = await Promise.all([
     readAllRecords<CandidateLogRecord>("data/logs/candidates", options.baseDir),
     readAllRecords<AcceptedSubmissionRecord>("data/logs/accepted", options.baseDir),
     readDailyRecords<CandidateLogRecord>("data/logs/candidates", reportDate, options.baseDir),
     readDailyRecords<RejectionLogRecord>("data/logs/rejections", reportDate, options.baseDir),
     readDailyRecords<AcceptedSubmissionRecord>("data/logs/accepted", reportDate, options.baseDir),
-    readDailyRecords<ApprovalOutcomeRecord>("data/outcomes/approvals", reportDate, options.baseDir)
+    readDailyRecords<ApprovalOutcomeRecord>("data/outcomes/approvals", reportDate, options.baseDir),
+    loadTrainingMemory(options.baseDir)
   ]);
 
   const beatByCandidateId = new Map(
@@ -366,7 +422,10 @@ export async function generateDailyOptimizationSnapshot(
   const approvedHeadlines = [...approvedHeadlineSet];
 
   const duplicateLossPatterns = buildDuplicateLossPatterns(rejections, beatByCandidateId);
-  const winningHeadlinePatterns = buildWinningHeadlinePatterns(approvedHeadlines);
+  const liveWinningHeadlinePatterns = buildWinningHeadlinePatterns(approvedHeadlines);
+  const winningHeadlinePatterns = liveWinningHeadlinePatterns.length > 0
+    ? liveWinningHeadlinePatterns
+    : trainingMemory.winningHeadlinePatterns;
   const beatPreferences = buildBeatPreferences(
     beatByCandidateId,
     detections,
@@ -387,6 +446,8 @@ export async function generateDailyOptimizationSnapshot(
     rejectionThreshold,
     duplicateLossPatterns,
     winningHeadlinePatterns,
+    trainingWinningTags: trainingMemory.winningTags,
+    trainingRejectionTags: trainingMemory.rejectionTags,
     nextDayRecommendations: [] as string[]
   };
 
