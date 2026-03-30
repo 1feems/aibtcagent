@@ -161,7 +161,7 @@ function inferBeat(text: string, fallbackBeat: string): string {
       keywords: ["x402", "agent payment", "wallet standard", "wallet layer", "agent economy", "micropayment", "commerce", "payment rail"]
     },
     {
-      beat: "onboarding",
+      beat: "aibtc-network",
       keywords: ["leaderboard", "genesis", "check-in", "check in", "achievement", "referral", "registration", "onboarding"]
     },
     {
@@ -173,7 +173,7 @@ function inferBeat(text: string, fallbackBeat: string): string {
       keywords: ["tvl", "yield", "stacking", "stacks yield", "liquidation", "pool", "apr", "lending"]
     },
     {
-      beat: "infrastructure",
+      beat: "dev-tools",
       keywords: ["release", "upgrade", "api", "mcp", "relay", "node", "signer", "queue", "nonce", "deployment", "protocol", "wallet", "browserbase"]
     }
   ];
@@ -253,6 +253,21 @@ function isLikelyPublisherValuable(beat: string, text: string, hardNumber: strin
     return false;
   }
 
+  // Reject external BTC price/ETF stories unless they name a concrete agent or Stacks consequence.
+  // "external price news = reject unless concrete agent trading implication" — sources.md
+  const isPriceOrEtfStory =
+    /bitcoin\s+falls|bitcoin\s+dips|bitcoin\s+rises|bitcoin\s+drops|etf\s+outflow|etf\s+inflow|etf\s+exodus|etf\s+fee|treasury\s+yield|geopolit|macro\s+fear|investors\s+yank/i.test(text);
+  if (isPriceOrEtfStory) {
+    const hasAgentConsequence =
+      normalized.includes("stacks") ||
+      normalized.includes("x402") ||
+      normalized.includes("agent") ||
+      normalized.includes("aibtc");
+    if (!hasAgentConsequence) {
+      return false;
+    }
+  }
+
   const highSignalTerms = [
     "exploit",
     "hack",
@@ -268,7 +283,6 @@ function isLikelyPublisherValuable(beat: string, text: string, hardNumber: strin
     "queues",
     "nonce",
     "relay",
-    "etf",
     "leaderboard",
     "yield",
     "tvl",
@@ -351,6 +365,32 @@ function buildNewsEvent(
   };
 }
 
+function sortFeedsForPriority(feeds: NewsFeedConfig[]): NewsFeedConfig[] {
+  const scoreFeed = (feed: NewsFeedConfig): number => {
+    let score = 0;
+    const publication = feed.publication.toLowerCase();
+
+    if (feed.format === "html") {
+      score += 2;
+    }
+    if (publication.includes("chainalysis") || publication.includes("bleepingcomputer") || publication.includes("infosecurity")) {
+      score += 4;
+    }
+    if (publication.includes("pr newswire")) {
+      score -= 2;
+    }
+    if (publication.includes("coindesk") || publication.includes("cointelegraph") || publication.includes("decrypt") || publication.includes("bitcoin magazine") || publication.includes("the block")) {
+      score -= 4;
+    }
+
+    return score;
+  };
+
+  return [...feeds].sort((left, right) =>
+    scoreFeed(right) - scoreFeed(left) || left.name.localeCompare(right.name)
+  );
+}
+
 async function readConfig(): Promise<MonitoredSourcesConfig> {
   const path = resolve(process.cwd(), "data/config/monitored-sources.json");
   return JSON.parse(await readFile(path, "utf8")) as MonitoredSourcesConfig;
@@ -404,7 +444,7 @@ export async function fetchNewsFeedEvents(now: string): Promise<string[]> {
   const cutoff = new Date(Date.now() - config.lookbackHours * 60 * 60 * 1000);
   const newPaths: string[] = [];
 
-  for (const feed of config.newsFeeds) {
+  for (const feed of sortFeedsForPriority(config.newsFeeds)) {
     process.stdout.write(`[sources] checking ${feed.name}\n`);
 
     let raw: string;

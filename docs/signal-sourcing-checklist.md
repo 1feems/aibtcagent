@@ -19,18 +19,21 @@ Use this method every time. It exists to prevent weak candidates from surviving 
 
 2. Verify novelty before getting attached
 - [ ] Check the daily brief before calling a candidate open
-- [ ] Check the live signal feed before calling a candidate unfiled
+- [ ] Check the approved, submitted, and rejected feeds before calling a candidate unfiled
+- [ ] Treat a near-duplicate already in any feed status as occupied until proven otherwise
 - [ ] Confirm whether existing signals are actually about the same version, number, or event instead of just the same broad topic
 
 3. Use the headline formula as a filter, not a formatter
 - [ ] If the candidate does not naturally fit a strong headline formula, hold it early
 - [ ] Do not use the formula at the end to dress up a weak candidate
 - [ ] Prefer candidates that immediately produce a version-number-change-consequence headline
+- [ ] Prefer candidates that can support a real news title and a reported body, not just a technical label
 
 Short version:
 - [ ] read primary sources instead of summaries
 - [ ] verify novelty against the live feed explicitly
 - [ ] use the headline formula to kill weak candidates before spending more time on them
+- [ ] kill candidates that only work as changelog headlines
 
 ---
 
@@ -49,12 +52,16 @@ Step 0 in the checklist is now the first thing that runs every day from tomorrow
 
 ### 0b — Analyze
 - [ ] What was filed?
+- [ ] Who posted each brief item and which top correspondents are repeatedly winning this lane?
+- [ ] Why did the publisher choose this content instead of other available stories that day?
 - [ ] What was the outcome?
 - [ ] If approved or brief-included, what exact trait likely got it selected?
 - [ ] If rejected, was it proof, timing, headline, beat mismatch, or another root cause?
 - [ ] If duplicate-loss, what should have happened earlier?
 - [ ] Did the headline read like something a publisher would actually select?
 - [ ] Did the beat match how this kind of story is actually getting approved?
+- [ ] What is the real story inside the item: the hidden driver, unresolved risk, or live operating window?
+- [ ] Does the body read like a reported human news brief with sources, mechanism, and consequence?
 
 ### 0c — Set strategy
 Write four sentences before opening any source, so sourcing is intentional not random.
@@ -70,6 +77,9 @@ Write four sentences before opening any source, so sourcing is intentional not r
 
 Do this before looking for anything. Prevents wasted effort on stale or crowded signals.
 
+**First action every morning:** Open `https://aibtc.news` and copy today's In Brief stories. Paste them into the working session. The automated pipeline cannot read the brief — this is a manual paste step. Do not proceed to candidate evaluation until today's brief is in front of you.
+
+- [ ] Paste today's In Brief into the session before evaluating any candidate
 - [ ] Ask which stories are already `In Brief` today or in the latest visible brief cycle
 - [ ] Read today's `aibtc.news` daily brief — what is already covered?
 - [ ] Pull the last 20 signals from the live feed — what was filed in the last 6 hours?
@@ -116,6 +126,8 @@ Check in order. Stop at the first strong candidate. Do not skip to lower tiers.
 - [ ] Regulatory: Senate vote, SEC ruling, or government action with exact vote count
 - [ ] AI + Crypto: major lab or exchange shipping agent-related infrastructure today
 - [ ] Agent Social: new standard, protocol, or first-of-kind agent coordination event
+- [ ] External actionable security or legal story with a direct wallet, signing, custody, compliance, or execution consequence for agents
+- [ ] Market or security story where the key value is the non-obvious driver, unresolved method, or quantified risk window
 
 ### Tier 3 — Lower priority, file only if very strong
 - [ ] Bitcoin Macro: price moves only if tied to a specific structural trigger (ETF flows, hashrate, difficulty adjustment)
@@ -138,7 +150,7 @@ One no = reject and move on. Do not rationalize past a no.
 - [ ] The cause is different from the event itself
 
 **Novelty**
-- [ ] This specific event has not appeared in the live signal feed today
+- [ ] This specific event has not appeared in the approved, submitted, or rejected live feeds today
 - [ ] This has not appeared in today's daily brief
 - [ ] I am early enough that most agents have not filed it yet
 
@@ -147,6 +159,7 @@ One no = reject and move on. Do not rationalize past a no.
 - [ ] This has a plausible path to selection — not just technical validity
 - [ ] Submitting now is better than waiting for a stronger signal today
 - [ ] This could improve sats earned, BTC rewards, or leaderboard position if selected
+- [ ] Another agent would plausibly pay to read this in a compiled brief
 
 ---
 
@@ -161,6 +174,8 @@ Read the draft headline against each line. Any fail = rewrite before continuing.
 - [ ] States what happened AND why it matters in that one sentence
 - [ ] Does not start with background or context
 - [ ] Does not read like a report title or analysis header
+- [ ] Does not read like a release artifact, issue title, or commit summary
+- [ ] Would look natural on a human news site
 - [ ] 25 words maximum, 15 preferred
 
 **Beat packaging rule (from posting-guide.md):**
@@ -176,6 +191,12 @@ Package the headline in the style of the beat that is actually winning:
 - `[metric] [moves by exact %] to [exact number] — [structural signal]`
 - `[$amount] [protocol] exploit — [exact mechanism]`
 - `[body] votes [exact count] to [action] — [consequence]`
+
+**Higher-order title patterns from real briefs:**
+- `[market cohort] leads [event] as [asset] hits [exact level]`
+- `[institution / action] challenged as [unresolved method or risk] remains sealed`
+- `[release / trigger] opens a near-term [operator / security] window`
+- `[external event] matters because [specific wallet, signer, custody, or execution consequence]`
 
 ---
 
@@ -210,6 +231,7 @@ Required before treating the package as ready to file.
 - [ ] `why_it_matters` sounds meaningful, not generic
 - [ ] `proof_summary` gives a human-readable proof anchor (not just a raw tx hash)
 - [ ] The package reads like something a publisher could compile without rewriting
+- [ ] The body contains a real mechanism, not just a surface fact plus generic implication
 
 ---
 

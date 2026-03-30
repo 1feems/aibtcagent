@@ -1,11 +1,14 @@
 {
   "repos": [
-    { "owner": "aibtcdev", "repo": "x402-sponsor-relay", "beat": "infrastructure" },
-    { "owner": "aibtcdev", "repo": "mcp-server", "beat": "infrastructure" },
-    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "infrastructure" },
-    { "owner": "aibtcdev", "repo": "agent-news", "beat": "infrastructure" },
-    { "owner": "aibtcdev", "repo": "landing-page", "beat": "infrastructure" },
-    { "owner": "stacks-network", "repo": "stacks-core", "beat": "infrastructure" }
+    { "owner": "aibtcdev", "repo": "x402-sponsor-relay", "beat": "dev-tools" },
+    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "dev-tools" },
+    { "owner": "aibtcdev", "repo": "aibtc-mcp-server", "beat": "dev-tools" },
+    { "owner": "aibtcdev", "repo": "agent-news", "beat": "dao-watch" },
+    { "owner": "aibtcdev", "repo": "ai-agent-crew", "beat": "agent-skills" },
+    { "owner": "stacks-network", "repo": "stacks-core", "beat": "dao-watch" },
+    { "owner": "stacksgov", "repo": "sips", "beat": "dao-watch" },
+    { "owner": "hirosystems", "repo": "clarinet", "beat": "dev-tools" },
+    { "owner": "hirosystems", "repo": "stacks-blockchain-api", "beat": "dev-tools" }
   ],
-  "lookbackHours": 48
+  "lookbackHours": 72
 }

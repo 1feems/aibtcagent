@@ -55,6 +55,10 @@ Observed from published AIBTC daily briefs on March 25, March 26, and March 27, 
   reports appear often
 - secondary media is usually strongest when it sharpens consequence, money at stake, urgency, or
   external validation
+- published briefs can use external stories when they create a direct wallet, signing, custody,
+  compliance, security, or execution consequence for agents
+- before pitching an external story, check whether the same topic is already in approved,
+  submitted, or rejected feeds so we do not waste a filing on an occupied angle
 
 ## Source Role Rules
 Every serious candidate should try to include:
@@ -336,7 +340,7 @@ Where to find infrastructure candidates:
 - GitHub `aibtcdev/aibtc-mcp-server` releases
 - GitHub `aibtcdev/x402-sponsor-relay` releases
 - GitHub `aibtcdev/agent-news` releases
-- GitHub `aibtcdev/landing-page` release-linked PRs when x402 or inbox/payment behavior changes
+- GitHub `aibtcdev/landing-page` — **only** when the release fixes a named x402 or inbox/payment failure mode with a concrete agent consequence. Version bumps, dependency patches, UI tweaks, and timeout adjustments without a named failure mode = auto-reject regardless of version number.
 - Any `aibtcdev` repo release in the last 24 hours
 - Stacks Core releases: `github.com/stacks-network/stacks-core`
 - Hiro API changelogs and status page

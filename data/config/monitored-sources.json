@@ -7,35 +7,49 @@
       "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
       "format": "rss",
       "publication": "CoinDesk",
-      "defaultBeat": "infrastructure",
-      "includeKeywords": ["bitcoin", "stacks", "security", "wallet", "x402", "agent", "mcp", "custody", "yield", "exploit", "etf", "relay"]
+      "defaultBeat": "dev-tools",
+      "includeKeywords": ["stacks", "security", "wallet", "x402", "agent", "mcp", "custody", "yield", "exploit", "relay", "bitcoin exploit", "bitcoin hack", "bitcoin security"],
+      "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf exodus", "etf fee", "investors yank", "macro", "price target", "market cap"]
+    },
+    {
+      "id": "cointelegraph-rss",
+      "name": "Cointelegraph RSS",
+      "url": "https://cointelegraph.com/rss",
+      "format": "rss",
+      "publication": "Cointelegraph",
+      "defaultBeat": "security",
+      "includeKeywords": ["stacks", "security", "wallet", "custody", "agent", "mcp", "exploit", "regulation", "stablecoin", "compliance", "derivatives", "x402"],
+      "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf break", "etf fee", "spot bitcoin etf", "investors yank", "price target"]
     },
     {
       "id": "decrypt-news",
-      "name": "Decrypt News",
-      "url": "https://decrypt.co",
-      "format": "html",
+      "name": "Decrypt RSS",
+      "url": "https://decrypt.co/feed",
+      "format": "rss",
       "publication": "Decrypt",
       "defaultBeat": "security",
-      "includeKeywords": ["bitcoin", "stacks", "security", "wallet", "agent", "x402", "yield", "exploit", "etf", "mcp"]
+      "includeKeywords": ["stacks", "security", "wallet", "agent", "x402", "yield", "exploit", "mcp", "bitcoin hack", "bitcoin exploit"],
+      "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf exodus", "etf fee", "investors yank", "macro", "gamestop", "price target"]
     },
     {
       "id": "bitcoin-magazine-news",
-      "name": "Bitcoin Magazine News",
-      "url": "https://bitcoinmagazine.com/news",
-      "format": "html",
+      "name": "Bitcoin Magazine RSS",
+      "url": "https://bitcoinmagazine.com/.rss/full/",
+      "format": "rss",
       "publication": "Bitcoin Magazine",
-      "defaultBeat": "infrastructure",
-      "includeKeywords": ["bitcoin", "stacks", "security", "wallet", "agent", "yield", "mempool", "hashrate", "etf", "custody"]
+      "defaultBeat": "dev-tools",
+      "includeKeywords": ["stacks", "security", "wallet", "agent", "yield", "mempool", "hashrate", "custody", "exploit", "x402", "mcp"],
+      "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "etf fee", "etf outflow", "etf inflow", "morgan stanley", "treasury yield", "geopolitical", "price target"]
     },
     {
       "id": "the-block-latest",
-      "name": "The Block Latest",
-      "url": "https://www.theblock.co/latest-crypto-news",
-      "format": "html",
+      "name": "The Block RSS",
+      "url": "https://www.theblock.co/rss.xml",
+      "format": "rss",
       "publication": "The Block",
       "defaultBeat": "deal-flow",
-      "includeKeywords": ["bitcoin", "stacks", "security", "funding", "custody", "agent", "x402", "wallet", "yield", "exploit", "etf"]
+      "includeKeywords": ["stacks", "security", "funding", "custody", "agent", "x402", "wallet", "yield", "exploit", "bitcoin hack", "bitcoin security"],
+      "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf fee", "morgan stanley", "investors yank", "price pressure", "macro"]
     },
     {
       "id": "prnewswire-releases",
@@ -54,6 +68,24 @@
       "publication": "Chainalysis",
       "defaultBeat": "security",
       "includeKeywords": ["crime", "hack", "exploit", "wallet", "security", "ransomware", "attack", "fraud", "bitcoin", "crypto"]
+    },
+    {
+      "id": "bleepingcomputer-rss",
+      "name": "BleepingComputer RSS",
+      "url": "https://www.bleepingcomputer.com/feed/",
+      "format": "rss",
+      "publication": "BleepingComputer",
+      "defaultBeat": "security",
+      "includeKeywords": ["bitcoin", "crypto", "wallet", "security", "malware", "ransomware", "exploit", "linux", "ubuntu", "debian", "agent", "npm", "credential"]
+    },
+    {
+      "id": "infosecurity-magazine-rss",
+      "name": "Infosecurity Magazine RSS",
+      "url": "https://www.infosecurity-magazine.com/rss/news/",
+      "format": "rss",
+      "publication": "Infosecurity Magazine",
+      "defaultBeat": "security",
+      "includeKeywords": ["bitcoin", "crypto", "wallet", "security", "exploit", "ransomware", "malware", "linux", "credential", "custody", "regulation", "compliance"]
     }
   ],
   "apiSnapshots": [

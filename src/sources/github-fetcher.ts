@@ -34,6 +34,32 @@ interface GithubRelease {
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+// landing-page releases only qualify when they fix a named x402 or inbox/payment failure mode.
+// Version bumps, dependency patches, UI tweaks, and timeout adjustments = auto-reject.
+// Sources.md: "Version bumps, dependency patches, UI tweaks, and timeout adjustments without
+// a named failure mode = auto-reject regardless of version number."
+const LANDING_PAGE_REQUIRED_KEYWORDS = [
+  "x402",
+  "inbox",
+  "payment fail",
+  "payment error",
+  "relay fail",
+  "relay error",
+  "sponsor fail",
+  "sign fail",
+  "signer fail",
+  "wallet fail",
+  "wallet error"
+];
+
+function isLandingPageWithoutNamedFailure(release: GithubRelease, repo: string): boolean {
+  if (repo !== "landing-page") return false;
+  const combined = stripMarkdown(
+    [release.name ?? "", release.body ?? "", release.tag_name].filter(Boolean).join(" ")
+  ).toLowerCase();
+  return !LANDING_PAGE_REQUIRED_KEYWORDS.some((keyword) => combined.includes(keyword));
+}
+
 const HIGH_SIGNAL_KEYWORDS = [
   "mandatory",
   "breaking",
@@ -316,6 +342,12 @@ export async function fetchNewReleases(now: string): Promise<string[]> {
       if (isWeakRelease(release)) {
         seen.add(key);
         process.stdout.write(`[fetcher] skipping weak release: ${release.tag_name}\n`);
+        continue;
+      }
+
+      if (isLandingPageWithoutNamedFailure(release, repo)) {
+        seen.add(key);
+        process.stdout.write(`[fetcher] skipping landing-page release without named failure mode: ${release.tag_name}\n`);
         continue;
       }
 

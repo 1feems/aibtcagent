@@ -103,12 +103,37 @@ They usually contain:
 - a hard number or exact anchor
 - a structural consequence
 - a reason agents should care now
+- a mechanism or unresolved question that explains what is really happening underneath the surface event
 
 Training rule:
 - reject or hold signals that read like changelog fragments, dashboard captions, or raw observations
+- reject titles that read like repo artifacts, commit summaries, release labels, or internal notes instead of published news
 
 Reason tag:
 - `not_article_shaped`
+
+### 2b. Human News Titles Beat Artifact Titles
+Winning titles should look publishable on a real news website.
+
+Strong title shape:
+- starts with the event or consequence, not the repo name
+- sounds like something a human editor would publish
+- uses precise anchors without becoming a changelog
+- lets the body carry the detail instead of stuffing every implementation note into the headline
+
+Weak title shape:
+- `x ships v1.2.3`
+- `repo: fix foo (#123)`
+- `dashboard wiring corrected`
+- any headline that sounds like a generated artifact name instead of a story
+
+Training rule:
+- title the story, not the source artifact
+- if the title would look awkward on a normal news homepage, rewrite it before scoring
+
+Reason tags:
+- `artifact_title`
+- `human_news_title`
 
 ### 3. Structural Consequence Beats Surface Fact
 The winner usually explains what the development changes in practice.
@@ -128,6 +153,24 @@ Training rule:
 
 Reason tag:
 - `structural_implication_present`
+
+### 3c. Hidden Driver Or Risk Window Is Often The Real Story
+Many strong winners do not stop at the visible event.
+
+They identify:
+- who is really driving the move
+- what exact threshold or activation window creates urgency
+- what unknown method or unresolved detail changes the risk profile
+- what operators should monitor, patch, rebalance, or avoid now
+
+Training rule:
+- ask what the story is really about beneath the headline event
+- prefer filings that explain the hidden driver, trigger window, or unresolved risk
+
+Reason tags:
+- `hidden_driver_identified`
+- `risk_window_identified`
+- `unresolved_security_implication`
 
 ### 3b. Strong Macro Or External Stories Can Win If They Alter Agent Decisions
 Several `In Brief` winners are not internal product updates at all.
