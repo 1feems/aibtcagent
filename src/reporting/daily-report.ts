@@ -29,6 +29,15 @@ interface SavedDailyReportPaths {
   jsonPath: string;
 }
 
+interface RewardSyncState {
+  address: string;
+  lastCheckedAt: string;
+  lastSatsReceived: number;
+  lastLeaderboardRank: number | null;
+  lastLeaderboardScore: number | null;
+  lastAchievementIds: string[];
+}
+
 function resolveBaseDir(baseDir?: string): string {
   return resolve(baseDir ?? process.cwd());
 }
@@ -98,6 +107,20 @@ async function readAllRecords<T extends DailyRecord>(
   }
 }
 
+async function readJsonOrNull<T>(relativePath: string, baseDir?: string): Promise<T | null> {
+  try {
+    const absolutePath = resolve(resolveBaseDir(baseDir), relativePath);
+    const contents = await readFile(absolutePath, "utf8");
+    return JSON.parse(contents) as T;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
 function toUniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
@@ -132,9 +155,9 @@ function buildChangedNarrative(report: Omit<DailyReport, "kind" | "generatedAt" 
     );
   }
 
-  if (approvalsAndRewards.totalApprovals > 0) {
+  if (approvalsAndRewards.totalInBrief > 0) {
     changed.push(
-      `Recorded ${approvalsAndRewards.totalApprovals} approval${approvalsAndRewards.totalApprovals === 1 ? "" : "s"} today.`
+      `Recorded ${approvalsAndRewards.totalInBrief} In Brief win${approvalsAndRewards.totalInBrief === 1 ? "" : "s"} today.`
     );
   }
 
@@ -151,6 +174,12 @@ function buildChangedNarrative(report: Omit<DailyReport, "kind" | "generatedAt" 
     changed.push(`Rewards recorded: ${rewardParts.join(" and ")}.`);
   }
 
+  if (approvalsAndRewards.approvalNotInBriefCount > 0) {
+    changed.push(
+      `${approvalsAndRewards.approvalNotInBriefCount} approved submission${approvalsAndRewards.approvalNotInBriefCount === 1 ? "" : "s"} still failed to make In Brief.`
+    );
+  }
+
   if (approvalsAndRewards.leaderboardChanges.length > 0) {
     changed.push(
       `Observed leaderboard movement: ${approvalsAndRewards.leaderboardChanges.join(", ")}.`
@@ -158,7 +187,7 @@ function buildChangedNarrative(report: Omit<DailyReport, "kind" | "generatedAt" 
   }
 
   if (changed.length === 0) {
-    changed.push("No detections, submissions, approvals, rewards, or leaderboard changes were recorded today.");
+    changed.push("No detections, submissions, In Brief wins, rewards, or leaderboard changes were recorded today.");
   }
 
   return changed;
@@ -177,6 +206,14 @@ function buildImproveNarrative(report: Omit<DailyReport, "kind" | "generatedAt" 
     improve.push(`Reduce ${topReason.reason} rejections, which occurred ${topReason.count} time${topReason.count === 1 ? "" : "s"} today.`);
   }
 
+  if (approvalsAndRewards.totalApprovals > 0 && approvalsAndRewards.totalInBrief === 0) {
+    improve.push("Treat approved-but-not-published outcomes as failed beat-slot attempts and rework story breadth, framing, or timing.");
+  }
+
+  if (approvalsAndRewards.approvalNotInBriefCount > 0) {
+    improve.push("Review the approved-not-in-brief failure notes before filing similar stories again.");
+  }
+
   const proofOrCausalityIssues = rejections.reasons.filter(
     (reason) => reason.reason === "proof_missing" || reason.reason === "causality_missing"
   );
@@ -191,8 +228,32 @@ function buildImproveNarrative(report: Omit<DailyReport, "kind" | "generatedAt" 
     improve.push("Record a leaderboard observation each day so momentum can be measured.");
   }
 
-  if (approvalsAndRewards.totalApprovals > 0 && approvalsAndRewards.totalSatsEarned === 0 && approvalsAndRewards.btcRewards.length === 0) {
-    improve.push("Track reward follow-through after approvals so paid outcomes are not missed.");
+  if (approvalsAndRewards.totalInBrief > 0 && approvalsAndRewards.totalSatsEarned === 0 && approvalsAndRewards.btcRewards.length === 0) {
+    improve.push("Track reward follow-through after In Brief wins so paid outcomes are not missed.");
+  }
+
+  if (
+    approvalsAndRewards.daysSinceLastBrief !== null &&
+    approvalsAndRewards.daysSinceLastBrief >= 3
+  ) {
+    improve.push(
+      `Brief drought is at ${approvalsAndRewards.daysSinceLastBrief} day${approvalsAndRewards.daysSinceLastBrief === 1 ? "" : "s"}; reject generic filings until they clear the slot-winning bar.`
+    );
+  }
+
+  if (
+    approvalsAndRewards.daysSinceLastOnChainPayout !== null &&
+    approvalsAndRewards.daysSinceLastOnChainPayout >= 3
+  ) {
+    improve.push(
+      `Payout drought is at ${approvalsAndRewards.daysSinceLastOnChainPayout} day${approvalsAndRewards.daysSinceLastOnChainPayout === 1 ? "" : "s"}; optimize for stories that can convert into visible wallet sats, not just approvals.`
+    );
+  }
+
+  if (report.optimization.successMetrics.inBriefWins < report.optimization.successMetrics.targetInBriefWins) {
+    improve.push(
+      `Target miss: ${report.optimization.successMetrics.inBriefWins}/${report.optimization.successMetrics.targetInBriefWins} In Brief wins today. Keep sourcing and packaging toward the beat-slot target.`
+    );
   }
 
   if (improve.length === 0) {
@@ -209,12 +270,18 @@ function renderMarkdown(report: Omit<DailyReport, "kind" | "markdown">): string 
   const sameDayResolvedApprovalRate = report.approvalsAndRewards.sameDayResolvedApprovalRate === null
     ? "n/a"
     : `${Math.round(report.approvalsAndRewards.sameDayResolvedApprovalRate * 100)}%`;
+  const sameDayResolvedInBriefRate = report.approvalsAndRewards.sameDayResolvedInBriefRate === null
+    ? "n/a"
+    : `${Math.round(report.approvalsAndRewards.sameDayResolvedInBriefRate * 100)}%`;
   const reasonLines = report.rejections.reasons.length === 0
     ? ["- None recorded"]
     : report.rejections.reasons.map((reason) => `- ${reason.reason}: ${reason.count}`);
   const headlineLines = report.detections.submittedHeadlines.length === 0
     ? ["- None recorded"]
     : report.detections.submittedHeadlines.map((headline) => `- ${headline}`);
+  const failureLines = report.approvalsAndRewards.failureNotes.length === 0
+    ? ["- None recorded"]
+    : report.approvalsAndRewards.failureNotes.map((note) => `- ${note}`);
   const changedLines = report.narrative.changed.map((line) => `- ${line}`);
   const improveLines = report.narrative.improve.map((line) => `- ${line}`);
   const optimizationLines = report.optimization.nextDayRecommendations.map((line) => `- ${line}`);
@@ -223,6 +290,17 @@ function renderMarkdown(report: Omit<DailyReport, "kind" | "markdown">): string 
     `# Daily Report: ${report.reportDate}`,
     "",
     `Generated at: ${report.generatedAt}`,
+    "",
+    "## Top KPI",
+    `- Success definition: ${report.optimization.successMetrics.successDefinition}`,
+    `- In Brief wins: ${report.approvalsAndRewards.totalInBrief}`,
+    `- Approved but not briefed: ${report.approvalsAndRewards.approvalNotInBriefCount}`,
+    `- Wallet sats realized: ${report.approvalsAndRewards.walletSatsRealized}`,
+    `- Days since last brief: ${report.approvalsAndRewards.daysSinceLastBrief ?? "n/a"}`,
+    `- Days since last on-chain payout: ${report.approvalsAndRewards.daysSinceLastOnChainPayout ?? "n/a"}`,
+    `- In Brief target: ${report.optimization.successMetrics.targetInBriefWins}`,
+    `- Sats earned: ${report.approvalsAndRewards.totalSatsEarned}`,
+    `- Target met: ${report.optimization.successMetrics.targetMet ? "yes" : "no"}`,
     "",
     "## Detections and Submissions",
     `- Detections: ${report.detections.totalDetected}`,
@@ -241,14 +319,19 @@ function renderMarkdown(report: Omit<DailyReport, "kind" | "markdown">): string 
     "",
     "## Approvals and Rewards",
     `- Approvals: ${report.approvalsAndRewards.totalApprovals}`,
+    `- In Brief wins: ${report.approvalsAndRewards.totalInBrief}`,
+    `- Approved but not in brief: ${report.approvalsAndRewards.approvalNotInBriefCount}`,
     `- Declines: ${report.approvalsAndRewards.totalDeclines}`,
     `- Resolved same-day submissions: ${report.approvalsAndRewards.resolvedSubmissionCount}`,
     `- Pending submissions without same-day outcome: ${report.approvalsAndRewards.pendingSubmissionCount}`,
     `- Same-day resolved approval rate: ${sameDayResolvedApprovalRate}`,
+    `- Same-day resolved In Brief rate: ${sameDayResolvedInBriefRate}`,
     `- Total sats earned: ${report.approvalsAndRewards.totalSatsEarned}`,
     `- BTC rewards: ${report.approvalsAndRewards.btcRewards.length === 0 ? "none" : report.approvalsAndRewards.btcRewards.join(", ")}`,
     `- Leaderboard changes: ${report.approvalsAndRewards.leaderboardChanges.length === 0 ? "none" : report.approvalsAndRewards.leaderboardChanges.join(", ")}`,
     `- Approval notes: ${report.approvalsAndRewards.approvalNotes.length === 0 ? "none" : report.approvalsAndRewards.approvalNotes.join(" | ")}`,
+    "- Failure notes:",
+    ...failureLines,
     "",
     "## What Changed",
     ...changedLines,
@@ -268,7 +351,7 @@ export async function generateDailyReport(
   options: ReportOptions = {}
 ): Promise<DailyReport> {
   const optimization = await generateDailyOptimizationSnapshot(reportDate, generatedAt, options);
-  const [allDetections, detections, rejections, submissions, approvals, rewards, leaderboardObservations] =
+  const [allDetections, detections, rejections, submissions, approvals, rewards, leaderboardObservations, rewardSyncState, allApprovals, allRewards] =
     await Promise.all([
       readAllRecords<CandidateLogRecord>("data/logs/candidates", options.baseDir),
       readDailyRecords<CandidateLogRecord>("data/logs/candidates", reportDate, options.baseDir),
@@ -280,7 +363,10 @@ export async function generateDailyReport(
         "data/logs/leaderboard",
         reportDate,
         options.baseDir
-      )
+      ),
+      readJsonOrNull<RewardSyncState>("data/state/reward-sync.json", options.baseDir),
+      readAllRecords<ApprovalOutcomeRecord>("data/outcomes/approvals", options.baseDir),
+      readAllRecords<RewardOutcomeRecord>("data/outcomes/rewards", options.baseDir)
     ]);
   const detectedCandidateIdsForDay = new Set(
     allDetections
@@ -297,6 +383,24 @@ export async function generateDailyReport(
   const resolvedApprovals = resolvedSubmissions.filter((record) =>
     approvalsByCandidateId.get(record.candidateId)?.approved === true
   );
+  const resolvedInBrief = resolvedSubmissions.filter((record) =>
+    approvalsByCandidateId.get(record.candidateId)?.published === true
+  );
+  const approvalNotInBrief = approvals.filter((record) => record.approved && record.published !== true);
+  const mostRecentBrief = allApprovals
+    .filter((record) => record.published === true)
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0] ?? null;
+  const mostRecentReward = allRewards
+    .sort((left, right) => right.recordedAt.localeCompare(left.recordedAt))[0] ?? null;
+  const daysSince = (timestamp: string | null): number | null => {
+    if (!timestamp) return null;
+    const generatedMs = Date.parse(generatedAt);
+    const seenMs = Date.parse(timestamp);
+    if (Number.isNaN(generatedMs) || Number.isNaN(seenMs) || generatedMs < seenMs) {
+      return null;
+    }
+    return Math.floor((generatedMs - seenMs) / 86400000);
+  };
 
   const baseReport = {
     reportDate,
@@ -317,14 +421,27 @@ export async function generateDailyReport(
     approvalsAndRewards: {
       totalApprovals: approvals.filter((record) => record.approved).length,
       totalDeclines: approvals.filter((record) => !record.approved).length,
+      totalInBrief: approvals.filter((record) => record.published === true).length,
+      approvalNotInBriefCount: approvalNotInBrief.length,
+      walletSatsRealized: rewardSyncState?.lastSatsReceived ?? 0,
+      daysSinceLastBrief: daysSince(mostRecentBrief?.recordedAt ?? null),
+      daysSinceLastOnChainPayout: daysSince(mostRecentReward?.recordedAt ?? null),
       resolvedSubmissionCount: resolvedSubmissions.length,
       pendingSubmissionCount: submissionsForDetectedDay.length - resolvedSubmissions.length,
       sameDayResolvedApprovalRate: formatRatio(
         resolvedApprovals.length,
         resolvedSubmissions.length
       ),
+      sameDayResolvedInBriefRate: formatRatio(
+        resolvedInBrief.length,
+        resolvedSubmissions.length
+      ),
       approvalNotes: approvals
         .map((record) => record.note)
+        .filter((note): note is string => note !== null)
+        .sort(),
+      failureNotes: approvalNotInBrief
+        .map((record) => record.learningWhy ?? record.note)
         .filter((note): note is string => note !== null)
         .sort(),
       totalSatsEarned: rewards.reduce(

@@ -27,9 +27,12 @@ export interface ApprovalOutcomeRecord {
   candidateId: string;
   approved: boolean;
   published?: boolean;
+  success?: boolean;
+  failureMode?: "not_in_brief" | "rejected" | "pending" | "unknown" | null;
   signalId?: string | null;
   status?: "approved" | "rejected" | "submitted" | "unknown";
   note: string | null;
+  learningWhy?: string | null;
 }
 
 export interface RewardOutcomeRecord {

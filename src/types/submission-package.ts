@@ -35,6 +35,14 @@ export interface ArticlePreview {
   audience: "human";
 }
 
+export interface CandidateMetadata {
+  styleTested: string;
+  competitorReference: string | null;
+  whyThisStyleWasChosen: string;
+  duplicateStatus: "clear" | "pending" | "flagged";
+  freshnessStatus: "clear" | "risk_unresolved" | "unknown";
+}
+
 export interface SubmissionPayload {
   candidateSignal: CandidateSignal;
   headline: string;
@@ -46,6 +54,7 @@ export interface SubmissionPayload {
   submissionDecision: SubmissionDecision;
   editorialReview: EditorialReview;
   articlePreview: ArticlePreview;
+  candidateMetadata: CandidateMetadata;
   outcomeTracking: OutcomeTracking;
   generatedAt: string;
 }

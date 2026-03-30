@@ -1,6 +1,105 @@
 import type { SubmissionPayload } from "../types/index.js";
 
+function inferStyleTested(payload: SubmissionPayload): string {
+  const headline = payload.headline.toLowerCase();
+  const context = [
+    payload.candidateSignal.summary,
+    payload.candidateSignal.significance,
+    payload.candidateSignal.causality
+  ].join(" ").toLowerCase();
+
+  if ((headline.includes(" and ") || headline.includes(" plus ") || /\b\d[\d,.]*\b.*\b\d[\d,.]*\b/.test(payload.headline)) &&
+      /\bupgrade|risk|window|operator|agent|structural|system\b/.test(context)) {
+    return "broad_same_beat_operator";
+  }
+
+  if (payload.sources.some((source) => source.sourceUrl.includes("github.com")) &&
+      /\bupgrade|risk|window|operator|agent|payment|security\b/.test(context)) {
+    return "release_operator_consequence";
+  }
+
+  if (/\bqueue|bottleneck|concentration|backlog|saturation|structural|threshold\b/.test(context)) {
+    return "structural_pattern";
+  }
+
+  if (/\b\d[\d,.]*\b/.test(payload.headline) &&
+      /\bbefore|early|same day|deadline|activation\b/.test(context)) {
+    return "exact_anchor_timing";
+  }
+
+  return "single_story_operator_angle";
+}
+
+function inferCompetitorReference(payload: SubmissionPayload): string | null {
+  const topAgentNote = payload.preSubmissionIntelligence.notes.find((note) =>
+    note.startsWith("Repeat-winning brief agent to study:")
+  );
+  if (topAgentNote) {
+    return topAgentNote.replace("Repeat-winning brief agent to study:", "").trim();
+  }
+
+  const ownedBeatNote = payload.preSubmissionIntelligence.notes.find((note) =>
+    note.startsWith("Competitor-owned beats right now:")
+  );
+  if (ownedBeatNote) {
+    return ownedBeatNote.replace("Competitor-owned beats right now:", "").trim();
+  }
+
+  return null;
+}
+
+function inferDuplicateStatus(payload: SubmissionPayload): "clear" | "pending" | "flagged" {
+  if (payload.candidateSignal.likelyDuplicate) {
+    return "flagged";
+  }
+
+  if (!payload.validationStatus.checks.duplicateRejected) {
+    return "pending";
+  }
+
+  return "clear";
+}
+
+function inferFreshnessStatus(payload: SubmissionPayload): "clear" | "risk_unresolved" | "unknown" {
+  const noteBlob = payload.preSubmissionIntelligence.notes.join(" ").toLowerCase();
+  if (/\bstale\b|\bfreshness\b/.test(noteBlob)) {
+    return "risk_unresolved";
+  }
+
+  return "unknown";
+}
+
+function buildWhyThisStyleWasChosen(payload: SubmissionPayload, styleTested: string): string {
+  const reasons: string[] = [];
+
+  if (/\b\d[\d,.]*\b/.test(payload.headline)) {
+    reasons.push("headline carries a hard numeric anchor");
+  }
+  if (payload.sources.some((source) => source.sourceUrl.includes("github.com"))) {
+    reasons.push("primary proof comes from a release or repo source");
+  }
+  if (/\bupgrade|risk|window|operator|agent|payment|security\b/i.test(
+    `${payload.candidateSignal.significance} ${payload.candidateSignal.causality}`
+  )) {
+    reasons.push("the story has direct operator consequence");
+  }
+  if (styleTested === "broad_same_beat_operator") {
+    reasons.push("the package is trying to win the beat with a broader story shape");
+  }
+
+  return reasons.length > 0
+    ? reasons.join("; ")
+    : "chosen as the strongest available story shape from the current candidate context";
+}
+
 export function serializeSubmissionPayload(payload: SubmissionPayload) {
+  const styleTested = payload.candidateMetadata.styleTested || inferStyleTested(payload);
+  const competitorReference = payload.candidateMetadata.competitorReference ?? inferCompetitorReference(payload);
+  const duplicateStatus = payload.candidateMetadata.duplicateStatus || inferDuplicateStatus(payload);
+  const freshnessStatus = payload.candidateMetadata.freshnessStatus || inferFreshnessStatus(payload);
+  const whyThisStyleWasChosen =
+    payload.candidateMetadata.whyThisStyleWasChosen || buildWhyThisStyleWasChosen(payload, styleTested);
+
   return {
     candidate_signal: {
       candidate_id: payload.candidateSignal.candidateId,
@@ -80,6 +179,13 @@ export function serializeSubmissionPayload(payload: SubmissionPayload) {
       why_it_matters: payload.articlePreview.whyItMatters,
       proof_summary: payload.articlePreview.proofSummary,
       audience: payload.articlePreview.audience
+    },
+    candidate_metadata: {
+      style_tested: styleTested,
+      competitor_reference: competitorReference,
+      why_this_style_was_chosen: whyThisStyleWasChosen,
+      duplicate_status: duplicateStatus,
+      freshness_status: freshnessStatus
     },
     outcome_tracking: {
       approved: payload.outcomeTracking.approved,

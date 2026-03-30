@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { markCandidateOutcome } from "../filing/candidate-history.js";
 
 const BTC_ADDRESS =
   process.env.AIBTC_BITCOIN_ADDRESS ?? "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv";
@@ -40,8 +41,11 @@ interface OutcomeRecord {
   candidateId: string | null;
   approved: boolean;
   published: boolean;
+  success: boolean;
+  failureMode: "not_in_brief" | "rejected" | "pending" | "unknown" | null;
   status: "approved" | "rejected" | "submitted" | "unknown";
   note: string | null;
+  learningWhy: string | null;
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -125,10 +129,11 @@ export async function runOutcomeChecker(): Promise<void> {
 
   process.stdout.write(`[checker] checking ${unresolved.length} unresolved signal(s) for ${BTC_ADDRESS}\n`);
 
-  const [approvedFeed, rejectedFeed, submittedFeed] = await Promise.all([
+  const [approvedFeed, rejectedFeed, submittedFeed, briefIncludedFeed] = await Promise.all([
     fetchFeed("approved"),
     fetchFeed("rejected"),
-    fetchFeed("submitted")
+    fetchFeed("submitted"),
+    fetchFeed("brief_included")
   ]);
 
   const now = new Date().toISOString();
@@ -140,7 +145,10 @@ export async function runOutcomeChecker(): Promise<void> {
     let status: OutcomeRecord["status"] = "unknown";
     let apiSignal: ApiSignal | undefined;
 
-    if (approvedFeed.has(signalId)) {
+    if (briefIncludedFeed.has(signalId)) {
+      status = "approved";
+      apiSignal = briefIncludedFeed.get(signalId);
+    } else if (approvedFeed.has(signalId)) {
       status = "approved";
       apiSignal = approvedFeed.get(signalId);
     } else if (rejectedFeed.has(signalId)) {
@@ -156,15 +164,32 @@ export async function runOutcomeChecker(): Promise<void> {
       continue;
     }
 
-    const published = status === "approved" && apiSignal ? isPublished(apiSignal) : false;
+    const published = briefIncludedFeed.has(signalId) || (status === "approved" && apiSignal ? isPublished(apiSignal) : false);
+    const success = status === "approved" && published;
+    const failureMode =
+      status === "approved" && !published
+        ? "not_in_brief"
+        : status === "rejected"
+          ? "rejected"
+          : status === "submitted"
+            ? "pending"
+            : null;
     const note =
       status === "approved"
         ? published
           ? "approved and published in compiled brief"
-          : "approved but not yet published in compiled brief"
+          : "approved but not published in In Brief — failed outcome for the real KPI"
         : status === "rejected"
           ? "rejected by editorial review"
           : "still in submitted queue";
+    const learningWhy =
+      status === "approved" && !published
+        ? "Approved, but no live evidence of In Brief yet. Review the winning same-day beat story and note whether this lost on breadth, framing, timing, or headline strength."
+        : status === "approved" && published
+          ? "Converted into In Brief. Study what made this stronger than same-day alternatives."
+          : status === "rejected"
+            ? "Rejected by editorial review. Use publisher feedback to identify the failure mode before filing a similar story again."
+            : "Still pending. Re-check live feeds before drawing conclusions.";
 
     const outcome: OutcomeRecord = {
       kind: "approval_outcome",
@@ -173,11 +198,29 @@ export async function runOutcomeChecker(): Promise<void> {
       candidateId: filed.candidateId,
       approved: status === "approved",
       published,
+      success,
+      failureMode,
       status,
-      note
+      note,
+      learningWhy
     };
 
     await writeOutcome(outcome);
+    if (filed.candidateId) {
+      await markCandidateOutcome(
+        filed.candidateId,
+        {
+          status,
+          approved: status === "approved",
+          publishedInBrief: published,
+          success,
+          failureMode,
+          recordedAt: now,
+          note,
+          learningWhy
+        }
+      );
+    }
     process.stdout.write(`[checker] ${signalId} — ${status}${published ? " + published" : ""}\n`);
     newOutcomes += 1;
 

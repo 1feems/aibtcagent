@@ -1,5 +1,6 @@
 import type {
   ArticlePreview,
+  CandidateMetadata,
   EditorialReview,
   EditorialRoleReview,
   OutcomeTracking,
@@ -284,6 +285,16 @@ export function buildDefaultOutcomeTracking(): OutcomeTracking {
   };
 }
 
+export function buildDefaultCandidateMetadata(): CandidateMetadata {
+  return {
+    styleTested: "",
+    competitorReference: null,
+    whyThisStyleWasChosen: "",
+    duplicateStatus: "clear",
+    freshnessStatus: "unknown"
+  };
+}
+
 export function buildSubmissionPayload(
   subject: ValidationSubject,
   validation: ValidationResult,
@@ -310,6 +321,7 @@ export function buildSubmissionPayload(
     submissionDecision,
     editorialReview,
     articlePreview,
+    candidateMetadata: buildDefaultCandidateMetadata(),
     outcomeTracking: buildDefaultOutcomeTracking(),
     generatedAt
   };
