@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runOutcomeChecker } from "../outcomes/index.js";
+import { runOutcomeChecker, runRewardSync } from "../outcomes/index.js";
 import { generateAndSaveDailyOptimizationSnapshot } from "./optimization.js";
 import { generateAndSaveDailyReport } from "../reporting/index.js";
 import { buildLivePreSubmission } from "../sources/index.js";
@@ -49,13 +49,37 @@ export async function runDailyLearn(argv: string[] = process.argv.slice(2)): Pro
   await runOutcomeChecker();
   process.stdout.write("[daily-learn] outcome check complete\n");
 
+  const btcAddress = process.env.AIBTC_BITCOIN_ADDRESS ?? "";
+  if (btcAddress) {
+    try {
+      const rewardSync = await runRewardSync(btcAddress, config.generatedAt);
+      process.stdout.write(
+        `[daily-learn] reward sync complete — total sats received ${rewardSync.satsReceived}, delta ${rewardSync.satsDelta}\n`
+      );
+      if (rewardSync.leaderboardMovement) {
+        process.stdout.write(`[daily-learn] leaderboard movement: ${rewardSync.leaderboardMovement}\n`);
+      }
+      if (rewardSync.newAchievements.length > 0) {
+        process.stdout.write(
+          `[daily-learn] new achievements: ${rewardSync.newAchievements.join(", ")}\n`
+        );
+      }
+    } catch (error) {
+      process.stderr.write(`[daily-learn] reward sync skipped: ${(error as Error).message}\n`);
+    }
+  } else {
+    process.stdout.write(
+      "[daily-learn] AIBTC_BITCOIN_ADDRESS not set — skipping reward sync and leaderboard tracking.\n"
+    );
+  }
+
   const trainingMemory = await loadTrainingMemory();
   process.stdout.write(
     `[daily-learn] training memory loaded — ${trainingMemory.winningTags.length} winning tags, ${trainingMemory.rejectionTags.length} rejection tags\n`
   );
 
   if (config.refreshPreSubmission) {
-    const preSubmissionPath = await buildLivePreSubmission(config.generatedAt);
+    const preSubmissionPath = await buildLivePreSubmission(config.generatedAt, config.reportDate);
     process.stdout.write(`[daily-learn] pre-submission memory refreshed at ${preSubmissionPath}\n`);
   }
 

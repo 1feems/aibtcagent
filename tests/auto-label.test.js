@@ -13,12 +13,14 @@ test("auto-labeler appends resolved outcomes into training memory", { concurrenc
   try {
     await mkdir("data/outcomes/approvals", { recursive: true });
     await mkdir("data/logs/accepted", { recursive: true });
+    await mkdir("data/state", { recursive: true });
 
     await writeFile(
       "data/outcomes/approvals/example.json",
       JSON.stringify({
         kind: "approval_outcome",
         recordedAt: "2026-03-28T12:00:00Z",
+        signalId: "sig-1",
         candidateId: "example-candidate",
         approved: true,
         published: true,
@@ -43,11 +45,29 @@ test("auto-labeler appends resolved outcomes into training memory", { concurrenc
       "utf8"
     );
 
+    await writeFile(
+      "data/state/brief-winners-2026-03-28.json",
+      JSON.stringify({
+        kind: "brief_winner_snapshot",
+        reportDate: "2026-03-28",
+        generatedAt: "2026-03-28T12:00:00Z",
+        occupiedBeats: ["infrastructure"],
+        repeatWinners: [],
+        winners: [],
+        publishedSignals: [],
+        approvedNotInBrief: []
+      }),
+      "utf8"
+    );
+
     const result = await autoLabelResolvedOutcomes();
     assert.equal(result.labeledCount, 1);
 
     const labeled = await readFile("data/training/in-brief.jsonl", "utf8");
-    assert.match(labeled, /Example candidate wins the brief/);
+    const entry = JSON.parse(labeled.trim());
+    assert.match(entry.headline, /Example candidate wins the brief/);
+    assert.equal(entry.brief_competition.same_day_competition_known, true);
+    assert.match(entry.reason_tags.join(","), /brief_slot_winner/);
 
     const state = JSON.parse(await readFile("data/state/auto-labeled-outcomes.json", "utf8"));
     assert.deepEqual(state.labeledCandidateIds, ["example-candidate"]);

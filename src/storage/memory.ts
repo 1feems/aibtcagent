@@ -89,6 +89,7 @@ export async function logApprovalOutcome(
     published?: boolean;
     signalId?: string | null;
     status?: "approved" | "rejected" | "submitted" | "unknown";
+    learningWhy?: string | null;
   } = {}
 ): Promise<void> {
   const record: ApprovalOutcomeRecord = {
@@ -99,7 +100,8 @@ export async function logApprovalOutcome(
     published: options.published,
     signalId: options.signalId ?? null,
     status: options.status,
-    note
+    note,
+    learningWhy: options.learningWhy ?? null
   };
 
   const filePath = `data/outcomes/approvals/${sanitizeId(candidateId)}.json`;
