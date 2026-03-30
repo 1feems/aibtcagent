@@ -6,6 +6,50 @@ Private working repository for an AIBTC onchain signal agent focused on:
 - one-line newsroom submissions
 - leaderboard, reward, and reputation optimization
 
+## Repo Intent
+This repository is meant to run as an agent, not as a one-off research notebook.
+
+The expectation for any new chat or coding agent is:
+
+- read the repo and continue from repo state
+- follow the stored daily workflow without needing the user to restate it
+- use saved memory, outcomes, brief history, and strategy files as the source of truth
+- update the repo so the next agent can continue without losing context
+
+The user should not have to repeatedly explain:
+
+- what the goal is
+- where the runtime code lives
+- what Step 0 means
+- what kind of stories win
+- which candidates were already under consideration
+
+If something important is learned in a session, write it back into the repo.
+
+## Runtime Map
+If you need to understand where the agent actually runs, start here:
+
+- [`AIBTC-AGENTS.md`](./AIBTC-AGENTS.md) — shortest code map for LLMs jumping into the repo
+- [`src/agent/run-daily.ts`](./src/agent/run-daily.ts) — top-level daily agent entrypoint
+- [`src/loop/fetch-and-run.ts`](./src/loop/fetch-and-run.ts) — fetch + dry-run candidate loop
+- [`src/outcomes/checker.ts`](./src/outcomes/checker.ts) — live outcome checker
+- [`src/intelligence/strategy-memory.ts`](./src/intelligence/strategy-memory.ts) — strategy and memory loader
+- [`src/scoring/candidate-queue.ts`](./src/scoring/candidate-queue.ts) — candidate ranking
+- [`.github/workflows/agent-daily.yml`](./.github/workflows/agent-daily.yml) — scheduled autonomous run
+
+If you are a new agent session, do not ask where the code is before checking these files.
+
+## Startup Preflight
+Before running anything, confirm all of these are true:
+
+- you are inside the `aibtcagent` repo, not another workspace project
+- `README.md` is the first runbook you opened for this session
+- [`AIBTC-AGENTS.md`](./AIBTC-AGENTS.md) and [`memory.md`](./memory.md) were checked before using prior chat memory
+- you are using repo state, saved artifacts, and current workflow files as source of truth
+- you are not pulling context from `Kizuna`, `MkondoMe`, `Synthesis`, or any other repo unless the user explicitly switched projects
+
+If any of those are false, stop and reset context before running `agent-daily`, approving filings, or editing strategy files.
+
 ## Start Here Every Day
 The first thing to open is:
 
@@ -26,8 +70,19 @@ Before picking new candidates, always ask:
 
 - what actually made `In Brief`
 - which approved signals did not make `In Brief`
+- whether any of our own recent approved signals moved from `approved` to `published`
 - whether a stronger same-beat story has already taken the slot
 - which agents are winning repeatedly, especially if they land multiple `In Brief` slots in one cycle
+
+Step 0 is not complete until recent filed signals are updated to one of:
+
+- `published` / made `In Brief`
+- `approved_not_in_brief`
+- `pending`
+- `rejected`
+- `duplicate_loss`
+
+Do this before sourcing anything new.
 
 Daily report files that support Step 0:
 
@@ -59,6 +114,12 @@ Use these commands in order:
    - fetches live candidates
    - runs dry-run evaluation
    - saves submission-ready artifacts for the strongest candidates
+
+Runtime preflight before either command:
+
+1. confirm the active repo is `aibtcagent`
+2. start from this README, not a prior chat summary
+3. only then run `npm run daily-learn`, `npm run fetch-and-run`, or `npm run agent-daily`
 
 If you only run one command in the morning, run `npm run daily-learn`.
 
@@ -104,6 +165,18 @@ What runs on that schedule:
 6. ranked queue generation
 7. filing-queue generation
 8. commit back updated agent memory and artifacts
+
+GitHub runtime boundary:
+
+- the scheduled automation path is GitHub Actions, not Claude
+- Claude or any local coding agent can edit this repo, but the autonomous daily run is defined by [`.github/workflows/agent-daily.yml`](./.github/workflows/agent-daily.yml)
+- if you want to verify the real runtime, check workflow runs, committed artifacts, and `data/state/agent-runtime.json`
+
+Proof of scheduled GitHub execution accumulates in:
+
+- `data/state/agent-runtime.json`
+- `data/reports/operator/<date>.json`
+- `data/reports/stability/<date>.json`
 
 The older `fetch-and-run` and `check-outcomes` workflows are still available as manual tools, but they are no longer the scheduled path.
 
@@ -187,6 +260,11 @@ Rules:
 - the public agent page alone is not proof of approval
 - do not guess from tone, absence, or model confidence
 - if no live evidence exists, do not write `approved`
+
+Daily Step 0 rule:
+- before filing any new signal, review recent filed signals and update whether they are `published`, `approved_not_in_brief`, `pending`, `rejected`, or `duplicate_loss`
+- treat `published` / `In Brief` outcome as more important than `approved`
+- if a recent signal made `In Brief`, study why before sourcing today's next candidate
 
 ## New Session Prompt
 When starting a fresh chat window, point the agent here and use this prompt:

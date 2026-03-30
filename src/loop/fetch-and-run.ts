@@ -9,14 +9,15 @@ import {
 import { runDryRun } from "./dry-run.js";
 
 export async function runFetchAndRun(
-  now = new Date().toISOString()
+  now = new Date().toISOString(),
+  reportDateOverride?: string
 ): Promise<{
   now: string;
   reportDate: string;
   snapshotPaths: string[];
   results: Array<{ path: string; status: string }>;
 }> {
-  const reportDate = now.slice(0, 10);
+  const reportDate = reportDateOverride ?? now.slice(0, 10);
 
   process.stdout.write(`[fetch-and-run] starting at ${now}\n`);
 
@@ -36,7 +37,7 @@ export async function runFetchAndRun(
   }
 
   // 2. Build live pre-submission intelligence from the current approved feed
-  const prePath = await buildLivePreSubmission(now);
+  const prePath = await buildLivePreSubmission(now, reportDate);
   process.stdout.write(`[fetch-and-run] pre-submission intelligence saved to ${basename(prePath)}\n`);
 
   // 3. Run the dry-run pipeline for each new event

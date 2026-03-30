@@ -1,0 +1,20 @@
+{
+  "kind": "operator_profile",
+  "operatorBtcAddress": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+  "publishableBeatSlugs": [
+    "dev-tools"
+  ],
+  "beatMappings": {
+    "protocol-updates": "dev-tools",
+    "infrastructure": "dev-tools",
+    "dev-tools": "dev-tools",
+    "security": "security",
+    "deal-flow": "deal-flow",
+    "agent-skills": "agent-skills",
+    "agent-economy": "agent-economy",
+    "agent-social": "agent-social",
+    "agent-trading": "agent-trading",
+    "governance": "governance",
+    "onboarding": "onboarding"
+  }
+}

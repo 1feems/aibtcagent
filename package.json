@@ -13,6 +13,10 @@
     "daily-learn": "npm run build && node dist/loop/daily-learn.js",
     "agent-daily": "npm run build && node dist/agent/run-daily.js",
     "approve-filing": "npm run build && node dist/filing/approve.js",
+    "record-filed": "npm run build && node dist/filing/record-filed.js",
+    "signing-preflight": "npm run build && node dist/filing/preflight.js",
+    "filing-helper": "npm run build && node dist/filing/helper-server.js",
+    "stability-report": "npm run build && node dist/ops/daily-stability.js",
     "fetch-and-run": "npm run build && node dist/loop/fetch-and-run.js",
     "heartbeat-reminder": "npm run build && node dist/ops/heartbeat-reminder.js"
   },

@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { upsertCandidateHistoryFromReadyArtifact } from "./candidate-history.js";
 import { readFilingQueue, saveFilingQueue, type FilingQueueSnapshot } from "./queue.js";
 
 interface ApproveConfig {
@@ -93,6 +94,12 @@ export async function applyHumanDecision(
     throw new Error(`Candidate ${config.candidateId} not found in filing queue for ${config.reportDate}`);
   }
 
+  if (config.decision === "approve" && item.queueStatus !== "awaiting_human_approval") {
+    throw new Error(
+      `Candidate ${config.candidateId} is not signable in the filing queue (current status: ${item.queueStatus})`
+    );
+  }
+
   let readyArtifactPath: string | null = null;
 
   if (config.decision === "approve") {
@@ -104,6 +111,7 @@ export async function applyHumanDecision(
       config.reviewedBy,
       baseDir
     );
+    await upsertCandidateHistoryFromReadyArtifact(readyArtifactPath, baseDir);
   } else {
     item.queueStatus = "rejected";
   }
