@@ -13,10 +13,10 @@ It uses the Xverse Sats Connect methods documented at:
 ## How to use it
 
 1. Open a terminal in the repo root.
-2. Start a simple local web server:
+2. Start the local helper server from the repo root:
 
 ```bash
-python3 -m http.server 4173
+npm run filing-helper
 ```
 
 3. In the same Chrome profile where Xverse is installed, open:
@@ -51,7 +51,15 @@ Then click:
 - `Sign Heartbeat`
 - `Submit Heartbeat`
 
-If the browser POST fails, copy the fallback curl command shown on the page and run it in a new terminal tab.
+If the browser POST succeeds while served from `npm run filing-helper`, the helper will also persist the filing receipt into repo state automatically.
+
+If local persistence fails, run the fallback command shown on the page:
+
+```bash
+npm run record-filed -- --date YYYY-MM-DD --candidate <candidate-id> --signal-id <signal-id>
+```
+
+If the browser POST itself fails, copy the fallback curl command shown on the page and run it in a new terminal tab.
 
 If terminal quoting is annoying again, paste the heartbeat signature into:
 
@@ -91,6 +99,7 @@ The helper signs only the timestamp header with BIP-322 inside Xverse and sends 
 
 ## Safety expectations
 
+- these helper pages are the operator-signing boundary for the runtime; the agent may prepare artifacts, but wallet-required actions stay human-signed
 - this should trigger message-signing prompts only
 - if Xverse shows a BTC send, STX send, PSBT, fee, inputs, or outputs, cancel it
 - verify the connected BTC and STX addresses match the intended wallet before signing

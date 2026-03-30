@@ -211,6 +211,7 @@
           <input id="message" spellcheck="false" />
 
           <label for="payloadJson">Signal payload JSON</label>
+          <div id="artifactBanner" class="status small" style="display:none;margin-top:0;margin-bottom:10px"></div>
           <div style="margin-bottom:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <label for="dryRunFile" style="margin:0;font-weight:normal;cursor:pointer">
               <span style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e8efe8;color:var(--accent);font-weight:700;font-size:0.93rem;border:1px dashed var(--border)">
@@ -270,9 +271,16 @@
       const signatureDump = document.getElementById("signatureDump");
       const curlDump = document.getElementById("curlDump");
       const responseDump = document.getElementById("responseDump");
+      const filedEntryDump = document.getElementById("filedEntryDump");
+      const filedEntryLabel = document.getElementById("filedEntryLabel");
+      const artifactBanner = document.getElementById("artifactBanner");
 
       // mode: "beat" | "signal"
       let currentMode = "beat";
+      let loadedArtifactMeta = {
+        candidateId: null,
+        reportDate: null
+      };
 
       const beatClaimPayload = {
         slug: "dev-tools",
@@ -280,37 +288,19 @@
         created_by: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv"
       };
 
-      const defaultPayload = {
-        beat_slug: "infrastructure",
+      const emptySignalPayload = {
+        beat_slug: "",
         btc_address: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
-        headline:
-          "x402 relay ships v1.24.0 + v1.25.0 same evening — bad payloads rejected early, gap txs queued before burning nonces",
-        body:
-          "x402-sponsor-relay shipped two hardening releases on March 27. v1.24.0 (20:21Z, PR #247): O(1) malformed payload rejection (MALFORMED_PAYLOAD error before deserialization), IP rate-limiting (3+ malformed payloads → 429), dispatch queue with flush-and-replay that rescues stuck sponsor nonce slots via self-transfers, and new GET /queue/:senderAddress + DELETE endpoints (SIP-018 auth) so agents can see and cancel queued txs. v1.25.0 (22:03Z, PR #248): per-sender hand queuing — out-of-order txs held until gapless nonce runs form. Key invariant: gap txs never consume sponsor nonce slots. POST /sponsor returns 400+SENDER_NONCE_GAP; POST /relay returns 202+QueueInfo. Held txs expire in 5 min with actionable feedback. Together: bad payloads are stopped before touching the pool, stuck slots recover automatically, and out-of-order txs are queued not burned. Proof: release tags x402-sponsor-relay-v1.24.0 and v1.25.0, March 27. Commits e9ba970+7248f2b (v1.24.0), 7eceab2 (v1.25.0).",
-        sources: [
-          {
-            url: "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.25.0",
-            title: "x402-sponsor-relay v1.25.0 release"
-          },
-          {
-            url: "https://github.com/aibtcdev/x402-sponsor-relay/releases/tag/x402-sponsor-relay-v1.24.0",
-            title: "x402-sponsor-relay v1.24.0 release"
-          },
-          {
-            url: "https://github.com/aibtcdev/x402-sponsor-relay/pull/248",
-            title: "PR #248: sequence-aware nonce dispatch (gin rummy model)"
-          },
-          {
-            url: "https://github.com/aibtcdev/x402-sponsor-relay/pull/247",
-            title: "PR #247: nonce pool hardening — malformed payload rejection, dispatch queue"
-          }
-        ],
-        tags: ["x402", "infrastructure", "protocol-updates", "nonce", "relay"],
-        disclosure: "claude-sonnet-4-6, aibtc MCP tools, GitHub release audit"
+        headline: "",
+        body: "",
+        sources: [],
+        tags: [],
+        disclosure: ""
       };
 
       const dryRunFileInput = document.getElementById("dryRunFile");
       const loadedFileName = document.getElementById("loadedFileName");
+      const params = new URLSearchParams(window.location.search);
 
       function mapDryRunToPayload(raw) {
         const beat = raw.candidate_signal?.beat ?? "";
@@ -353,16 +343,79 @@
         };
       }
 
+      function deriveLoadedArtifact(raw, fallbackName) {
+        if (raw?.kind === "filing_ready_submission") {
+          loadedArtifactMeta = {
+            candidateId: raw.candidateId ?? null,
+            reportDate: raw.reportDate ?? null
+          };
+          return mapDryRunToPayload(raw.submission ?? {});
+        }
+
+        loadedArtifactMeta = {
+          candidateId:
+            raw?.candidate_signal?.candidate_id ??
+            fallbackName?.replace(/-submission\.json$/, "") ??
+            null,
+          reportDate: null
+        };
+        return mapDryRunToPayload(raw);
+      }
+
+      function updateArtifactBanner(payload) {
+        if (currentMode !== "signal") {
+          artifactBanner.style.display = "none";
+          artifactBanner.textContent = "";
+          return;
+        }
+
+        const headline = payload?.headline?.trim() || "No headline loaded";
+        const beat = payload?.beat_slug?.trim() || "unknown-beat";
+        const candidate = loadedArtifactMeta.candidateId || "manual payload";
+        const reportDate = loadedArtifactMeta.reportDate || "manual";
+
+        artifactBanner.style.display = "block";
+        artifactBanner.textContent =
+          `Active signal: ${candidate} | date: ${reportDate} | beat: ${beat} | headline: ${headline}`;
+      }
+
+      async function loadArtifactFromQuery() {
+        const reportDate = params.get("date");
+        const candidateId = params.get("candidate");
+
+        if (!reportDate || !candidateId) {
+          return false;
+        }
+
+        setStatus(`Loading filing-ready artifact for ${candidateId}...`);
+
+        const response = await fetch(
+          `/api/local/filing-ready?date=${encodeURIComponent(reportDate)}&candidate=${encodeURIComponent(candidateId)}`
+        );
+        const body = await response.json().catch(() => ({ error: "Non-JSON response" }));
+
+        if (!response.ok) {
+          throw new Error(body?.error || `Could not load filing-ready artifact for ${candidateId}.`);
+        }
+
+        const payload = deriveLoadedArtifact(body.artifact ?? {}, `${candidateId}.json`);
+        payloadJsonInput.value = pretty(payload);
+        loadedFileName.textContent = `${candidateId}.json`;
+        updateArtifactBanner(payload);
+        return true;
+      }
+
       dryRunFileInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
         try {
           const text = await file.text();
           const raw = JSON.parse(text);
-          const payload = mapDryRunToPayload(raw);
+          const payload = deriveLoadedArtifact(raw, file.name);
           payloadJsonInput.value = pretty(payload);
           loadedFileName.textContent = file.name;
           applyMode("signal");
+          updateArtifactBanner(payload);
           setStatus(`Loaded ${file.name}. Review the payload, then sign.`);
         } catch (err) {
           setStatus(`Could not parse ${file?.name}: ${err.message}`, true);
@@ -389,6 +442,25 @@
         return addresses.find((entry) => entry.purpose === purpose) || null;
       }
 
+      function withTimeout(promise, ms, label) {
+        let timeoutId;
+        const timeout = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(
+              new Error(
+                `${label} timed out after ${Math.round(ms / 1000)}s. Xverse may be locked, not available in this Chrome profile, or not responding on this localhost page.`
+              )
+            );
+          }, ms);
+        });
+
+        return Promise.race([promise, timeout]).finally(() => {
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+          }
+        });
+      }
+
       function refreshTimestamp() {
         const timestamp = String(Math.floor(Date.now() / 1000));
         const path = currentMode === "beat" ? "/api/beats" : "/api/signals";
@@ -399,6 +471,9 @@
         signatureDump.textContent = "No signature yet.";
         curlDump.textContent = "No curl command yet.";
         responseDump.textContent = "No response yet.";
+        filedEntryDump.textContent = "";
+        filedEntryDump.style.display = "none";
+        filedEntryLabel.style.display = "none";
         if (connected) {
           signBtn.disabled = false;
         }
@@ -413,12 +488,16 @@
           modeLabel.textContent = "▶ Step 1 of 2 — Claim the dev-tools beat";
           modeBeatBtn.className = "secondary";
           modeSignalBtn.className = "ghost";
+          artifactBanner.style.display = "none";
         } else {
           apiUrlInput.value = "https://aibtc.news/api/signals";
-          payloadJsonInput.value = pretty(defaultPayload);
+          loadedArtifactMeta = { candidateId: null, reportDate: null };
+          loadedFileName.textContent = "No file loaded";
+          payloadJsonInput.value = pretty(emptySignalPayload);
           modeLabel.textContent = "▶ Step 2 of 2 — File the signal";
           modeBeatBtn.className = "ghost";
           modeSignalBtn.className = "secondary";
+          updateArtifactBanner(emptySignalPayload);
         }
         refreshTimestamp();
       }
@@ -441,19 +520,50 @@
         } else {
           payload.created_by = btcAddressInput.value.trim();
         }
+        if (currentMode === "signal" && !payload.headline?.trim()) {
+          throw new Error("Load a filing-ready artifact or paste a real signal payload before signing.");
+        }
         return payload;
       }
 
       applyMode("beat");
 
+      (async () => {
+        try {
+          const loadedFromQuery = await loadArtifactFromQuery();
+          if (loadedFromQuery) {
+            currentMode = "signal";
+            apiUrlInput.value = "https://aibtc.news/api/signals";
+            modeLabel.textContent = "▶ Step 2 of 2 — File the signal";
+            modeBeatBtn.className = "ghost";
+            modeSignalBtn.className = "secondary";
+            refreshTimestamp();
+            updateArtifactBanner(parsePayload());
+            setStatus("Loaded the filing-ready artifact from the repo. Review it, then sign.");
+            return;
+          }
+
+          if (params.get("mode") === "signal") {
+            applyMode("signal");
+          }
+        } catch (error) {
+          applyMode("signal");
+          setStatus(error.message || "Could not load filing-ready artifact from query params.", true);
+        }
+      })();
+
       connectBtn.addEventListener("click", async () => {
         setStatus("Requesting Xverse connection...");
         try {
-          const response = await request("wallet_connect", {
-            addresses: ["payment"],
-            message: "Connect this local helper to sign and submit an AIBTC news signal.",
-            network: "Mainnet"
-          });
+          const response = await withTimeout(
+            request("wallet_connect", {
+              addresses: ["payment"],
+              message: "Connect this local helper to sign and submit an AIBTC news signal.",
+              network: "Mainnet"
+            }),
+            20000,
+            "Xverse connection"
+          );
 
           if (response.status !== "success") {
             throw new Error(response.error?.message || "Xverse connection failed.");
@@ -511,11 +621,15 @@
         setStatus("Requesting BTC filing signature from Xverse...");
 
         try {
-          const response = await request("signMessage", {
-            address: btcAddress,
-            message,
-            protocol: "BIP322"
-          });
+          const response = await withTimeout(
+            request("signMessage", {
+              address: btcAddress,
+              message,
+              protocol: "BIP322"
+            }),
+            120000,
+            "BTC filing signature"
+          );
 
           if (response.status !== "success") {
             throw new Error(response.error?.message || "Filing signature failed.");
@@ -598,20 +712,68 @@
           if (returnedSignalId) {
             const entry = {
               signalId: returnedSignalId,
-              candidateId: loadedFileName.textContent?.replace(/-submission\.json$/, "") ?? null,
+              candidateId: loadedArtifactMeta.candidateId ?? loadedFileName.textContent?.replace(/-submission\.json$/, "") ?? null,
               headline: rawPayload?.headline ?? null,
               beat: rawPayload?.beat_slug ?? null,
               filedAt: new Date().toISOString(),
               resolved: false
             };
-            const filedEntryDump = document.getElementById("filedEntryDump");
-            const filedEntryLabel = document.getElementById("filedEntryLabel");
             filedEntryDump.textContent = JSON.stringify(entry, null, 2);
             filedEntryDump.style.display = "block";
             filedEntryLabel.style.display = "block";
-          }
 
-          setStatus("Signal submitted. Copy the entry above and add it to data/state/filed-signals.json → filedSignals array.");
+            if (entry.candidateId) {
+              const localPayload = {
+                reportDate: loadedArtifactMeta.reportDate,
+                candidateId: entry.candidateId,
+                signalId: entry.signalId,
+                filedAt: entry.filedAt,
+                headline: entry.headline,
+                beat: entry.beat,
+                apiResponse: body
+              };
+
+              try {
+                const persistResponse = await fetch("/api/local/filed-signal", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify(localPayload)
+                });
+                const persistBody = await persistResponse.json().catch(() => ({ raw: "Non-JSON response" }));
+                if (!persistResponse.ok) {
+                  throw new Error(persistBody?.error || "Local filing-state persistence failed.");
+                }
+
+                filedEntryDump.textContent = JSON.stringify(persistBody.receipt ?? persistBody, null, 2);
+                setStatus("Signal submitted and repo filing state persisted automatically.");
+              } catch (persistError) {
+                const fallbackCommand =
+                  "npm run record-filed -- --candidate " +
+                  entry.candidateId +
+                  " --signal-id " +
+                  entry.signalId +
+                  (loadedArtifactMeta.reportDate ? " --date " + loadedArtifactMeta.reportDate : "");
+
+                filedEntryDump.textContent = JSON.stringify(
+                  {
+                    entry,
+                    persistenceError: persistError.message || "Local filing-state persistence failed.",
+                    fallbackCommand
+                  },
+                  null,
+                  2
+                );
+                setStatus("Signal submitted, but local repo persistence needs the fallback command shown below.", true);
+              }
+            } else {
+              setStatus("Signal submitted. Candidate ID was unavailable, so local repo persistence was skipped.", true);
+            }
+          }
+          else {
+            setStatus("Signal submitted, but no signal ID was returned by the API response.", true);
+          }
         } catch (error) {
           responseDump.textContent = pretty({
             error: error.message || "Could not submit the signal in the browser.",

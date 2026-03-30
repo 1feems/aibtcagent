@@ -187,6 +187,25 @@
         return addresses.find((entry) => entry.purpose === purpose) || null;
       }
 
+      function withTimeout(promise, ms, label) {
+        let timeoutId;
+        const timeout = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(
+              new Error(
+                `${label} timed out after ${Math.round(ms / 1000)}s. Xverse may be locked, not available in this Chrome profile, or not responding on this localhost page.`
+              )
+            );
+          }, ms);
+        });
+
+        return Promise.race([promise, timeout]).finally(() => {
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+          }
+        });
+      }
+
       function prepareHeartbeat() {
         const timestamp = new Date().toISOString();
         timestampInput.value = timestamp;
@@ -207,11 +226,15 @@
       connectBtn.addEventListener("click", async () => {
         setStatus("Requesting Xverse connection...");
         try {
-          const response = await request("wallet_connect", {
-            addresses: ["payment"],
-            message: "Connect this local helper to request an AIBTC heartbeat signature.",
-            network: "Mainnet"
-          });
+          const response = await withTimeout(
+            request("wallet_connect", {
+              addresses: ["payment"],
+              message: "Connect this local helper to request an AIBTC heartbeat signature.",
+              network: "Mainnet"
+            }),
+            20000,
+            "Xverse connection"
+          );
           if (response.status !== "success") {
             throw new Error(response.error?.message || "Xverse connection failed.");
           }
@@ -253,11 +276,15 @@
         setStatus("Requesting BTC heartbeat signature from Xverse...");
 
         try {
-          const response = await request("signMessage", {
-            address: btcAddress,
-            message,
-            protocol: "BIP322"
-          });
+          const response = await withTimeout(
+            request("signMessage", {
+              address: btcAddress,
+              message,
+              protocol: "BIP322"
+            }),
+            120000,
+            "BTC heartbeat signature"
+          );
 
           if (response.status !== "success") {
             throw new Error(response.error?.message || "Heartbeat signing failed.");
