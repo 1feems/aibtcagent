@@ -3,9 +3,51 @@
 ## Purpose
 This checklist is the working build plan for development.
 
+It is not just a feature inventory.
+It is the ordered build contract for preventing drift, late-discovery failures, and patch-on-patch fixes.
+
 Mark items complete only after implementation and testing both pass.
 
+## Current Objective
+Build an agent that only surfaces candidates that are:
+- publishable by the current operator identity
+- competitive enough to win `In Brief`
+- fresh for the current report date
+
+Primary KPI:
+- `In Brief` wins
+- sats actually realized
+
+Not sufficient:
+- approval-only outcomes
+- technically valid submission artifacts
+- filing-ready candidates that are not actually competitive or publishable
+
+## Recent Repairs Already Completed
+These came from real failures and should stay visible here so they do not get rediscovered in chat.
+
+- [x] Add repo-boundary anti-drift docs so `aibtcagent` does not pull in `Kizuna`, `MkondoMe`, or `Synthesis` context by default
+- [x] Add daily scoreboard fields for `In Brief` wins, approved-but-not-briefed, wallet sats realized, days since last brief, and days since last payout
+- [x] Block raw release-note stories without operator consequence from ranking as `file`
+- [x] Prune stale prior-day dry-run candidates before current-day ranking
+- [x] Prevent `hold` candidates from entering `awaiting_human_approval`
+- [x] Make operator summary fail closed when there are zero signable candidates
+- [x] Add competitor coverage to ranked candidates and filing queue items
+
+## Current Build Order
+Build in this order.
+Do not skip ahead to filing UX or optimization tweaks if an earlier gate is still weak.
+
+1. Project guardrails
+2. Publishability preflight
+3. Editorial competitiveness contract
+4. Freshness and queue hygiene
+5. Outcome-driven scoring and learning
+6. Operator flow and signable queue discipline
+7. Regression tests from real failures
+
 ## Phase 0: Documentation Lock
+- [x] Add project-boundary startup rule: when working in `aibtcagent`, do not import `Kizuna`, `MkondoMe`, `Synthesis`, or other repo context unless the user explicitly switches projects
 - [x] Concept note completed
 - [x] PRD completed
 - [x] JSON schema completed
@@ -17,6 +59,12 @@ Mark items complete only after implementation and testing both pass.
 - [x] Learning loop completed
 - [x] Outcome schema completed
 - [x] Testing plan completed
+
+## Phase 0b: Guardrails And Startup Discipline
+- [x] Add `memory.md` as repo-local running memory for `aibtcagent`
+- [x] Add anti-drift startup rule to `AGENTS.md`, `AIBTC-AGENTS.md`, and `docs/in-brief-success-checklist.md`
+- [ ] Make the startup guard visible in `README.md`
+- [ ] Make future runbooks fail closed if active repo is not confirmed first
 
 ## Phase 1: Repo and Runtime Scaffold
 - [x] Create source folder structure
@@ -210,6 +258,62 @@ These are the remaining steps to make the agent fully live. Do these in order.
 - [x] Confirm the pipeline rejects weak ones (changelog dumps, dashboard-only releases)
 - [x] Tune `significance` and `causalTrigger` extraction in `src/sources/github-fetcher.ts` if needed
 - [x] Add more repos to `data/config/monitored-repos.json` as new beats are prioritised
+
+## Phase 17: Publishability Preflight
+Goal:
+  Fail early if the current operator cannot actually publish the story.
+- [x] Add a single `publishability preflight` module before filing-ready generation
+- [x] Verify beat permission for the current operator identity before a candidate becomes signable
+- [x] Verify the current wallet identity matches the intended filing identity
+- [x] Persist `publishable_by_current_operator` status on candidates
+- [x] Persist exact publishability failure reasons on candidates and in the operator summary
+- [x] Prevent non-publishable candidates from entering filing-ready artifacts
+- [x] Add regression coverage for the `deal-flow` / designated publisher failure path
+
+## Phase 18: Editorial Competitiveness Contract
+Goal:
+  Separate technically valid stories from stories that can realistically win a brief slot.
+- [x] Add a single editorial contract module for `competitive_for_brief`
+- [x] Require human-news headline shape before any candidate can rank as `file`
+- [x] Require operator consequence or system consequence framing before any candidate can rank as `file`
+- [x] Block narrow raw artifact or release-note packaging unless the broader consequence story is present
+- [x] Make `valid but not competitive` an explicit candidate state in queue output and reporting
+- [x] Add regression fixtures where generic release notes lose to stronger consequence-led stories
+
+## Phase 19: Freshness And Queue Hygiene
+Goal:
+  Keep the queue limited to stories that are live, current, and worth operator attention today.
+- [x] Auto-prune prior-day dry-run submissions before ranking
+- [x] Add an explicit stale-candidate cleanup step before queue generation
+- [x] Persist why a candidate was removed for staleness
+- [x] Stop stale candidates from appearing in operator-facing recommendation summaries entirely
+- [x] Add verification that current-day filing queues only contain current-day signable candidates
+
+## Phase 20: Outcome-Driven Scoring
+Goal:
+  Optimize for real wins and payouts instead of approval-ready cleanliness.
+- [x] Reduce or remove score bonuses that let generic approval-ready stories overpower non-competitive editorial shape
+- [x] Gate `unique pick advantage` so it only applies after a candidate already clears the stronger competitive bar
+- [x] Learn from actual `In Brief` winners and wallet payouts, not just resolved API approvals
+- [x] Show why top competitors won the slot in a form the scorer can directly use
+- [x] Add tests proving crowded but important differentiated stories can outrank lonely weak ones
+
+## Phase 21: Operator Flow Discipline
+Goal:
+  Never ask for manual signing unless the candidate is truly signable.
+- [ ] Show three operator-facing failure classes everywhere: `not publishable`, `not competitive`, `stale`
+- [ ] Ensure the operator summary only emits approve/sign instructions for candidates that pass all hard gates
+- [ ] Add helper diagnostics for wallet/provider detection before connect
+- [ ] Validate payload integrity before signing begins
+- [ ] Add an explicit pre-sign checklist to the manual filing helper
+
+## Phase 22: Regression Discipline
+Goal:
+  Every painful failure becomes a permanent test or checklist item.
+- [ ] Add a regression test for wallet/provider late-discovery failure handling
+- [ ] Add a regression test for helper payload truncation or wiped-payload behavior
+- [ ] Add a regression test for operator summary suggesting approval with zero signable candidates
+- [ ] Add a checklist rule: no live fix is complete until the failure has a persistent test or documented guardrail
 
 ## Rule
 - [x] Do not start the next incomplete phase before the current one is implemented and tested

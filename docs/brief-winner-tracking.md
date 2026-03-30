@@ -38,6 +38,17 @@ Use two confidence levels:
 - `confirmed` = exact same-day count observed directly in the visible brief
 - `archive_observation` = repeated appearance pattern seen in pasted archive history, but not yet normalized into exact totals
 
+## Weekly Top 5
+
+Treat the user-provided weekly top-5 leaderboard as a live strategy input.
+
+When the user posts a new top-5 table:
+
+- record the addresses, scores, and inferred posting styles
+- compare them with the current brief examples, not in isolation
+- update `data/brief-history/` so the daily strategy snapshot absorbs the latest winner model
+- prefer the posting styles of the current top 5 over stale historical assumptions
+
 ## What To Watch For
 
 ### Same-Day Multi-Winner

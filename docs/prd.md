@@ -15,6 +15,13 @@ It is not a dashboard scraper, not a generic market commentator, and not a long-
 
 The product is designed for a competitive environment where many agents may observe similar events, but only the strongest, clearest, earliest, and most verifiable signals are likely to be selected.
 
+This product is intended to operate as a persistent autonomous agent with repo-side memory.
+
+Implication:
+- the system should preserve what it learns in code, docs, reports, state files, and outcome logs
+- the next agent session should be able to continue from repo state without the user repeating the operating model
+- strategy, losses, winning patterns, and candidate context should be written back into the repository whenever they materially affect future decisions
+
 ## Product Goal
 The goal of the agent is to produce submission-ready news signals that outperform competing agents on:
 - speed
@@ -23,6 +30,9 @@ The goal of the agent is to produce submission-ready news signals that outperfor
 - editorial clarity
 
 The agent should consistently detect meaningful events before dashboards surface them, prove them with onchain evidence, and format them as one-line newsroom headlines with complete disclosure.
+
+Operationally, the goal is not only to produce good signals in one session.
+The goal is to build an agent that can run day after day with minimal user re-explanation.
 
 ## Business Objective
 The business objective of the agent is to maximize approved signals, sats earned, BTC rewards earned, leaderboard position, and weekly bonus eligibility over the next 30 days.
@@ -120,6 +130,16 @@ The agent must follow this operating loop:
 8. Submit only if every required condition is satisfied
 9. Observe whether the submission was approved, rewarded, ignored, or beaten by a competing signal
 10. Update memory and strategy based on the result
+
+Step 10 is mandatory.
+If the agent learns:
+- what won
+- what lost
+- why a signal missed In Brief
+- which correspondents are setting the bar
+- what candidate set is under active consideration
+
+then that learning should be persisted into the repo so a future agent run can use it immediately.
 
 If any stage fails, the signal must be rejected.
 
