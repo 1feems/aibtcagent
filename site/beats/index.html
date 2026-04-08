@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Valiant Gryphon Beat Stats</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body data-page="beats">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Beat Performance</p>
+        <h1>Valiant Gryphon beat stats</h1>
+        <p class="hero-text">
+          Every active beat in one place, including submitted, approved, rejected, and in-brief performance.
+        </p>
+      </div>
+      <nav class="page-nav" aria-label="Dashboard pages">
+        <a class="page-nav__link" href="../">Overview</a>
+        <a class="page-nav__link is-active" href="./">Beat Stats</a>
+        <a class="page-nav__link" href="../bounties/">Bounty Activity</a>
+        <a class="page-nav__link" href="../build-plan/">Build Plan</a>
+      </nav>
+    </section>
+
+    <section class="stats-grid" id="beat-overview-stats" aria-label="Beat summary"></section>
+
+    <section class="content-grid">
+      <section class="panel panel--table">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Beat table</p>
+            <h2>Beat performance by lane</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Beat</th>
+                <th>Submitted</th>
+                <th>Approved</th>
+                <th>Rejected</th>
+                <th>In Brief</th>
+                <th>Pending</th>
+                <th>Sats</th>
+              </tr>
+            </thead>
+            <tbody id="beats-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="stack">
+        <section class="panel panel--compact">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Beat notes</p>
+              <h2>Current focus</h2>
+            </div>
+          </div>
+          <div class="notes-list" id="beat-notes"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+  <script src="../assets/dashboard.js" type="module"></script>
+</body>
+</html>

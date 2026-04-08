@@ -1,0 +1,51 @@
+{
+  "name": "aibtcagent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test --test-concurrency=1 tests/*.test.js tests/editor/*.test.js",
+    "dry-run": "npm run build && node dist/loop/dry-run.js",
+    "paperboy": "npm run build && node dist/loop/paperboy-run.js",
+    "check-outcomes": "npm run build && node dist/outcomes/checker.js",
+    "daily-learn": "npm run build && node dist/loop/daily-learn.js",
+    "agent-daily": "npm run build && node dist/agent/run-daily.js",
+    "signal-loop": "npm run build && node dist/agent/run-signal-loop.js",
+    "approve-filing": "npm run build && node dist/filing/approve.js",
+    "record-filed": "npm run build && node dist/filing/record-filed.js",
+    "signing-preflight": "npm run build && node dist/filing/preflight.js",
+    "filing-helper": "npm run build && node dist/filing/helper-server.js",
+    "restart-filing-helper": "lsof -ti tcp:4173 | xargs kill -9 2>/dev/null; npm run filing-helper",
+    "stability-report": "npm run build && node dist/ops/daily-stability.js",
+    "refresh-memory": "npm run build && node dist/ops/refresh-memory.js",
+    "quantum-weekly": "npm run build && node dist/reporting/quantum-weekly.js",
+    "fetch-and-run": "npm run build && node dist/agent/run-daily.js",
+    "heartbeat-reminder": "npm run build && node dist/ops/heartbeat-reminder.js",
+    "daily-prep": "npm run build && node dist/prep/daily-prep.js",
+    "signal-job": "npm run signal-loop",
+    "register-repair-feedback": "npm run build && node dist/learning/register-repair-feedback.js",
+    "editor-fetch": "npm run build && node dist/editor/fetch-signals.js",
+    "editor-review": "npm run build && node dist/editor/review-engine.js",
+    "editor-loop": "npm run build && node dist/editor/run-editor-loop.js",
+    "editor-report": "npm run build && node dist/editor/beat-health-report.js",
+    "editor-spot-check": "npm run build && node dist/editor/spot-check-poller.js",
+    "test-editor": "npm run build && node --test --test-concurrency=1 tests/editor/*.test.js",
+    "export-dashboard": "npm run build && node dist/reporting/export-dashboard.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.0.1",
+    "@scure/bip32": "^2.0.1",
+    "@scure/bip39": "^2.0.1",
+    "@scure/btc-signer": "^2.0.1",
+    "@stacks/common": "^7.3.1",
+    "@stacks/network": "^7.3.1",
+    "@stacks/transactions": "^7.4.0",
+    "commander": "^14.0.3"
+  }
+}

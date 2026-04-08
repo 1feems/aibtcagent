@@ -1,0 +1,54 @@
+{
+  "kind": "daily_stability_report",
+  "reportDate": "2026-03-30",
+  "generatedAt": "2026-03-30T05:24:54.429Z",
+  "datesAnalyzed": [
+    "2026-03-29",
+    "2026-03-30"
+  ],
+  "evidence": {
+    "analyzedDays": 2,
+    "topPickDays": 2,
+    "minimumDaysRequiredForApprovalOnly": 5,
+    "minimumDaysRequiredForWalletSignOnly": 10
+  },
+  "scheduler": {
+    "recordedRuns": 2,
+    "consecutiveDailyRuns": 2,
+    "last7DayCoverage": 0.29
+  },
+  "totals": {
+    "filingQuality": 0,
+    "approvalRate": 0,
+    "publicationRate": 0,
+    "falsePositiveTopPickRate": 0,
+    "trainingDrift": 4.75
+  },
+  "breakdown": [
+    {
+      "reportDate": "2026-03-29",
+      "topCandidateId": "gamestop-btc-covered-call-deal-flow-2026-03-29",
+      "topDecision": "file",
+      "topScore": 88,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    },
+    {
+      "reportDate": "2026-03-30",
+      "topCandidateId": "aibtc-mcp-server-mcp-server-v1-46-0-2026-03-30",
+      "topDecision": "hold",
+      "topScore": 92,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    }
+  ],
+  "recommendation": {
+    "roleMode": "manual_coaching",
+    "reasons": [
+      "Need at least 5 analyzed days before reducing the operator role.",
+      "Daily GitHub runtime has not yet shown strong enough schedule coverage."
+    ]
+  }
+}

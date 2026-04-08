@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xverse AIBTC Signal Filing Helper</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef2ea;
+        --panel: #fbfdf8;
+        --ink: #172019;
+        --muted: #536257;
+        --accent: #1a624a;
+        --accent-2: #9c6126;
+        --border: #cad6cc;
+        --danger: #8a2d1f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(26, 98, 74, 0.14), transparent 28%),
+          radial-gradient(circle at top right, rgba(156, 97, 38, 0.1), transparent 32%),
+          linear-gradient(180deg, #f8fbf7 0%, var(--bg) 100%);
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 28px 20px 56px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(23, 32, 25, 0.08);
+        padding: 22px;
+        margin-bottom: 18px;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+        line-height: 1.1;
+      }
+
+      p,
+      li {
+        line-height: 1.5;
+      }
+
+      .grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      @media (min-width: 980px) {
+        .grid {
+          grid-template-columns: 1.05fr 0.95fr;
+        }
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: var(--accent);
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+      }
+
+      button.ghost {
+        background: #dfe8e1;
+        color: var(--ink);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      label {
+        display: block;
+        margin: 14px 0 8px;
+        font-weight: 700;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 240px;
+        resize: vertical;
+      }
+
+      code,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #eef5f0;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #eef5f0;
+        border: 1px solid var(--border);
+      }
+
+      .status.error {
+        color: var(--danger);
+        background: #fde9e4;
+        border-color: #e6b2a7;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .pill {
+        display: inline-block;
+        margin: 0 8px 8px 0;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e8efe8;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>Xverse Trigger for AIBTC Signal Filing</h1>
+        <p>
+          This helper prepares the authenticated signal filing request locally, asks Xverse for a
+          BIP-322 message signature, and then submits the exact JSON payload to the AIBTC news API.
+        </p>
+        <div class="pill">No seed phrase needed</div>
+        <div class="pill">Wallet approval only</div>
+        <div class="pill">Fallback curl included</div>
+        <div class="row" style="margin-bottom:4px">
+          <button id="modeBeatBtn" class="secondary">Mode: Beat Claim</button>
+          <button id="modeSignalBtn" class="ghost">Mode: Signal Filing</button>
+        </div>
+        <div id="modeLabel" class="small" style="margin:0 0 8px;color:var(--accent-2);font-weight:700">▶ Step 1 of 2 — Claim the dev-tools beat</div>
+        <div class="row">
+          <button id="connectBtn">1. Connect Xverse</button>
+          <button id="refreshBtn" class="secondary">2. Refresh Timestamp</button>
+          <button id="signBtn" class="secondary" disabled>3. Sign Request</button>
+          <button id="submitBtn" class="ghost" disabled>4. Submit</button>
+        </div>
+        <div id="status" class="status small">
+          Open this page in the same Chrome profile where the Xverse extension is installed.
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Request Setup</h2>
+          <label for="apiUrl">API endpoint</label>
+          <input id="apiUrl" value="https://aibtc.news/api/signals" spellcheck="false" />
+
+          <label for="btcAddress">Bitcoin address</label>
+          <input id="btcAddress" value="bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv" spellcheck="false" />
+
+          <label for="timestamp">Timestamp header</label>
+          <input id="timestamp" spellcheck="false" />
+
+          <label for="message">Message to sign</label>
+          <input id="message" spellcheck="false" />
+
+          <label for="payloadJson">Signal payload JSON</label>
+          <div id="artifactBanner" class="status small" style="display:none;margin-top:0;margin-bottom:10px"></div>
+          <div style="margin-bottom:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label for="dryRunFile" style="margin:0;font-weight:normal;cursor:pointer">
+              <span style="display:inline-block;padding:8px 14px;border-radius:999px;background:#e8efe8;color:var(--accent);font-weight:700;font-size:0.93rem;border:1px dashed var(--border)">
+                Load dry-run JSON
+              </span>
+              <input id="dryRunFile" type="file" accept=".json" style="display:none" />
+            </label>
+            <span id="loadedFileName" class="small" style="color:var(--muted)">No file loaded</span>
+          </div>
+          <textarea id="payloadJson" spellcheck="false"></textarea>
+
+          <p class="small">
+            Click <strong>Load dry-run JSON</strong> to pick a <code>*-submission.json</code> from
+            <code>data/dry-runs/</code> — it maps directly to the API payload. Or paste manually.
+            If Xverse shows a BTC send, PSBT, fee, inputs, or outputs, cancel it — this is
+            message-signing only.
+          </p>
+        </section>
+
+        <section class="panel">
+          <h2>Results</h2>
+          <label>Connected account data</label>
+          <pre id="connectionDump">Not connected yet.</pre>
+
+          <label>Signed request</label>
+          <pre id="signatureDump">No signature yet.</pre>
+
+          <label>Fallback curl command</label>
+          <pre id="curlDump">No curl command yet.</pre>
+
+          <label>API response</label>
+          <pre id="responseDump">No signal submitted yet.</pre>
+
+          <label id="filedEntryLabel" style="display:none">Add to filed-signals.json</label>
+          <pre id="filedEntryDump" style="display:none"></pre>
+        </section>
+      </div>
+    </main>
+
+    <script type="module">
+      import { request } from "https://esm.sh/sats-connect@latest";
+
+      const connectBtn = document.getElementById("connectBtn");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const signBtn = document.getElementById("signBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const modeBeatBtn = document.getElementById("modeBeatBtn");
+      const modeSignalBtn = document.getElementById("modeSignalBtn");
+      const modeLabel = document.getElementById("modeLabel");
+      const status = document.getElementById("status");
+      const apiUrlInput = document.getElementById("apiUrl");
+      const btcAddressInput = document.getElementById("btcAddress");
+      const timestampInput = document.getElementById("timestamp");
+      const messageInput = document.getElementById("message");
+      const payloadJsonInput = document.getElementById("payloadJson");
+      const connectionDump = document.getElementById("connectionDump");
+      const signatureDump = document.getElementById("signatureDump");
+      const curlDump = document.getElementById("curlDump");
+      const responseDump = document.getElementById("responseDump");
+      const filedEntryDump = document.getElementById("filedEntryDump");
+      const filedEntryLabel = document.getElementById("filedEntryLabel");
+      const artifactBanner = document.getElementById("artifactBanner");
+
+      const TIMESTAMP_TTL_SECONDS = 270;
+      let timestampRefreshedAt = 0;
+      let expiryTimerId = null;
+
+      // mode: "beat" | "signal"
+      let currentMode = "beat";
+      let loadedArtifactMeta = {
+        candidateId: null,
+        reportDate: null
+      };
+      let latestSignalGuard = null;
+      let signalPayloadOrigin = "manual";
+
+      const beatClaimPayload = {
+        slug: "dev-tools",
+        name: "Dev Tools",
+        created_by: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv"
+      };
+
+      const emptySignalPayload = {
+        beat_slug: "",
+        btc_address: "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+        headline: "",
+        body: "",
+        sources: [],
+        tags: [],
+        disclosure: ""
+      };
+
+      const dryRunFileInput = document.getElementById("dryRunFile");
+      const loadedFileName = document.getElementById("loadedFileName");
+      const params = new URLSearchParams(window.location.search);
+
+      function getPacificDateString() {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Los_Angeles",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date());
+
+        const year = parts.find((part) => part.type === "year")?.value;
+        const month = parts.find((part) => part.type === "month")?.value;
+        const day = parts.find((part) => part.type === "day")?.value;
+
+        if (!year || !month || !day) {
+          throw new Error("Could not determine Pacific report date");
+        }
+
+        return `${year}-${month}-${day}`;
+      }
+
+      function getReportDateForSignalGuard() {
+        if (loadedArtifactMeta.reportDate) {
+          return loadedArtifactMeta.reportDate;
+        }
+        const queryDate = params.get("date");
+        const queryCandidate = params.get("candidate");
+        if (queryDate && queryCandidate) return queryDate;
+        return getPacificDateString();
+      }
+
+      function sanitizeSignalPayload(payload) {
+        return {
+          beat_slug: String(payload.beat_slug ?? "").trim(),
+          btc_address: btcAddressInput.value.trim(),
+          headline: String(payload.headline ?? "").trim(),
+          body: String(payload.body ?? payload.analysis ?? "").trim(),
+          sources: Array.isArray(payload.sources) ? payload.sources.slice(0, 5) : [],
+          tags: Array.isArray(payload.tags) ? payload.tags.slice(0, 10) : [],
+          disclosure: String(payload.disclosure ?? "").trim().slice(0, 500)
+        };
+      }
+
+      function mapDryRunToPayload(raw) {
+        const beat = raw.candidate_signal?.beat ?? "";
+        const headline = raw.headline ?? "";
+        const preview = raw.article_preview ?? {};
+        const rawSources = raw.sources ?? [];
+        const disclosure = raw.model_disclosure ?? {};
+
+        // body: lede + why_it_matters, hard cap 1000 chars
+        const bodyFull = [preview.lede, preview.why_it_matters]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        const body = bodyFull.length > 1000 ? bodyFull.slice(0, 997) + "..." : bodyFull;
+
+        // sources: up to 5, map field names
+        const sources = rawSources.slice(0, 5).map((s) => ({
+          url: s.source_url ?? s.url ?? "",
+          title: s.source_name ?? s.title ?? ""
+        }));
+
+        // tags: beat + static agent-economy tags
+        const tags = [...new Set([beat, "infrastructure", "protocol-updates", "stacks"].filter(Boolean))];
+
+        // disclosure string
+        const toolsStr = Array.isArray(disclosure.tools_used)
+          ? disclosure.tools_used.join(", ")
+          : "";
+        const disclosureStr = toolsStr
+          ? `claude-sonnet-4-6, aibtc MCP tools, ${toolsStr}`
+          : "claude-sonnet-4-6, aibtc MCP tools";
+
+        return {
+          beat_slug: beat,
+          headline: headline.slice(0, 120),
+          body,
+          sources,
+          tags,
+          disclosure: disclosureStr.slice(0, 500)
+        };
+      }
+
+      function deriveLoadedArtifact(raw, fallbackName) {
+        signalPayloadOrigin = "artifact";
+        if (raw?.kind === "filing_ready_submission") {
+          loadedArtifactMeta = {
+            candidateId: raw.candidateId ?? null,
+            reportDate: raw.reportDate ?? null
+          };
+          return mapDryRunToPayload(raw.submission ?? {});
+        }
+
+        loadedArtifactMeta = {
+          candidateId:
+            raw?.candidate_signal?.candidate_id ??
+            fallbackName?.replace(/-submission\.json$/, "") ??
+            null,
+          reportDate: null
+        };
+        return mapDryRunToPayload(raw);
+      }
+
+      function updateArtifactBanner(payload) {
+        if (currentMode !== "signal") {
+          artifactBanner.style.display = "none";
+          artifactBanner.textContent = "";
+          return;
+        }
+
+        const headline = payload?.headline?.trim() || "No headline loaded";
+        const beat = payload?.beat_slug?.trim() || "unknown-beat";
+        const candidate = loadedArtifactMeta.candidateId || "manual payload";
+        const reportDate = loadedArtifactMeta.reportDate || "manual";
+        const origin = signalPayloadOrigin === "artifact" ? "repo artifact" : "manual paste";
+
+        artifactBanner.style.display = "block";
+        artifactBanner.textContent =
+          `Active signal: ${candidate} | date: ${reportDate} | origin: ${origin} | beat: ${beat} | headline: ${headline}`;
+      }
+
+      async function loadArtifactFromQuery() {
+        const reportDate = params.get("date");
+        const candidateId = params.get("candidate");
+
+        if (!reportDate || !candidateId) {
+          return false;
+        }
+
+        setStatus(`Loading filing-ready artifact for ${candidateId}...`);
+
+        const response = await fetch(
+          `/api/local/filing-ready?date=${encodeURIComponent(reportDate)}&candidate=${encodeURIComponent(candidateId)}`
+        );
+        const body = await response.json().catch(() => ({ error: "Non-JSON response" }));
+
+        if (!response.ok) {
+          throw new Error(body?.error || `Could not load filing-ready artifact for ${candidateId}.`);
+        }
+
+        const payload = deriveLoadedArtifact(body.artifact ?? {}, `${candidateId}.json`);
+        payloadJsonInput.value = pretty(payload);
+        loadedFileName.textContent = `${candidateId}.json`;
+        updateArtifactBanner(payload);
+        return true;
+      }
+
+      dryRunFileInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const raw = JSON.parse(text);
+          const payload = deriveLoadedArtifact(raw, file.name);
+          payloadJsonInput.value = pretty(payload);
+          loadedFileName.textContent = file.name;
+          applyMode("signal");
+          updateArtifactBanner(payload);
+          const guard = await runSignalGuard(parsePayload());
+          if (guard && !guard.ok) {
+            responseDump.textContent = pretty(guard);
+            setStatus(`Loaded ${file.name}, but submission is blocked: ${guard.blockers.join(" | ")}`, true);
+            return;
+          }
+          setStatus(`Loaded ${file.name}. Review the payload, then sign.`);
+        } catch (err) {
+          setStatus(`Could not parse ${file?.name}: ${err.message}`, true);
+        }
+      });
+
+      let connected = null;
+      let btcSignature = null;
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.className = isError ? "status error small" : "status small";
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function shellEscapeSingleQuotes(value) {
+        return value.replace(/'/g, `'\"'\"'`);
+      }
+
+      function extractErrorMessage(value) {
+        if (!value || typeof value !== "object") return null;
+        return (
+          value.error ||
+          value.message ||
+          value.body?.error ||
+          value.body?.message ||
+          value.body?.body?.error ||
+          value.body?.body?.message ||
+          null
+        );
+      }
+
+      function getAddressByPurpose(addresses, purpose) {
+        return addresses.find((entry) => entry.purpose === purpose) || null;
+      }
+
+      async function persistSignabilitySession(activeWalletAddress) {
+        try {
+          await fetch("/api/local/signing-preflight/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              activeWalletAddress,
+              walletProviderReady: true,
+              helperPath: "/tools/xverse-register/file-signal.html"
+            })
+          });
+        } catch {
+          // Keep the helper usable even if local state persistence is unavailable.
+        }
+      }
+
+      function withTimeout(promise, ms, label) {
+        let timeoutId;
+        const timeout = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(
+              new Error(
+                `${label} timed out after ${Math.round(ms / 1000)}s. Xverse may be locked, not available in this Chrome profile, or not responding on this localhost page.`
+              )
+            );
+          }, ms);
+        });
+
+        return Promise.race([promise, timeout]).finally(() => {
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+          }
+        });
+      }
+
+      function clearExpiryCountdown() {
+        if (expiryTimerId !== null) {
+          clearInterval(expiryTimerId);
+          expiryTimerId = null;
+        }
+      }
+
+      function startExpiryCountdown() {
+        clearExpiryCountdown();
+        expiryTimerId = setInterval(() => {
+          if (!btcSignature) {
+            clearExpiryCountdown();
+            return;
+          }
+          const tsValue = parseInt(timestampInput.value || "0", 10);
+          if (!tsValue) {
+            clearExpiryCountdown();
+            return;
+          }
+          const nowSecs = Math.floor(Date.now() / 1000);
+          const remaining = TIMESTAMP_TTL_SECONDS - (nowSecs - tsValue);
+          if (remaining <= 0) {
+            clearExpiryCountdown();
+            btcSignature = null;
+            submitBtn.disabled = true;
+            signatureDump.textContent = "No signature yet.";
+            setStatus(
+              "Signature expired — click Refresh Timestamp, then Sign again.",
+              true
+            );
+            return;
+          }
+          if (remaining <= 60) {
+            setStatus(
+              `Signature valid for ${remaining}s — submit now or re-sign before it expires.`,
+              remaining <= 30
+            );
+          }
+          // Above 60s: leave the status showing the last meaningful message.
+        }, 5000);
+      }
+
+      function refreshTimestamp() {
+        clearExpiryCountdown();
+        const nowSecs = Math.floor(Date.now() / 1000);
+        timestampRefreshedAt = nowSecs;
+        const timestamp = String(nowSecs);
+        const path = currentMode === "beat" ? "/api/beats" : "/api/signals";
+        const pacificDate = getReportDateForSignalGuard();
+        timestampInput.value = timestamp;
+        messageInput.value = `POST ${path}:${timestamp}`;
+        btcSignature = null;
+        submitBtn.disabled = true;
+        signatureDump.textContent = "No signature yet.";
+        curlDump.textContent = "No curl command yet.";
+        responseDump.textContent = "No response yet.";
+        filedEntryDump.textContent = "";
+        filedEntryDump.style.display = "none";
+        filedEntryLabel.style.display = "none";
+        if (connected) {
+          signBtn.disabled = false;
+        }
+        setStatus(`Fresh timestamp prepared for Pacific filing date ${pacificDate}. Sign the exact POST ${path} message with Xverse.`);
+      }
+
+      async function submitCurrentPayload() {
+        if (!btcSignature) {
+          setStatus("Sign the filing request before submitting.", true);
+          return;
+        }
+
+        const tsValue = parseInt(timestampInput.value || "0", 10);
+        const nowSecs = Math.floor(Date.now() / 1000);
+        const tsAge = tsValue > 0 ? nowSecs - tsValue : TIMESTAMP_TTL_SECONDS + 1;
+        if (tsAge > TIMESTAMP_TTL_SECONDS) {
+          btcSignature = null;
+          submitBtn.disabled = true;
+          setStatus(
+            `Timestamp expired (${tsAge}s old, max ${TIMESTAMP_TTL_SECONDS}s). ` +
+            `Click Refresh Timestamp then re-sign before submitting.`,
+            true
+          );
+          return;
+        }
+
+        setStatus(`Submitting signal to AIBTC... (timestamp ${tsAge}s old). Keep this tab open while the helper waits for AIBTC to respond.`);
+
+        try {
+          const payload = parsePayload();
+          const guard = latestSignalGuard ?? await runSignalGuard(payload);
+          if (guard && !guard.ok) {
+            responseDump.textContent = pretty(guard);
+            setStatus(`Submission blocked: ${guard.blockers.join(" | ")}`, true);
+            return;
+          }
+          const response = await fetch("/api/local/signal-submit", {
+            method: "POST",
+            signal: AbortSignal.timeout(45_000),
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              apiUrl: apiUrlInput.value.trim(),
+              headers: {
+                "X-BTC-Address": btcAddressInput.value.trim(),
+                "X-BTC-Signature": btcSignature,
+                "X-BTC-Timestamp": timestampInput.value
+              },
+              payload
+            })
+          });
+
+          const body = await response.json().catch(() => ({ raw: "Non-JSON response" }));
+          responseDump.textContent = pretty({
+            status: response.status,
+            ok: response.ok,
+            body
+          });
+
+          if (!response.ok) {
+            const detailedError = extractErrorMessage(body) || "Signal filing request failed.";
+            throw new Error(detailedError);
+          }
+
+          const upstreamBody = body?.body ?? body;
+          const returnedSignalId =
+            upstreamBody?.id ??
+            upstreamBody?.signal_id ??
+            upstreamBody?.signalId ??
+            upstreamBody?.body?.id ??
+            null;
+          let rawPayload = null;
+          try { rawPayload = JSON.parse(payloadJsonInput.value.trim()); } catch {}
+
+          if (returnedSignalId) {
+            // Signal is in — stop the expiry countdown immediately.
+            clearExpiryCountdown();
+            // Show success immediately — do not wait for local persist
+            setStatus(`API accepted — signal id: ${returnedSignalId}`);
+            const entry = {
+              signalId: returnedSignalId,
+              candidateId: loadedArtifactMeta.candidateId ?? loadedFileName.textContent?.replace(/-submission\.json$/, "") ?? null,
+              headline: rawPayload?.headline ?? null,
+              beat: rawPayload?.beat_slug ?? null,
+              filedAt: new Date().toISOString(),
+              resolved: false
+            };
+            filedEntryDump.textContent = JSON.stringify(entry, null, 2);
+            filedEntryDump.style.display = "block";
+            filedEntryLabel.style.display = "block";
+
+            if (entry.candidateId) {
+              const localPayload = {
+                reportDate: loadedArtifactMeta.reportDate,
+                candidateId: entry.candidateId,
+                signalId: entry.signalId,
+                filedAt: entry.filedAt,
+                headline: entry.headline,
+                beat: entry.beat,
+                apiResponse: body
+              };
+
+              try {
+                const persistResponse = await fetch("/api/local/filed-signal", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify(localPayload)
+                });
+                const persistBody = await persistResponse.json().catch(() => ({ raw: "Non-JSON response" }));
+                if (!persistResponse.ok) {
+                  throw new Error(persistBody?.error || "Local filing-state persistence failed.");
+                }
+
+                filedEntryDump.textContent = JSON.stringify(persistBody.receipt ?? persistBody, null, 2);
+                setStatus(`Signal submitted — id: ${returnedSignalId}. Filing state persisted.`);
+              } catch (persistError) {
+                const fallbackCommand =
+                  "npm run record-filed -- --candidate " +
+                  entry.candidateId +
+                  " --signal-id " +
+                  entry.signalId +
+                  (loadedArtifactMeta.reportDate ? " --date " + loadedArtifactMeta.reportDate : "");
+
+                filedEntryDump.textContent = JSON.stringify(
+                  {
+                    entry,
+                    persistenceError: persistError.message || "Local filing-state persistence failed.",
+                    fallbackCommand
+                  },
+                  null,
+                  2
+                );
+                // Signal was accepted — keep signal ID visible in status even though persist failed
+                setStatus(`Signal submitted — id: ${returnedSignalId}. Repo persist failed; use fallback command below.`, true);
+              }
+            } else {
+              setStatus(`Signal submitted — id: ${returnedSignalId}. Candidate ID unavailable; local persist skipped.`);
+            }
+          }
+          else {
+            setStatus("Signal submitted, but no signal ID was returned by the API response.", true);
+          }
+        } catch (error) {
+          const helperMessage = error.message || "Could not submit the signal in the browser.";
+          if (helperMessage.includes("EXPIRED_TIMESTAMP") || helperMessage.includes("Timestamp is outside the allowed window")) {
+            refreshTimestamp();
+            responseDump.textContent = pretty({
+              error: helperMessage,
+              nextStep: "Timestamp refreshed automatically. Click Sign again so Xverse signs the new request immediately."
+            });
+            setStatus("Timestamp expired during sign/submit. A fresh timestamp is ready — click Sign again.", true);
+            return;
+          }
+          if (
+            helperMessage.includes("This operation was aborted") ||
+            helperMessage.includes("timed out after") ||
+            helperMessage.includes("helper aborted the slow request") ||
+            helperMessage.includes("TimeoutError") ||
+            helperMessage.includes("signal timed out")
+          ) {
+            responseDump.textContent = pretty({
+              error: helperMessage,
+              nextStep:
+                "AIBTC API did not respond in time. Run the fallback curl command shown above in your terminal — it uses the same signature you just captured and will submit directly."
+            });
+            setStatus(
+              "Submit timed out. Use the curl command above to send directly — your signature is still valid.",
+              true
+            );
+            curlDump.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+          responseDump.textContent = pretty({
+            error: helperMessage,
+            nextStep:
+              "Use the fallback curl command shown above in your terminal to submit the already-captured signature and payload."
+          });
+          setStatus(helperMessage, true);
+        }
+      }
+
+      function applyMode(mode) {
+        currentMode = mode;
+        if (mode === "beat") {
+          apiUrlInput.value = "https://aibtc.news/api/beats";
+          payloadJsonInput.value = pretty(beatClaimPayload);
+          modeLabel.textContent = "▶ Step 1 of 2 — Claim the dev-tools beat";
+          modeBeatBtn.className = "secondary";
+          modeSignalBtn.className = "ghost";
+          artifactBanner.style.display = "none";
+        } else {
+          apiUrlInput.value = "https://aibtc.news/api/signals";
+          loadedArtifactMeta = { candidateId: null, reportDate: null };
+          signalPayloadOrigin = "manual";
+          loadedFileName.textContent = "No file loaded";
+          payloadJsonInput.value = pretty(emptySignalPayload);
+          modeLabel.textContent = "▶ Step 2 of 2 — File the signal";
+          modeBeatBtn.className = "ghost";
+          modeSignalBtn.className = "secondary";
+          updateArtifactBanner(emptySignalPayload);
+        }
+        refreshTimestamp();
+      }
+
+      modeBeatBtn.addEventListener("click", () => applyMode("beat"));
+      modeSignalBtn.addEventListener("click", () => applyMode("signal"));
+
+      function getPayloadText() {
+        return payloadJsonInput.value.trim();
+      }
+
+      async function runSignalGuard(payload) {
+        if (currentMode !== "signal") {
+          latestSignalGuard = null;
+          return null;
+        }
+
+        const response = await fetch("/api/local/signal-guard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reportDate: getReportDateForSignalGuard(),
+            headline: payload.headline,
+            beat_slug: payload.beat_slug,
+            body: payload.body,
+            sources: payload.sources,
+            model_disclosure: {
+              tools_used: [],
+              derivation_steps: payload.disclosure ? [payload.disclosure] : []
+            }
+          })
+        });
+        const body = await response.json().catch(() => ({ error: "Non-JSON response" }));
+        if (!response.ok) {
+          throw new Error(body?.error || "Local duplicate guard failed.");
+        }
+        latestSignalGuard = body;
+        return body;
+      }
+
+      function parsePayload() {
+        const raw = getPayloadText();
+        if (!raw) {
+          throw new Error("Paste the payload JSON before signing.");
+        }
+        const parsed = JSON.parse(raw);
+        if (currentMode === "signal") {
+          const payload = sanitizeSignalPayload(parsed);
+          if (!payload.headline?.trim()) {
+            throw new Error("Load a filing-ready artifact or paste a real signal payload before signing.");
+          }
+          if (!payload.body?.trim()) {
+            throw new Error("Signal payload body is empty. Add claim, evidence, and implication before signing.");
+          }
+          if (signalPayloadOrigin !== "artifact") {
+            loadedArtifactMeta = { candidateId: null, reportDate: null };
+            signalPayloadOrigin = "manual";
+          }
+          return payload;
+        } else {
+          const payload = parsed;
+          payload.created_by = btcAddressInput.value.trim();
+          return payload;
+        }
+      }
+
+      async function checkHelperHealth() {
+        try {
+          const r = await fetch("/api/local/health");
+          if (!r.ok) return;
+          const data = await r.json().catch(() => null);
+          const serverDate = data?.pacificDate;
+          const clientDate = getPacificDateString();
+          if (serverDate && serverDate !== clientDate) {
+            setStatus(
+              `Helper server date mismatch: server=${serverDate} but browser=${clientDate}. ` +
+              `Rebuild and restart (npm run filing-helper) before filing.`,
+              true
+            );
+          }
+        } catch {
+          // Helper not running — let normal flow surface the error.
+        }
+      }
+
+      applyMode("beat");
+
+      (async () => {
+        await checkHelperHealth();
+        try {
+          const loadedFromQuery = await loadArtifactFromQuery();
+          if (loadedFromQuery) {
+            currentMode = "signal";
+            apiUrlInput.value = "https://aibtc.news/api/signals";
+            modeLabel.textContent = "▶ Step 2 of 2 — File the signal";
+            modeBeatBtn.className = "ghost";
+            modeSignalBtn.className = "secondary";
+            refreshTimestamp();
+            updateArtifactBanner(parsePayload());
+            setStatus("Loaded the filing-ready artifact from the repo. Review it, then sign.");
+            return;
+          }
+
+          if (params.get("mode") === "signal") {
+            applyMode("signal");
+          }
+        } catch (error) {
+          applyMode("signal");
+          setStatus(error.message || "Could not load filing-ready artifact from query params.", true);
+        }
+      })();
+
+      connectBtn.addEventListener("click", async () => {
+        setStatus("Requesting Xverse connection...");
+        try {
+          const response = await withTimeout(
+            request("wallet_connect", {
+              addresses: ["payment"],
+              message: "Connect this local helper to sign and submit an AIBTC news signal.",
+              network: "Mainnet"
+            }),
+            20000,
+            "Xverse connection"
+          );
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Xverse connection failed.");
+          }
+
+          connected = response.result;
+          connectionDump.textContent = pretty(connected);
+
+          const payment = getAddressByPurpose(connected.addresses || [], "payment");
+          if (payment?.address) {
+            btcAddressInput.value = payment.address;
+          }
+          await persistSignabilitySession(payment?.address ?? null);
+
+          signBtn.disabled = false;
+          setStatus("Connected. Confirm the BTC address matches your registered correspondent wallet.");
+        } catch (error) {
+          setStatus(error.message || "Could not connect to Xverse.", true);
+        }
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        refreshTimestamp();
+      });
+
+      signBtn.addEventListener("click", async () => {
+        if (!connected) {
+          setStatus("Connect Xverse first.", true);
+          return;
+        }
+
+        refreshTimestamp();
+
+        const btcAddress = btcAddressInput.value.trim();
+        const message = messageInput.value.trim();
+        const payment = getAddressByPurpose(connected.addresses || [], "payment");
+
+        if (!message) {
+          setStatus("Missing message to sign.", true);
+          return;
+        }
+
+        if (!payment || payment.address !== btcAddress) {
+          setStatus(
+            "The connected Bitcoin payment address does not match the address in the form. Switch Xverse accounts if needed.",
+            true
+          );
+          return;
+        }
+
+        try {
+          const payload = parsePayload();
+          updateArtifactBanner(payload);
+          if (signalPayloadOrigin !== "artifact") {
+            setStatus("Manual signal JSON detected. Running local signal guard before requesting an Xverse signature.");
+          }
+          const guard = await runSignalGuard(payload);
+          if (guard && !guard.ok) {
+            responseDump.textContent = pretty(guard);
+            setStatus(`Submission blocked: ${guard.blockers.join(" | ")}`, true);
+            return;
+          }
+        } catch (error) {
+          setStatus(error.message || "Payload JSON is invalid.", true);
+          return;
+        }
+
+        // Refresh the timestamp again right before Xverse opens so the signed
+        // message is as fresh as possible — guard check above can take a few
+        // seconds, and we want to maximise the window before expiry.
+        refreshTimestamp();
+        const freshMessage = messageInput.value.trim();
+
+        setStatus("Requesting BTC filing signature from Xverse...");
+
+        try {
+          const response = await withTimeout(
+            request("signMessage", {
+              address: btcAddress,
+              message: freshMessage,
+              protocol: "BIP322"
+            }),
+            120000,
+            "BTC filing signature"
+          );
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Filing signature failed.");
+          }
+
+          btcSignature = response.result.signature;
+          const payload = parsePayload();
+          const requestSummary = {
+            apiUrl: apiUrlInput.value.trim(),
+            headers: {
+              "X-BTC-Address": btcAddress,
+              "X-BTC-Signature": btcSignature,
+              "X-BTC-Timestamp": timestampInput.value
+            },
+            payload
+          };
+
+          signatureDump.textContent = pretty(requestSummary);
+          curlDump.textContent =
+            "curl -sS -X POST " +
+            apiUrlInput.value.trim() +
+            " \\\n" +
+            '  -H "Content-Type: application/json" \\\n' +
+            '  -H "X-BTC-Address: ' +
+            btcAddress +
+            '" \\\n' +
+            '  -H "X-BTC-Signature: ' +
+            btcSignature +
+            '" \\\n' +
+            '  -H "X-BTC-Timestamp: ' +
+            timestampInput.value +
+            '" \\\n' +
+            "  -d '" +
+            shellEscapeSingleQuotes(JSON.stringify(payload)) +
+            "'";
+
+          submitBtn.disabled = false;
+          startExpiryCountdown();
+          setStatus("Signature captured. Submitting immediately while the timestamp is still fresh...");
+          if (currentMode === "signal") {
+            await submitCurrentPayload();
+          }
+        } catch (error) {
+          setStatus(error.message || "Could not sign filing request.", true);
+        }
+      });
+
+      submitBtn.addEventListener("click", async () => {
+        await submitCurrentPayload();
+      });
+    </script>
+  </body>
+</html>

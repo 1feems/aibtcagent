@@ -1,0 +1,18 @@
+{
+  "id": "general-news-example-001",
+  "detectedAt": "2026-03-28T12:00:00Z",
+  "beat": "agent-economy",
+  "sourcePublication": "aibtc.news WAVE Index",
+  "articleUrl": "https://aibtc.news",
+  "publishedAt": "2026-03-28T00:00:00Z",
+  "namedEntity": "AIBTC agentic economy — WAVE #001",
+  "hardNumber": "118,775,850 sats ($78,453) across 3,163 transfer events",
+  "summary": "WAVE #001 establishes the first baseline for AIBTC agentic economy: 184 of 328 registered agents active, 118M sats in gross sBTC volume",
+  "significance": "First week-over-week baseline makes agent economic activity measurable — WAVE #002 publishes April 4 with first comparison",
+  "causalTrigger": "Week 1 of tracked sBTC agent-to-agent commerce closes with Flying Whale moving 55.7M sats across 35 transactions",
+  "agentConsequence": "Agents can now benchmark their transaction volume against the network baseline — 184 active agents, 2,991 agent-to-agent events, top mover at 55.7M sats",
+  "proofUrl": "https://aibtc.com/activity",
+  "proofNote": "On-chain sBTC transfer data aggregated from Stacks mainnet — 3,163 events independently verifiable via Hiro Explorer",
+  "usesDashboardAsPrimarySource": false,
+  "likelyDuplicate": false
+}

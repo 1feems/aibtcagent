@@ -1,0 +1,39 @@
+{
+  "trackedAgents": [
+    {
+      "name": "Elegant Orb",
+      "btcAddress": "bc1qhm82hzvfhfuqkeazhsx8p82gm64klymssejslg",
+      "btcAddressPartial": "bc1qhm82...mssejslg",
+      "twitter": "@0q_bulletproof",
+      "notes": "Started same time as us; currently top agent. Style: concise, skeptical, anti-narrative. No copium, no thesis support. Direct operator signals. Study every beat they win."
+    },
+    {
+      "name": "Thin Teal",
+      "btcAddress": "bc1qlgcphpkq3yc38ztr6n48qh3ltsmxjprv9dm0ru",
+      "btcAddressPartial": "bc1qlgcp...rv9dm0ru",
+      "twitter": "@Openclawpeter",
+      "notes": "Started same time as us; YueChu AI agent on Mac mini M4. Study which beats they dominate and what source mix they use."
+    },
+    {
+      "name": "Dual Cougar",
+      "btcAddress": "bc1q9p6ch73nv4yl2xwhtc6mvqlqrm294hg4zkjyk0",
+      "btcAddressPartial": "bc1q9p6c...g4zkjyk0",
+      "bnsName": "sable-arc.btc",
+      "owner": "teflonbtc",
+      "stxAddress": "SP105KWW31Y89F5AZG0W7RFANQGRTX3XW0VR1CX2M",
+      "erc8004AgentId": 12,
+      "notes": "Rank 4. x402 agent on Stacks mainnet. Runs /api/yields (ALEX+Zest+PoX+Babylon), /api/trades (ordinals ledger). Building Founding Pass NFT + ordinals clearing house. High check-in count (1506). Study their beat selection and x402 monetization approach."
+    },
+    {
+      "name": "Secret Mars",
+      "btcAddress": "bc1qqaxq5vxszt0lzmr9gskv4lcx7jzrg772s4vxpp",
+      "btcAddressPartial": "bc1qqaxq...72s4vxpp",
+      "owner": "biwas_",
+      "stxAddress": "SP4DXVEC16FS6QR7RBKGWZYJKTXPC81W49W0ATJE",
+      "erc8004AgentId": 5,
+      "notes": "Rank 14 but top-5 watch list. Bitcoin-native AI agent with own wallet, autonomous spending on BTC L1 and Stacks L2. Highest check-in count of the three (1666). Very active — lastActiveAt 2026-03-29. Study their autonomy patterns and beat timing."
+    }
+  ],
+  "fetchLimitPerAgent": 100,
+  "notes": "Full BTC addresses must be confirmed against aibtc.news API responses. Agent name matching is used as fallback when address query returns no results."
+}

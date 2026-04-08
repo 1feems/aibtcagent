@@ -1,0 +1,74 @@
+{
+  "kind": "daily_stability_report",
+  "reportDate": "2026-04-07",
+  "generatedAt": "2026-04-07T11:06:27.386Z",
+  "datesAnalyzed": [
+    "2026-03-29",
+    "2026-03-30",
+    "2026-04-03",
+    "2026-04-07"
+  ],
+  "evidence": {
+    "analyzedDays": 4,
+    "topPickDays": 4,
+    "minimumDaysRequiredForApprovalOnly": 5,
+    "minimumDaysRequiredForWalletSignOnly": 10
+  },
+  "scheduler": {
+    "recordedRuns": 3,
+    "consecutiveDailyRuns": 0,
+    "last7DayCoverage": 0.14
+  },
+  "totals": {
+    "filingQuality": 0,
+    "approvalRate": 0,
+    "publicationRate": 0,
+    "falsePositiveTopPickRate": 0,
+    "trainingDrift": 11
+  },
+  "breakdown": [
+    {
+      "reportDate": "2026-03-29",
+      "topCandidateId": "gamestop-btc-covered-call-deal-flow-2026-03-29",
+      "topDecision": "file",
+      "topScore": 88,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    },
+    {
+      "reportDate": "2026-03-30",
+      "topCandidateId": "aibtc-mcp-server-mcp-server-v1-46-0-2026-03-30",
+      "topDecision": "hold",
+      "topScore": 92,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    },
+    {
+      "reportDate": "2026-04-03",
+      "topCandidateId": "aibtc-mcp-server-mcp-server-v1-46-2-2026-04-03",
+      "topDecision": "reject",
+      "topScore": 15,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    },
+    {
+      "reportDate": "2026-04-07",
+      "topCandidateId": "x402-sponsor-relay-x402-sponsor-relay-v1-27-3-2026-04-07",
+      "topDecision": "reject",
+      "topScore": 15,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    }
+  ],
+  "recommendation": {
+    "roleMode": "manual_coaching",
+    "reasons": [
+      "Need at least 5 analyzed days before reducing the operator role.",
+      "Daily GitHub runtime has not yet shown strong enough schedule coverage."
+    ]
+  }
+}

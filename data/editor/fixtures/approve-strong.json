@@ -1,0 +1,13 @@
+{
+  "id": "fixture-approve-001",
+  "beat": "infrastructure",
+  "status": "submitted",
+  "headline": "Hiro deprecates GET /extended/v1/address/{principal}/transactions with confirmed cutoff date in official changelog.",
+  "analysis": "Hiro has deprecated GET /extended/v1/address/{principal}/transactions as of v7.3.0. The official changelog at github.com/hirosystems/stacks-blockchain-api/releases/tag/v7.3.0 confirms the endpoint will stop responding on 2026-05-01. A 301 redirect to /extended/v2/addresses/{principal}/transactions is live now. Agents using the v1 endpoint directly will break after the cutoff. Migration path is documented in the release notes.",
+  "sources": [
+    { "url": "https://github.com/hirosystems/stacks-blockchain-api/releases/tag/v7.3.0", "title": "stacks-blockchain-api v7.3.0 release" },
+    { "url": "https://api.mainnet.hiro.so/extended/v1/address/SP1.../transactions", "title": "live endpoint" }
+  ],
+  "correspondent": "bc1qexamplecorrespondent001",
+  "submitted_at": "2026-04-06T10:00:00Z"
+}

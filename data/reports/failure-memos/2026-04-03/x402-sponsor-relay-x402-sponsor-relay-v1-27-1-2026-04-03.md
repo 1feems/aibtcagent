@@ -1,0 +1,28 @@
+# Failure Memo: x402-sponsor-relay-x402-sponsor-relay-v1-27-1-2026-04-03
+
+Report date: 2026-04-03
+Generated at: 2026-04-03T18:20:18.071Z
+Headline: x402-sponsor-relay ships x402-sponsor-relay: v1.27.1 — recover stale sender frontiers in the alarm cycle (#285) (55f7814).
+Beat: protocol-updates
+Categories: too_narrow, weak_headline, weak_packaging
+
+## Summary
+Miss categories: too_narrow, weak_headline, weak_packaging.
+
+## Evidence
+- manual checks still missing before this can be filed
+- editorial review does not consider it filing-ready
+- borderline editorial fit
+- low publisher confidence
+- headline reads like raw release notes instead of a finished filing
+- headline starts with a source artifact instead of a publishable news event
+- raw release-note framing without operator consequence is not competitive for In Brief
+- fails publisher Q1 mission-aligned test
+- passes publisher Q2 replicable-disclosure test
+- passes publisher Q3 inscribable/newsworthy test
+- fails publisher Q4 value-creating test
+- headline matches the current winning pattern (full-length)
+- recent loss memory says broader same-beat packaging should be promoted
+- no tracked competitors on this story (unique pick noted, but candidate has not cleared approval-quality floor)
+- does not yet clear the explicit obvious-brief-winner threshold
+- daily slate already has multiple protocol-updates candidates

@@ -1,0 +1,44 @@
+{
+  "kind": "daily_stability_report",
+  "reportDate": "2026-03-29",
+  "generatedAt": "2026-03-29T07:02:22.287Z",
+  "datesAnalyzed": [
+    "2026-03-29"
+  ],
+  "evidence": {
+    "analyzedDays": 1,
+    "topPickDays": 1,
+    "minimumDaysRequiredForApprovalOnly": 5,
+    "minimumDaysRequiredForWalletSignOnly": 10
+  },
+  "scheduler": {
+    "recordedRuns": 1,
+    "consecutiveDailyRuns": 1,
+    "last7DayCoverage": 0.14
+  },
+  "totals": {
+    "filingQuality": 0,
+    "approvalRate": 0,
+    "publicationRate": 0,
+    "falsePositiveTopPickRate": 0,
+    "trainingDrift": 4.57
+  },
+  "breakdown": [
+    {
+      "reportDate": "2026-03-29",
+      "topCandidateId": "sip-039-040-042-governance-2026-03-29",
+      "topDecision": "file",
+      "topScore": 91,
+      "topApproved": null,
+      "topPublished": null,
+      "falsePositiveTopPick": false
+    }
+  ],
+  "recommendation": {
+    "roleMode": "manual_coaching",
+    "reasons": [
+      "Need at least 5 analyzed days before reducing the operator role.",
+      "Daily GitHub runtime has not yet shown strong enough schedule coverage."
+    ]
+  }
+}

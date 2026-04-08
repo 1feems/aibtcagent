@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.aibtcagent.heartbeat-reminder</string>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>/usr/bin/osascript</string>
+      <string>-e</string>
+      <string>display notification "Keep the streak alive. Open the heartbeat helper and check in today. http://127.0.0.1:4173/tools/xverse-register/heartbeat.html" with title "AIBTC heartbeat reminder"</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/aibtc-heartbeat-reminder.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/aibtc-heartbeat-reminder.log</string>
+  </dict>
+</plist>

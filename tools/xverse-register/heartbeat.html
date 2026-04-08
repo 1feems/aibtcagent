@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xverse AIBTC Heartbeat Helper</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #edf3ef;
+        --panel: #fcfffb;
+        --ink: #15211a;
+        --muted: #4d5e54;
+        --accent: #165b45;
+        --accent-2: #8c5b23;
+        --border: #c8d7cd;
+        --danger: #8a2d1f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(22, 91, 69, 0.15), transparent 28%),
+          radial-gradient(circle at top right, rgba(140, 91, 35, 0.12), transparent 30%),
+          linear-gradient(180deg, #f7fbf8 0%, var(--bg) 100%);
+      }
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 30px 20px 56px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(20, 33, 26, 0.08);
+        padding: 22px;
+        margin-bottom: 18px;
+      }
+      h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+      p, li { line-height: 1.5; }
+      .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        color: #fff;
+        background: var(--accent);
+      }
+      button.secondary { background: var(--accent-2); }
+      button.ghost { background: #dde8e1; color: var(--ink); }
+      button:disabled { opacity: 0.55; cursor: not-allowed; }
+      label {
+        display: block;
+        margin: 14px 0 8px;
+        font-weight: 700;
+      }
+      input, textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #eef5f1;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .status {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #eef5f1;
+        border: 1px solid var(--border);
+      }
+      .status.error {
+        color: var(--danger);
+        background: #fde9e4;
+        border-color: #e6b2a7;
+      }
+      .small { color: var(--muted); font-size: 0.95rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>Xverse Trigger for AIBTC Heartbeat</h1>
+        <p>
+          Registration is done. This helper generates a fresh heartbeat timestamp, triggers the
+          Xverse BTC signing prompt, and then shows a one-command fallback submit for the signed
+          check-in.
+        </p>
+        <div class="row">
+          <button id="connectBtn">1. Connect Xverse</button>
+          <button id="prepareBtn" class="secondary">2. Prepare Fresh Check-In</button>
+          <button id="signBtn" class="secondary" disabled>3. Sign Heartbeat</button>
+        </div>
+        <div id="status" class="status small">
+          Use the same Chrome profile where the Xverse extension is installed.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Heartbeat Payload</h2>
+        <label for="btcAddress">Bitcoin address</label>
+        <input id="btcAddress" value="bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv" spellcheck="false" />
+
+        <label for="timestamp">ISO timestamp</label>
+        <input id="timestamp" spellcheck="false" />
+
+        <label for="message">Message to sign</label>
+        <textarea id="message" rows="3" spellcheck="false"></textarea>
+
+        <p class="small">
+          Heartbeats are limited to one check-in per 5 minutes. If Xverse shows a send, PSBT, fee,
+          inputs, or outputs, cancel it.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Results</h2>
+        <label>Connected account data</label>
+        <pre id="connectionDump">Not connected yet.</pre>
+
+        <label>Signature payload</label>
+        <pre id="signatureDump">No signature yet.</pre>
+
+        <label>Fallback curl command</label>
+        <pre id="curlDump">No curl command yet.</pre>
+
+        <label>AIBTC response</label>
+        <pre id="responseDump">No heartbeat submitted yet.</pre>
+
+        <div class="row">
+          <button id="submitBtn" class="ghost" disabled>4. Submit Heartbeat</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { request } from "https://esm.sh/sats-connect@latest";
+
+      const connectBtn = document.getElementById("connectBtn");
+      const prepareBtn = document.getElementById("prepareBtn");
+      const signBtn = document.getElementById("signBtn");
+      const submitBtn = document.getElementById("submitBtn");
+      const status = document.getElementById("status");
+      const btcAddressInput = document.getElementById("btcAddress");
+      const timestampInput = document.getElementById("timestamp");
+      const messageInput = document.getElementById("message");
+      const connectionDump = document.getElementById("connectionDump");
+      const signatureDump = document.getElementById("signatureDump");
+      const curlDump = document.getElementById("curlDump");
+      const responseDump = document.getElementById("responseDump");
+
+      let connected = null;
+      let heartbeatSignature = null;
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.className = isError ? "status error small" : "status small";
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      function shellEscapeSingleQuotes(value) {
+        return value.replace(/'/g, `'\"'\"'`);
+      }
+
+      function getAddressByPurpose(addresses, purpose) {
+        return addresses.find((entry) => entry.purpose === purpose) || null;
+      }
+
+      async function persistSignabilitySession(activeWalletAddress) {
+        try {
+          await fetch("/api/local/signing-preflight/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              activeWalletAddress,
+              walletProviderReady: true,
+              helperPath: "/tools/xverse-register/heartbeat.html"
+            })
+          });
+        } catch {
+          // Keep the helper usable even if local state persistence is unavailable.
+        }
+      }
+
+      function withTimeout(promise, ms, label) {
+        let timeoutId;
+        const timeout = new Promise((_, reject) => {
+          timeoutId = window.setTimeout(() => {
+            reject(
+              new Error(
+                `${label} timed out after ${Math.round(ms / 1000)}s. Xverse may be locked, not available in this Chrome profile, or not responding on this localhost page.`
+              )
+            );
+          }, ms);
+        });
+
+        return Promise.race([promise, timeout]).finally(() => {
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+          }
+        });
+      }
+
+      function prepareHeartbeat() {
+        const timestamp = new Date().toISOString();
+        timestampInput.value = timestamp;
+        messageInput.value = `AIBTC Check-In | ${timestamp}`;
+        heartbeatSignature = null;
+        submitBtn.disabled = true;
+        signatureDump.textContent = "No signature yet.";
+        curlDump.textContent = "No curl command yet.";
+        responseDump.textContent = "No heartbeat submitted yet.";
+        if (connected) {
+          signBtn.disabled = false;
+        }
+        setStatus("Fresh heartbeat prepared. Sign it within 5 minutes.");
+      }
+
+      prepareHeartbeat();
+
+      connectBtn.addEventListener("click", async () => {
+        setStatus("Requesting Xverse connection...");
+        try {
+          const response = await withTimeout(
+            request("wallet_connect", {
+              addresses: ["payment"],
+              message: "Connect this local helper to request an AIBTC heartbeat signature.",
+              network: "Mainnet"
+            }),
+            20000,
+            "Xverse connection"
+          );
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Xverse connection failed.");
+          }
+          connected = response.result;
+          connectionDump.textContent = pretty(connected);
+          const payment = getAddressByPurpose(connected.addresses || [], "payment");
+          if (payment?.address) {
+            btcAddressInput.value = payment.address;
+          }
+          await persistSignabilitySession(payment?.address ?? null);
+          signBtn.disabled = false;
+          setStatus("Connected. Confirm the Bitcoin payment address matches your registered agent.");
+        } catch (error) {
+          setStatus(error.message || "Could not connect to Xverse.", true);
+        }
+      });
+
+      prepareBtn.addEventListener("click", () => {
+        prepareHeartbeat();
+      });
+
+      signBtn.addEventListener("click", async () => {
+        if (!connected) {
+          setStatus("Connect Xverse first.", true);
+          return;
+        }
+
+        const btcAddress = btcAddressInput.value.trim();
+        const message = messageInput.value;
+        const payment = getAddressByPurpose(connected.addresses || [], "payment");
+
+        if (!payment || payment.address !== btcAddress) {
+          setStatus(
+            "The connected Bitcoin payment address does not match the address in the form. Switch Xverse accounts if needed.",
+            true
+          );
+          return;
+        }
+
+        setStatus("Requesting BTC heartbeat signature from Xverse...");
+
+        try {
+          const response = await withTimeout(
+            request("signMessage", {
+              address: btcAddress,
+              message,
+              protocol: "BIP322"
+            }),
+            120000,
+            "BTC heartbeat signature"
+          );
+
+          if (response.status !== "success") {
+            throw new Error(response.error?.message || "Heartbeat signing failed.");
+          }
+
+          heartbeatSignature = response.result.signature;
+          const payload = {
+            signature: heartbeatSignature,
+            timestamp: timestampInput.value,
+            btcAddress
+          };
+
+          signatureDump.textContent = pretty({
+            message,
+            ...payload
+          });
+
+          curlDump.textContent =
+            "curl -sS -X POST https://aibtc.com/api/heartbeat \\\n" +
+            '  -H "Content-Type: application/json" \\\n' +
+            "  -d '" +
+            shellEscapeSingleQuotes(JSON.stringify(payload)) +
+            "'";
+
+          submitBtn.disabled = false;
+          setStatus("Heartbeat signature captured. Submit within 5 minutes.");
+        } catch (error) {
+          setStatus(error.message || "Could not sign heartbeat.", true);
+        }
+      });
+
+      submitBtn.addEventListener("click", async () => {
+        if (!heartbeatSignature) {
+          setStatus("Sign the heartbeat before submitting.", true);
+          return;
+        }
+
+        setStatus("Submitting heartbeat to AIBTC...");
+
+        try {
+          const payload = {
+            signature: heartbeatSignature,
+            timestamp: timestampInput.value,
+            btcAddress: btcAddressInput.value.trim()
+          };
+
+          const response = await fetch("https://aibtc.com/api/heartbeat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const body = await response.json().catch(() => ({ raw: "Non-JSON response" }));
+          responseDump.textContent = pretty({
+            status: response.status,
+            ok: response.ok,
+            body
+          });
+
+          if (!response.ok) {
+            throw new Error(body?.error || body?.message || "Heartbeat request failed.");
+          }
+
+          setStatus("Heartbeat submitted successfully.");
+        } catch (error) {
+          responseDump.textContent = pretty({
+            error: error.message || "Could not submit heartbeat in the browser.",
+            nextStep:
+              "Use the fallback curl command shown above in your terminal to submit the already-captured heartbeat signature."
+          });
+          setStatus(error.message || "Could not submit heartbeat.", true);
+        }
+      });
+    </script>
+  </body>
+</html>

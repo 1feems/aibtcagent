@@ -1,0 +1,50 @@
+name: Refresh Memory
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - data/briefs/shared-context.json
+      - data/training/brief-examples.json
+      - data/state/signal-history.json
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-memory:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Refresh derived runtime memory
+        run: npm run refresh-memory
+
+      - name: Commit refreshed memory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            data/state/activity-dashboard.json \
+            data/state/brief-examples.json \
+            data/state/competition-memory.json \
+            data/state/editorial-memory.json \
+            data/state/memory-index.json \
+            data/state/objective-memory.json \
+            data/state/outcome-feedback-memory.json \
+            data/state/repairable-candidates.json
+          git diff --cached --quiet && echo "no changes" || git commit -m "chore: refresh runtime memory [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}

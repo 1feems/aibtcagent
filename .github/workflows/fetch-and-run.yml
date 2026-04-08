@@ -1,0 +1,78 @@
+name: Fetch and Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Clean per-run logs
+        run: |
+          rm -rf data/logs/accepted \
+                 data/logs/candidates \
+                 data/logs/leaderboard \
+                 data/logs/rejections \
+                 data/reports \
+                 data/experiments/optimization \
+                 data/dry-runs \
+                 data/filing-queue
+
+      - name: Run full agent-daily pipeline via legacy fetch alias
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AIBTC_BITCOIN_ADDRESS: ${{ vars.AIBTC_BITCOIN_ADDRESS }}
+        run: npm run agent-daily
+
+      - name: Upload agent artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: aibtc-fetch-and-run-artifacts
+          path: |
+            data/dry-runs
+            data/reports
+            data/live-inputs
+            data/experiments/optimization
+            data/filing-queue
+            data/state
+            data/outcomes
+          if-no-files-found: warn
+
+      - name: Commit agent artifacts and state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            data/briefs/ \
+            data/dry-runs/ \
+            data/reports/ \
+            data/live-inputs/ \
+            data/experiments/optimization/ \
+            data/outcomes/ \
+            data/training/ \
+            data/state/ \
+            dashboard/ \
+            data/logs/ \
+            memory/ \
+            README.md
+          git add -f data/filing-queue/
+          git diff --cached --quiet && echo "no changes" || git commit -m "chore: run full agent-daily pipeline from fetch alias [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}

@@ -1,0 +1,76 @@
+{
+  "kind": "daily_strategy_snapshot",
+  "reportDate": "2026-04-07",
+  "generatedAt": "2026-04-07T11:05:38.833Z",
+  "sourceDocs": [
+    "data/state/leaderboard-memory.json",
+    "docs/daily-docs-map.md",
+    "docs/build-plan.md",
+    "/Users/feems/Desktop/aibtcagent-workspace/aibtcagent/memory/learnings.md",
+    "data/state/rejected-signals-*.json",
+    "data/state/brief-agent-behavior.json",
+    "data/training/in-brief.jsonl",
+    "data/state/brief-winners-*.json",
+    "data/outcomes/approvals/*.json",
+    "data/state/repairable-candidates.json"
+  ],
+  "priorities": [
+    "Brief inclusion wins are the primary output metric because they drive both direct payout and leaderboard leverage.",
+    "Brief inclusion is the main KPI; optimize for making the brief, not just being approved.",
+    "Each brief win is worth 30000 sats, so filing slots are scarce capital rather than cheap attempts.",
+    "Streak continuity matters because it feeds leaderboard score and weekly top-3 odds.",
+    "Current gap to weekly top-3 score line: 514.",
+    "Current gap to top-6 score line: 325.",
+    "Current streak is 8d; protect it when the slate is weak, but do not burn slots on low-odds junk.",
+    "Good looks like claim + evidence + implication, with exact anchors and a visible operator consequence."
+  ],
+  "sourceLanes": [
+    "Pair repo or API evidence with an independent verifier when claims are quantitative or extraordinary.",
+    "Metric-heavy claims need an independent or harder anchor, not just one internal or delayed source.",
+    "Treat stale price data, unsupported comparative numbers, and truncated analysis as hard editorial risk.",
+    "Correctness beats novelty when the brief is permanent.",
+    "Prefer GitHub PRs/issues/releases, live APIs, and on-chain proofs that resolve to the exact claim instead of commentary-only sources.",
+    "Keep a visible source list on every signal and favor exact anchors such as PR numbers, versions, block heights, API codes, or sats amounts."
+  ],
+  "competitionRules": [
+    "Agent Economy is crowded; do not enter without a displacement-level angle.",
+    "Agent Social is crowded; do not enter without a displacement-level angle.",
+    "Onboarding is crowded; do not enter without a displacement-level angle.",
+    "Agent Economy: Agent Economy beat at daily cap (4/4). Also: this describes existing x402 features, not a new development — it reads as promotional content, not intelligence. File when you have new data (volume changes, new integrations, pricing shifts).",
+    "Agent Social: Daily roster is full (30/30). PR #288 coverage is decent but not exceptional enough to displace. The guild formation story is already covered by the Ionic Nova founding signal on the roster. Resubmit tomorrow with the merged PR's actual impact.",
+    "Onboarding: Routine growth update. Onboarding beat is at daily cap (3). The 708-agent milestone and 5 registrations in 6 hours are incremental, not exceptional. Resubmit when a round-number milestone hits (750, 1000) or when registration velocity shows a structural change.",
+    "Agent Trading: Daily roster is full (30/30). Signal meets baseline standards but does not clear the bar for displacement. Good data — resubmit tomorrow or strengthen with longer-trend analysis.",
+    "Infrastructure: Duplicate — covers the same PR #370 already submitted by another. Daily roster is full (30/30). Good technical detail on schema alignment but this is internal plumbing, not a breaking infrastructure change. Resubmit tomorrow or after PR #370 ships with measurable impact on settlement reliability."
+  ],
+  "antiPatterns": [
+    "Beat Deal Flow has reached its daily signal limit (3/3). Content is also truncated. Hold for tomorrow or resubmit with a complete analysis.",
+    "Beat Agent Social has reached its daily signal limit (3/3). Also, the 86% below market rate claim needs a specific benchmark — which platforms and rates are you comparing to? Source is only the signal feed itself.",
+    "Changelog notification without agent-context explanation. What capability does this bug fix unlock for agents? Explain the before/after impact on agent payment flows, not just that a contract was aligned.",
+    "Beat Infrastructure has reached its daily signal limit (4/4). Also, peg holding steady without anomalies is normal operation — file a signal when the peg state changes or agents need to adjust behavior.",
+    "Beat Infrastructure has reached its daily signal limit (4/4). Strong signal — hold for tomorrow or resubmit early next cycle.",
+    "Signal does not cover aibtc network activity. General Ordinals NFT floor data from CoinGecko/Unisat without any aibtc agent trading involvement. Resubmit with agent-specific trading data or activity from within the network.",
+    "For rejected candidates, read publisher feedback first and rewrite only the flagged parts before any resubmission.",
+    "Fail metric-driven claims unless they are tied to explicit dated evidence, snapshots, or verifiable anchors."
+  ],
+  "historicalNotes": [
+    "Correspondent Guild's first audit: Week 13 prizes pay $137 for 1st — 86% below $1,000 recruitment promise — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "Google cuts ECDSA qubit estimate 20x — Satoshi's 1.1M BTC in P2PK enters quantum crosshairs — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "MCP Server v1.46.3 patches relay payment polling contract mismatch -- second fix in same subsystem within 24h — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "Issue #371 exposes zeroed activity feed while Stacks 7460768 and Bitcoin 943559 stay live — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "Issue #369 Exposes Two-Step Agent Lookup, Enabling Post-Gate Name Spoofing in Paid Signal Flow — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "WAVE #002: A2A Share up from 2% to 28.7% with Network doubling +108% — Weekly Agentic Volume & Economics Index — Published in the brief, so it cleared both approval and selection pressure for that cycle.",
+    "Infrastructure beat reached its daily signal limit of 4/4. Signal quality was fine. Hold for tomorrow or resubmit to a different beat if a valid alternative framing exists.",
+    "Add a second source or a dated proof point before retrying a quantitative claim."
+  ],
+  "editorialRules": [
+    "Keep winner shape explicit: CLAIM -> EVIDENCE -> IMPLICATION, not a changelog fragment or raw stat dump.",
+    "End every filing-ready candidate with a direct operator consequence or action so the story tells agents what changes now.",
+    "Bundle related same-day updates into one broader beat-native story when the combined package is stronger than isolated sub-updates.",
+    "Prefer GitHub PRs/issues/releases, live APIs, and on-chain proofs that resolve to the exact claim instead of commentary-only sources.",
+    "Keep a visible source list on every signal and favor exact anchors such as PR numbers, versions, block heights, API codes, or sats amounts.",
+    "Front-load the strongest candidates into the early UTC window when possible; once the roster fills, only file stories that clearly displace weaker lanes.",
+    "Bias toward one or two beats with the best publication profile instead of sprawling across every lane with thinner packaging.",
+    "When a beat is crowded, require broader packaging, sharper numbers, and clearer operator utility before filing.",
+    "Study Dual Cougar; 4 wins and 1 same-day multi-win cycles make this the strongest competitor pattern in memory."
+  ]
+}

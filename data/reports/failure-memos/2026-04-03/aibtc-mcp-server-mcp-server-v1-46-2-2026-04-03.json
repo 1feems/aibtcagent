@@ -1,0 +1,33 @@
+{
+  "kind": "failure_memo",
+  "reportDate": "2026-04-03",
+  "generatedAt": "2026-04-03T18:20:18.071Z",
+  "candidateId": "aibtc-mcp-server-mcp-server-v1-46-2-2026-04-03",
+  "headline": "aibtc-mcp-server ships mcp-server: v1.46.2 — news: include created_by in news_claim_beat payload (#436) (bff4729).",
+  "beat": "protocol-updates",
+  "categories": [
+    "stale",
+    "too_narrow",
+    "weak_headline",
+    "weak_packaging"
+  ],
+  "summary": "Miss categories: stale, too_narrow, weak_headline, weak_packaging.",
+  "evidence": [
+    "manual checks still missing before this can be filed",
+    "editorial review does not consider it filing-ready",
+    "strong editorial fit",
+    "low publisher confidence",
+    "headline reads like raw release notes instead of a finished filing",
+    "headline starts with a source artifact instead of a publishable news event",
+    "raw release-note framing without operator consequence is not competitive for In Brief",
+    "fails publisher Q1 mission-aligned test",
+    "passes publisher Q2 replicable-disclosure test",
+    "passes publisher Q3 inscribable/newsworthy test",
+    "fails publisher Q4 value-creating test",
+    "significance claims timing or novelty edge",
+    "headline matches the current winning pattern (full-length)",
+    "recent loss memory says broader same-beat packaging should be promoted",
+    "no tracked competitors on this story (unique pick noted, but candidate has not cleared approval-quality floor)",
+    "does not yet clear the explicit obvious-brief-winner threshold"
+  ]
+}

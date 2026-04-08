@@ -1,0 +1,16 @@
+{
+  "repos": [
+    { "owner": "aibtcdev", "repo": "x402-sponsor-relay", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "agent-tools-ts", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "aibtc-mcp-server", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "agent-news", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "aibtc-dev-tools", "beat": "infrastructure" },
+    { "owner": "hirosystems", "repo": "stacks-blockchain-api", "beat": "infrastructure" },
+    { "owner": "hirosystems", "repo": "clarinet", "beat": "infrastructure" },
+    { "owner": "stacks-network", "repo": "stacks-core", "beat": "infrastructure" },
+    { "owner": "aibtcdev", "repo": "ai-agent-crew", "beat": "agent-skills" },
+    { "owner": "stacksgov", "repo": "sips", "beat": "infrastructure" },
+    { "owner": "bitcoin", "repo": "bips", "beat": "quantum" }
+  ],
+  "lookbackHours": 72
+}

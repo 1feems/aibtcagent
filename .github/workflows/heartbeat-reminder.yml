@@ -1,0 +1,50 @@
+name: Heartbeat Reminder
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 14 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  heartbeat-reminder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Generate heartbeat reminder report
+        env:
+          AIBTC_BITCOIN_ADDRESS: ${{ vars.AIBTC_BITCOIN_ADDRESS }}
+        run: npm run heartbeat-reminder
+
+      - name: Upload heartbeat report
+        uses: actions/upload-artifact@v6
+        with:
+          name: heartbeat-reminder-report
+          path: |
+            data/reports/heartbeat
+            data/state/heartbeat-status.json
+          if-no-files-found: warn
+
+      - name: Commit heartbeat reminder report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/reports/heartbeat/ data/state/heartbeat-status.json
+          git diff --cached --quiet && echo "no changes" || git commit -m "chore: record heartbeat reminder status [skip ci]"
+          git push origin HEAD:${GITHUB_REF_NAME}

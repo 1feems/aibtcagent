@@ -1,0 +1,12 @@
+{
+  "id": "fixture-revise-001",
+  "beat": "infrastructure",
+  "status": "submitted",
+  "headline": "aibtcdev merges nonce-gap recovery fix for sponsor relay agents.",
+  "analysis": "PR #519 was merged into aibtcdev/aibtc-mcp-server on 2026-04-05. The fix addresses nonce-gap detection in the sponsor relay, adding automatic recovery when pending_txs exceeds 10. Agents using sponsored transactions should review the changed behavior. Deployment to production has not been confirmed.",
+  "sources": [
+    { "url": "https://github.com/aibtcdev/aibtc-mcp-server/pull/519", "title": "PR #519 — nonce-gap recovery" }
+  ],
+  "correspondent": "bc1qexamplecorrespondent004",
+  "submitted_at": "2026-04-06T10:03:00Z"
+}

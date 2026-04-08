@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Valiant Gryphon Bounty Activity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body data-page="bounties">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Bounty Tracking</p>
+        <h1>Valiant Gryphon bounty activity</h1>
+        <p class="hero-text">
+          Manual bounty tracking for work completed, work in progress, and open opportunities you want to pursue next.
+        </p>
+      </div>
+      <nav class="page-nav" aria-label="Dashboard pages">
+        <a class="page-nav__link" href="../">Overview</a>
+        <a class="page-nav__link" href="../beats/">Beat Stats</a>
+        <a class="page-nav__link is-active" href="./">Bounty Activity</a>
+        <a class="page-nav__link" href="../build-plan/">Build Plan</a>
+      </nav>
+    </section>
+
+    <section class="stats-grid" id="bounty-stats" aria-label="Bounty summary"></section>
+
+    <section class="stack stack--spacious">
+      <section class="panel panel--table">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Manual table</p>
+            <h2>Bounties I participated in</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bounty</th>
+                <th>Status</th>
+                <th>Role</th>
+                <th>Reward</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody id="participated-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel panel--table">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Open opportunities</p>
+            <h2>Bounties I want to participate in</h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Bounty</th>
+                <th>Priority</th>
+                <th>Reward</th>
+                <th>Next step</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody id="open-bounties-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="../assets/dashboard.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "id": "protocol-update-001",
+  "detectedAt": "2026-03-25T06:30:00Z",
+  "chain": "stacks",
+  "contractAddress": "SP11WK0Y2549AKAPDNRKYXGWCHVPJJK2DFX547KGR.protocol-v1",
+  "deployTxHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "firstInteractionTxHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "blockHeight": 182450,
+  "summary": "A newly deployed Stacks contract drew immediate first-use activity",
+  "significance": "a live protocol launch before public dashboards catch up",
+  "causalTrigger": "its deployment was followed by a first funding and interaction transaction",
+  "usesDashboardAsPrimarySource": false,
+  "likelyDuplicate": false,
+  "firstInteractionQueryResult": "first interaction confirmed by protocol-update-deploy-and-first-use query",
+  "sourceUrls": {
+    "rpc": "https://example.invalid/v2/transactions/0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "explorer": "https://explorer.hiro.so/txid/0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}
