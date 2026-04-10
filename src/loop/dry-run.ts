@@ -155,6 +155,18 @@ export async function runDryRun(config: DryRunConfig): Promise<DryRunSummary> {
 }
 
 async function main(): Promise<void> {
+  if (!process.argv.includes("--legacy-direct")) {
+    process.stdout.write(
+      "[dry-run] legacy entrypoint detected; delegating to agent-daily so signal automation uses the full repo gating path\n"
+    );
+    process.stdout.write(
+      "[dry-run] to invoke the low-level dry-run pipeline directly, pass --legacy-direct\n"
+    );
+    const { runAgentDaily } = await import("../agent/run-daily.js");
+    await runAgentDaily(process.argv.slice(2));
+    return;
+  }
+
   const summary = await runDryRun(parseArgs(process.argv.slice(2)));
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
 }

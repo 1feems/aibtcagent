@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { evaluateWinnerGate } from "../signals/winner-gate.js";
 
 interface RankedCandidateQueue {
   candidates?: Array<{
@@ -92,7 +93,7 @@ async function readJsonOrNull<T>(filePath: string): Promise<T | null> {
 export async function materializeGeneratedCandidates(
   reportDate: string,
   baseDir?: string
-): Promise<{ outputDir: string; written: string[]; sourceCount: number }> {
+): Promise<{ outputDir: string; written: string[]; sourceCount: number; winnerGateBlocked: number }> {
   const root = resolve(baseDir ?? process.cwd());
   const dryRunDir = resolve(root, `data/dry-runs/${reportDate}`);
   const outputDir = resolve(root, `data/manual-submissions/${reportDate}`);
@@ -109,7 +110,7 @@ export async function materializeGeneratedCandidates(
     fileNames = (await readdir(dryRunDir)).filter((name) => name.endsWith("-submission.json"));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return { outputDir, written: [], sourceCount: 0 };
+      return { outputDir, written: [], sourceCount: 0, winnerGateBlocked: 0 };
     }
     throw error;
   }
@@ -137,6 +138,7 @@ export async function materializeGeneratedCandidates(
 
   await mkdir(outputDir, { recursive: true });
   const written: string[] = [];
+  let winnerGateBlocked = 0;
 
   for (const { candidateId, submission } of eligible) {
     const beatSlug = mapBeat(submission.candidate_signal?.beat);
@@ -150,16 +152,31 @@ export async function materializeGeneratedCandidates(
       }))
       .filter((source) => source.url.length > 0);
 
+    const analysis = buildAnalysis(headline, significance, causality, beatSlug);
+    const disclosure = buildDisclosure(submission);
+
+    // Screen every dry-run candidate through the P28 winner-gate before materializing.
+    // The old pipeline's editorial_review.ready_to_file flag only checked original MVP rules —
+    // it does not enforce headline anchor, CLAIM/EVIDENCE/IMPLICATION, or concrete disclosure.
+    const gateResult = evaluateWinnerGate({ headline, body: analysis, disclosure, sources });
+    if (!gateResult.passed) {
+      winnerGateBlocked += 1;
+      process.stdout.write(
+        `[candidate-generator] winner-gate blocked ${candidateId}: ${gateResult.reasons.join("; ")}\n`
+      );
+      continue;
+    }
+
     const candidateArtifact = {
       status: "in_queue",
       generated_by: "materializeGeneratedCandidates",
       generated_from: `data/dry-runs/${reportDate}/${candidateId}-submission.json`,
       beat_slug: beatSlug,
       headline,
-      analysis: buildAnalysis(headline, significance, causality, beatSlug),
+      analysis,
       sources,
       tags: buildTags(beatSlug),
-      disclosure: buildDisclosure(submission)
+      disclosure
     };
 
     const outputPath = resolve(outputDir, `${candidateId}.json`);
@@ -168,5 +185,5 @@ export async function materializeGeneratedCandidates(
     written.push(outputPath);
   }
 
-  return { outputDir, written, sourceCount: eligible.length };
+  return { outputDir, written, sourceCount: eligible.length, winnerGateBlocked };
 }

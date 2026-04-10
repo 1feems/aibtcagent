@@ -5,7 +5,10 @@ import { runDailyLearn } from "../loop/index.js";
 import { runFetchAndRun } from "../loop/fetch-and-run.js";
 import { runDailyPrep } from "../prep/daily-prep.js";
 import { runSignalJob } from "../prep/signal-job.js";
-import { rankDryRunCandidates, saveRankedCandidateQueue } from "../scoring/index.js";
+import {
+  replenishCandidateSlate,
+  countStrongCandidates
+} from "./replenishment.js";
 import {
   autoLabelResolvedOutcomes,
   refreshOutcomeFeedbackMemory,
@@ -13,7 +16,7 @@ import {
   syncRuntimeMemory
 } from "../learning/index.js";
 import { ingestManualDailyBrief, trackBriefWinners } from "../brief/index.js";
-import { buildFilingQueue, saveFilingQueue, writeTrustedSignalSlate } from "../filing/index.js";
+import { saveFilingQueue, writeTrustedSignalSlate } from "../filing/index.js";
 import { fetchAndCacheQuantumMapSnapshot } from "../filing/index.js";
 import { generateDailyOperatorSummary, saveDailyOperatorSummary } from "../ops/index.js";
 import { generateDailyStabilityReport, saveDailyStabilityReport } from "../ops/index.js";
@@ -25,85 +28,11 @@ import { generateAndSaveQuantumWeeklySynthesis } from "../reporting/index.js";
 import { generateActivityDashboard, saveActivityDashboard } from "../reporting/index.js";
 import { runCorrectionHunter } from "../corrections/correction-hunter.js";
 import { getPacificReportDate } from "../utils/report-date.js";
-import type { FilingQueueSnapshot } from "../filing/index.js";
 import type { DailyOperatorSummary } from "../types/index.js";
 
 interface AgentDailyConfig {
   reportDate: string;
   generatedAt: string;
-}
-
-const TARGET_STRONG_CANDIDATES = 6;
-const MAX_REPLENISHMENT_PASSES = 4;
-
-function countStrongCandidates(queue: FilingQueueSnapshot): number {
-  return queue.items.filter((item) => item.queueStatus === "awaiting_human_approval").length;
-}
-
-async function replenishCandidateSlate(
-  reportDate: string,
-  generatedAt: string
-): Promise<{
-  rankedCandidates: Awaited<ReturnType<typeof rankDryRunCandidates>>;
-  queuePath: string;
-  filingQueue: FilingQueueSnapshot;
-  replenishmentPassesRun: number;
-}> {
-  let rankedCandidates = await rankDryRunCandidates(reportDate);
-  let queuePath = await saveRankedCandidateQueue(reportDate, rankedCandidates);
-  process.stdout.write(`[agent-daily] ranked queue saved to ${queuePath}\n`);
-
-  let filingQueue = await buildFilingQueue(reportDate, rankedCandidates);
-  let strongCandidates = countStrongCandidates(filingQueue);
-  let replenishmentPassesRun = 0;
-
-  while (
-    strongCandidates < TARGET_STRONG_CANDIDATES &&
-    replenishmentPassesRun < MAX_REPLENISHMENT_PASSES
-  ) {
-    replenishmentPassesRun += 1;
-    process.stdout.write(
-      `[agent-daily] only ${strongCandidates}/${TARGET_STRONG_CANDIDATES} strong candidate(s) survived hard gates; running replenishment pass ${replenishmentPassesRun}/${MAX_REPLENISHMENT_PASSES}\n`
-    );
-
-    const passTime = new Date(
-      new Date(generatedAt).getTime() + replenishmentPassesRun * 60_000
-    ).toISOString();
-    const fetchResult = await runFetchAndRun(passTime, reportDate);
-
-    rankedCandidates = await rankDryRunCandidates(reportDate);
-    queuePath = await saveRankedCandidateQueue(reportDate, rankedCandidates);
-    process.stdout.write(
-      `[agent-daily] ranked queue refreshed after replenishment pass ${replenishmentPassesRun}: ${queuePath}\n`
-    );
-    filingQueue = await buildFilingQueue(reportDate, rankedCandidates);
-
-    const updatedStrongCandidates = countStrongCandidates(filingQueue);
-    process.stdout.write(
-      `[agent-daily] replenishment pass ${replenishmentPassesRun} result — ${updatedStrongCandidates}/${TARGET_STRONG_CANDIDATES} strong candidate(s)\n`
-    );
-
-    if (updatedStrongCandidates >= TARGET_STRONG_CANDIDATES) {
-      strongCandidates = updatedStrongCandidates;
-      break;
-    }
-
-    if (fetchResult.results.length === 0 || updatedStrongCandidates <= strongCandidates) {
-      const exhaustionReason =
-        fetchResult.results.length === 0
-          ? "no fresh candidate events were found"
-          : "fresh candidates were tested but none improved the strong-candidate count";
-      process.stdout.write(
-        `[agent-daily] replenishment exhausted after pass ${replenishmentPassesRun} — ${exhaustionReason}\n`
-      );
-      strongCandidates = updatedStrongCandidates;
-      break;
-    }
-
-    strongCandidates = updatedStrongCandidates;
-  }
-
-  return { rankedCandidates, queuePath, filingQueue, replenishmentPassesRun };
 }
 
 function summarizeManualActions(
@@ -275,7 +204,7 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
     queuePath,
     filingQueue,
     replenishmentPassesRun
-  } = await replenishCandidateSlate(config.reportDate, config.generatedAt);
+  } = await replenishCandidateSlate(config.reportDate, config.generatedAt, "agent-daily");
   const initialStrongCandidates = 0;
   const secondSourcingPassTriggered = replenishmentPassesRun > 0;
 

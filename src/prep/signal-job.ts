@@ -843,9 +843,11 @@ export async function runSignalJob(
   let queueFiles = await listQueuedCandidates(paths.queueDir);
   if (queueFiles.length === 0) {
     const generated = await materializeGeneratedCandidates(reportDate, root);
-    if (generated.written.length > 0) {
+    if (generated.written.length > 0 || generated.winnerGateBlocked > 0) {
       process.stdout.write(
-        `[signal-job] generated ${generated.written.length} candidate artifact(s) from dry-run submissions in ${generated.outputDir}\n`
+        `[signal-job] generated ${generated.written.length} candidate artifact(s) from dry-run submissions in ${generated.outputDir}` +
+        (generated.winnerGateBlocked > 0 ? ` (${generated.winnerGateBlocked} blocked by winner-gate)` : "") +
+        "\n"
       );
     }
     queueFiles = await listQueuedCandidates(paths.queueDir);
