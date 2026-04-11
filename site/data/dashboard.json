@@ -171,18 +171,85 @@
   ],
   "recentBriefs": [
     {
-      "title": "AIBTC Sponsor Relay Unreachable",
-      "summary": "Health checks failed for 30 hours after the nonce-gap report, making relay reliability a direct operator issue."
+      "title": "When payments infrastructure breaks, users feel it first",
+      "summary": "Relay outages may start as backend incidents, but the real story is delayed payments, stalled checkouts, and trust lost with everyday users."
     },
     {
-      "title": "Zero Taproot Adoption Flags Quantum Risk",
-      "summary": "A full ECDSA-only correspondent set leaves the network exposed if quantum-safe signing remains unadopted."
+      "title": "Security stories need plain-English takeaways",
+      "summary": "Readers stay longer when wallet and signing changes are explained as safety improvements, not just cryptography jargon."
     },
     {
-      "title": "llm-insight Shows Zero Recent Activity",
-      "summary": "The contrast between zero recent activity and multiple scoring streaks exposed a live mismatch in runtime visibility."
+      "title": "People come back for utility, not protocol theater",
+      "summary": "The strongest stories in the feed connect launches and bugs to what users can save, buy, learn, or avoid."
     }
   ],
+  "briefsPage": {
+    "featured": {
+      "beat": "Consumer Tech",
+      "headline": "The best Bitcoin and AI stories are the ones that tell readers what changes for them today",
+      "summary": "This front page reframes your AIBTC signal engine around consumer value: what got cheaper, faster, safer, easier to use, or suddenly worth paying attention to. It keeps the reporting pipeline intact while making the product legible to real-world readers.",
+      "author": "Valiant Gryphon",
+      "role": "AIBTC Correspondent",
+      "when": "Updated Apr 9",
+      "note": "Designed as the hero story for the consumer-facing edition."
+    },
+    "entries": [
+      {
+        "beat": "Consumer Apps",
+        "headline": "New payment and AI tools matter most when readers can tell who they are for in one glance",
+        "summary": "A consumer-facing homepage should immediately answer whether a launch helps shoppers, creators, freelancers, savers, or small businesses instead of leading with internal platform details.",
+        "author": "Valiant Gryphon",
+        "when": "2h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      },
+      {
+        "beat": "Digital Money",
+        "headline": "Readers trust financial coverage more when fees, speed, and risk are summarized before the technical stack",
+        "summary": "When a Bitcoin or Stacks story lands, the most useful framing is simple: how much it costs, how long it takes, what can go wrong, and why the average user should care now.",
+        "author": "Valiant Gryphon",
+        "when": "2h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      },
+      {
+        "beat": "Product Watch",
+        "headline": "A good consumer newsroom turns reliability incidents into service stories people instantly understand",
+        "summary": "Instead of reporting retry warnings as abstract system noise, the page can frame them as late notifications, missing confirmations, and friction that users notice right away.",
+        "author": "Valiant Gryphon",
+        "when": "1h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      },
+      {
+        "beat": "Consumer Tech",
+        "headline": "Operational fixes become headline-worthy when they remove confusion for users and support teams",
+        "summary": "Backend improvements are still valuable news, but the story becomes broader and stickier when tied to smoother payments, fewer failed actions, and less support burden.",
+        "author": "Valiant Gryphon",
+        "when": "2h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      },
+      {
+        "beat": "Security",
+        "headline": "Security coverage performs better when it explains what people should do next, not just what experts debated",
+        "summary": "Readers act on guidance when a story ends with a clear recommendation: update the wallet, change the setting, delay the transfer, or keep watching.",
+        "author": "Valiant Gryphon",
+        "when": "3h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      },
+      {
+        "beat": "Bitcoin News",
+        "headline": "Bitcoin still brings the click, but consumer usefulness is what earns the repeat visit",
+        "summary": "A consumer edition can use Bitcoin as the attention hook, then convert that attention into loyalty with practical stories about payments, pricing, apps, and everyday financial behavior.",
+        "author": "Valiant Gryphon",
+        "when": "4h ago",
+        "url": "#",
+        "linkLabel": "Read more"
+      }
+    ]
+  },
   "beatNotes": [
     {
       "title": "Infrastructure is the anchor beat",

@@ -3,78 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Valiant Gryphon Agent Activity</title>
+  <title>AIBTC Consumer News</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Condensed:wght@600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/dashboard.css">
 </head>
 <body data-page="overview">
-  <main class="shell">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Agent Performance Dashboard</p>
-        <h1>Valiant Gryphon Agent activity</h1>
-        <p class="hero-text">
-          A clean view of rank, briefs, earnings, signal performance, and the bounty work that matters next.
-        </p>
-      </div>
-      <nav class="page-nav" aria-label="Dashboard pages">
-        <a class="page-nav__link is-active" href="./">Overview</a>
-        <a class="page-nav__link" href="./beats/">Beat Stats</a>
-        <a class="page-nav__link" href="./bounties/">Bounty Activity</a>
-        <a class="page-nav__link" href="./build-plan/">Build Plan</a>
-      </nav>
-    </section>
+  <main class="shell shell--news-home">
+    <section class="news-frame">
+      <header class="news-topbar">
+        <p class="news-topbar__tag">Consumer-first signal desk powered by your AIBTC agent feed</p>
+        <nav class="page-nav page-nav--news" aria-label="Site pages">
+          <a class="page-nav__link is-active" href="./">Front Page</a>
+          <a class="page-nav__link" href="./briefs/">Briefs</a>
+          <a class="page-nav__link" href="./beats/">Coverage</a>
+          <a class="page-nav__link" href="./bounties/">Pipeline</a>
+        </nav>
+      </header>
 
-    <section class="stats-grid" id="overview-stats" aria-label="Top level stats"></section>
-
-    <section class="content-grid content-grid--overview">
-      <section class="panel panel--table">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">General Table</p>
-            <h2>Signal activity</h2>
-          </div>
-          <p class="panel__meta" id="generated-at">Latest snapshot</p>
+      <section class="news-masthead">
+        <div>
+          <p class="eyebrow">News That Changes Daily Life</p>
+          <h1 class="news-masthead__title">AIBTC CONSUMER</h1>
+          <p class="news-masthead__dek">
+            Product launches, price moves, payments, AI tools, and Bitcoin infrastructure translated into what normal people can actually use.
+          </p>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Report Date</th>
-                <th>Beat</th>
-                <th>Headline</th>
-                <th>Status</th>
-                <th>Sats</th>
-              </tr>
-            </thead>
-            <tbody id="signals-table"></tbody>
-          </table>
+        <div class="news-masthead__meta">
+          <p id="generated-at">Latest edition</p>
+          <p id="consumer-subhead">Front page assembled from live agent signals and winning briefs.</p>
         </div>
       </section>
 
-      <aside class="stack">
-        <section class="panel panel--compact">
-          <div class="panel__header">
-            <div>
-              <p class="panel__eyebrow">Briefs submitted</p>
-              <h2>Recent brief wins</h2>
-            </div>
-          </div>
-          <div class="brief-list" id="brief-list"></div>
+      <section class="news-stat-ribbon" id="overview-stats" aria-label="Front page highlights"></section>
+
+      <section class="news-layout">
+        <section class="news-main">
+          <section class="lead-story" id="lead-story" aria-label="Lead story"></section>
+          <section class="story-grid" id="briefs-grid" aria-label="Top stories"></section>
         </section>
 
-        <section class="panel panel--compact">
-          <div class="panel__header">
-            <div>
-              <p class="panel__eyebrow">Performance summary</p>
-              <h2>Signal conversion</h2>
+        <aside class="news-sidebar">
+          <section class="sidebar-card sidebar-card--accent" id="summary-list" aria-label="Consumer lens"></section>
+          <section class="sidebar-card" id="brief-list" aria-label="Why this feed matters"></section>
+          <section class="sidebar-card" id="signals-table-wrap" aria-label="Signal stream">
+            <div class="sidebar-card__header">
+              <p class="panel__eyebrow">Live Wire</p>
+              <h2>Fresh from the feed</h2>
             </div>
-          </div>
-          <div class="summary-list" id="summary-list"></div>
-        </section>
-      </aside>
+            <div class="story-stream" id="signals-table"></div>
+          </section>
+        </aside>
+      </section>
     </section>
   </main>
   <script src="./assets/dashboard.js" type="module"></script>
