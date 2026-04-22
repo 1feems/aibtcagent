@@ -227,6 +227,22 @@ See docs/in-brief-success-checklist.md for the active build checklist and succes
 - Follow collaboration rules in AIBTC-AGENTS.md when other agents report changes.
 
 ---
+## Publisher Feedback Rules Doc
+
+The file `docs/publisher-feedback-rules.md` is the human-readable publisher feedback rulebook.
+
+It must be read and applied in:
+- Step 2, when checking the operator’s previous submitted signal statuses and feedback
+- Step 3, when building the daily outcome board
+- Step 4, when analyzing what to draft, repair, avoid, or resubmit
+- Step 8, before drafting or declaring `filing_ready`
+- Step 11, when recording a final known outcome
+
+Publisher feedback verbatim is primary.
+
+Machine labels are secondary.
+
+If `docs/publisher-feedback-rules.md` has not been read when required by the step, return `hold`.
 
 ---
 
@@ -266,180 +282,63 @@ If the operator asks about wallet cooldown, `canFileSignal`, signing, or whether
 
 ## Step 2. Submitted Signal Status and Feedback Intake
 
-Step 2 is about the operator’s previously submitted signals.
-
-Do not treat Step 2 as generic public feed browsing.
-
-For every signal submitted by this agent/operator since the last cycle:
-- check current status
-- capture publisher feedback verbatim
-- preserve approval/rejection/cap feedback exactly
-- update the human-readable Publisher Feedback Board
-- read helper errors or filing bugs from the previous cycle
-- identify unresolved helper problems that could affect today’s filing
-
-Allowed statuses:
-- `pending`
-- `submitted`
-- `approved`
-- `brief_included`
-- `rejected`
-- `cap_blocked`
-- `unknown`
-
 Required inputs:
 - public signal feed filtered by this agent/operator address or known signal IDs
 - `data/state/signal-history.json`
 - `data/state/helper-errors.jsonl`
+- `docs/publisher-feedback-rules.md`
 - Publisher Feedback Board
 - any operator-pasted publisher feedback
 
-For each submitted signal, record:
-- signal ID
-- filed timestamp
-- beat
-- headline
-- current status
-- publisher feedback verbatim
-- feedback label
-- whether it is repairable
-- exact next action
+Apply `docs/publisher-feedback-rules.md` to:
+- preserve publisher feedback verbatim
+- assign feedback labels
+- decide whether each signal is repairable
+- decide exact next action
+- avoid repeating known April rejection patterns
 
-Do not summarize publisher feedback unless the verbatim text is also preserved.
-
-Do not hide rejected signals. Rejected signals are training data.
-
-Do not convert feedback only into labels. Labels are secondary. The exact publisher wording is primary.
-
-Step 2 output:
-- updated Publisher Feedback Board
-- list of this operator’s submitted signals and current statuses
-- verbatim publisher feedback for each resolved signal
-- unresolved pending signals
-- helper bugs/errors from the previous cycle
-- status report for Step 3
-
-Return:
-- `complete` if submitted-signal statuses, feedback, and helper errors are checked
-- `hold` if this operator’s signal statuses or feedback cannot be checked
 
 ---
 
 ## Step 3. Daily Outcome Board Builder
 
-Step 3 builds the evidence board that Step 4 will analyze.
-
-Step 3 is not the deep analysis step. Step 3 organizes the raw outcomes.
-
-Use Step 2 output as the starting point.
-
-Combine:
-- this operator’s submitted signals and publisher feedback from Step 2
+Required inputs:
+- Step 2 output
+- `docs/publisher-feedback-rules.md`
 - today’s or latest brief-included signals
 - public approved signals if needed for beat-cap and quality comparison
 - public rejected signals if needed for rejection-pattern comparison
 - helper errors from the previous cycle
 - beat editor rejection and approval qualifiers
 
-For each operator-submitted signal, include:
-- status
-- beat
-- headline
-- publisher feedback verbatim
-- feedback label
-- repairability
-- next action
+Apply `docs/publisher-feedback-rules.md` to:
+- separate operator feedback from public feed feedback
+- preserve publisher feedback verbatim in the board
+- group repeated publisher feedback patterns
+- carry repairability and next action into Step 4
 
-For each brief-included public signal, include:
-- beat
-- headline
-- source/anchor type
-- story shape
-- why it likely won
-
-For public rejected signals, include only what is useful:
-- beat
-- rejection reason
-- duplicate cluster
-- source problem
-- beat relevance problem
-- cap problem
-
-Write a daily outcome board that separates:
-- operator submitted signals
-- operator rejected signals
-- operator approved signals
-- operator brief-included signals
-- operator pending signals
-- public brief winners
-- public rejected patterns
-- helper errors
-- beat-cap or saturation notes
-
-Step 3 output:
-- daily outcome board
-- clear separation of operator outcomes vs public feed outcomes
-- raw publisher feedback preserved verbatim
-- no deep drafting rules yet
-
-Return:
-- `complete` if the board is written and ready for Step 4
-- `hold` if Step 2 feedback or brief winner data is missing
 
 
 ---
 
 ## Step 4. Outcome Analyst
 
-Step 4 analyzes the daily outcome board from Step 3.
-
-Do not start Step 4 until Step 3 has produced the board.
-
 Use:
 - `skills/analyze-signal-outcomes/SKILL.md`
 - daily outcome board from Step 3
+- `docs/publisher-feedback-rules.md`
 - Publisher Feedback Board
 - `data/state/signal-history.json`
 - `data/state/helper-errors.jsonl`
 - beat editor files
 - public brief winners
 
-Analyze:
-- why this operator’s signals were approved, rejected, pending, cap-blocked, or brief-included
-- what publisher feedback says to repair
-- what brief-included public signals did differently
-- what rejected public signals failed
-- which beats are crowded or winnable
-- which story shapes are duplicated
-- which helper bugs must block filing
-- which source/anchor patterns are winning
+Apply `docs/publisher-feedback-rules.md` to:
+- identify which rejected signals are repair-and-resubmit candidates
+- identify which rejected signals should not be resubmitted
+- promote repeated feedback into hard pre-draft blockers
+- choose today’s winnable beats and avoid known failing patterns
 
-Compare:
-- operator rejected vs operator approved
-- operator approved vs operator brief-included
-- operator signals vs public brief winners
-- public rejected patterns vs today’s candidate ideas
-
-Produce today’s drafting rules:
-- patterns to stop
-- patterns to keep
-- repair-and-resubmit candidates
-- signals that should not be resubmitted
-- winnable beats today
-- beats to avoid today
-- hard pre-draft blockers
-- helper-risk blockers
-
-Step 4 output:
-- today’s analysis memo
-- exact drafting rules for Step 5 through Step 8
-- repair list for rejected signals
-- beat guidance for today
-- source and anchor requirements for today
-
-Return:
-- `complete` if analysis rules are ready
-- `hold` if the outcome board is missing or incomplete
 
 ---
 
@@ -499,74 +398,30 @@ Return:
 
 ## Step 8. Create Signal
 
-- Use `skills/create-signal/SKILL.md`.
+## Step 8. Create Signal
 
-- Load required context in this order (fixed paths, no substitutions):
-  1. `data/briefs/YYYY-MM-DD.md`
-  2. `data/state/brief-winners-YYYY-MM-DD.json`
-  3. `data/state/signal-history.json`
-  4. `data/state/helper-errors.jsonl`
-  5. `skills/aibtc-news-publisher/SKILL.md`
-  6. Beat editor file (exactly one, must match selected beat):
-     - `aibtc-network` -> `docs/beat-editors/aibtc-network-skill.md`
-     - `bitcoin-macro` -> `docs/beat-editors/bitcoin-macro-ivory-coda.md`
-     - `quantum` -> `docs/beat-editors/quantum-zen-rocket.md`
+Load required context in this order:
+1. `data/briefs/YYYY-MM-DD.md`
+2. `data/state/brief-winners-YYYY-MM-DD.json`
+3. `data/state/signal-history.json`
+4. `data/state/helper-errors.jsonl`
+5. `docs/publisher-feedback-rules.md`
+6. `skills/aibtc-news-publisher/SKILL.md`
+7. Beat editor file matching selected beat
 
-- Hard stop checks (return `hold` immediately):
-  - required file missing
-  - selected beat has no matching beat editor loaded
-  - helper-errors context not reviewed
-  - brief/history duplicate check not completed
+Apply `docs/publisher-feedback-rules.md` before drafting to block:
+- `empty_body`
+- `truncated_body`
+- `external_news_no_aibtc_activity`
+- `duplicate_story_shape`
+- `cluster_cap_exceeded`
+- `beat_cap_full`
+- `source_verification_failed`
+- `homepage_level_source`
+- `beat_relevance_failed`
 
-- Apply all pre-filing rules from:
-  - `data/state/editorial-memory.json`
-  - selected beat editor file
-  - `skills/aibtc-news-publisher/SKILL.md`
-  - repeated helper-failure guards from `data/state/helper-errors.jsonl`
+If the candidate repeats a known publisher-feedback failure and the repair is not proven, return `hold`.
 
-- Re-check non-duplication against:
-  - `data/briefs/YYYY-MM-DD.md`
-  - `data/state/signal-history.json`
-
-- Draft required sections in `body`:
-  - `CLAIM:`
-  - `EVIDENCE:`
-  - `IMPLICATION:`
-  - `Directive:`
-- Attach `sources` as a required payload part; sources must be structured objects, not loose prose.
-
-- Enforce output quality:
-  - article-shaped, not internal-note-shaped
-  - headline includes exact anchor identifier
-  - concrete wording (no vague/promotional language)
-  - disclosure present and replicable
-  - helper-safe format and length (target under 900 chars body)
-  - `EVIDENCE` must include at least one exact source URL from `sources`
-
-- Return exactly one verdict:
-  - `filing_ready`
-  - `repair_and_resubmit`
-  - `hold`
-
-- If verdict is `filing_ready`, output helper-ready JSON only (no prose) using this exact payload shape:
-
-```json
-{
-  "beat_slug": "aibtc-network | bitcoin-macro | quantum",
-  "btc_address": "<registered btc address>",
-  "headline": "<120 chars max, no trailing period>",
-  "body": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...\n\nDirective: ...",
-  "analysis": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...\n\nDirective: ...",
-  "sources": [
-    { "title": "<source title>", "url": "https://..." }
-  ],
-  "tags": ["<beat_slug>", "<tag2>", "<tag3>"],
-  "disclosure": "<concrete tools/models/queries/urls used>"
-}
-```
-- Step 8 is not permission to invent a new story.
-- Do not change the selected beat, source, or story angle unless the operator asks for alternatives.
-- If the candidate is weak, duplicate, off-beat, unsupported, or missing proof, return `hold` instead of drafting around the weakness.
 
 ---
 
@@ -621,86 +476,20 @@ Return:
 
 ## Step 11. Record Signal Outcome
 
-Step 11 records a final known outcome for one filed signal.
-
-Use Step 11 when the operator confirms:
-- `pending`
-- `submitted`
-- `approved`
-- `brief_included`
-- `rejected`
-- `cap_blocked`
-- `unknown`
-
-Use:
+Required inputs:
 - `skills/record-signal-outcome/SKILL.md`
-
-For every outcome, record:
-- signal ID
-- filed timestamp
-- beat
-- headline
-- final status
+- `docs/publisher-feedback-rules.md`
+- final signal status
 - publisher feedback verbatim
-- feedback label
-- whether it is repairable
-- next action
-- exact lesson
 
-Publisher feedback must be preserved verbatim.
+Apply `docs/publisher-feedback-rules.md` to:
+- assign feedback labels
+- decide repairability
+- choose next action
+- write one concrete lesson
+- update the human-readable feedback rules when a new feedback pattern appears
 
-Do not replace publisher feedback with a summary.
-
-Do not hide rejected signals.
-
-Do not record only labels.
-
-Update:
-- `data/state/signal-history.json`
-- Publisher Feedback Board
-- `data/outcomes/approvals/<signalId>.json` if compatibility output is still used
-- `memory/learnings.md` when there is a lesson
-- `data/state/outcome-feedback-memory.json` through the learning refresh
-
-Feedback labels may include:
-- `empty_body`
-- `truncated_headline`
-- `truncated_body`
-- `external_news_no_aibtc_activity`
-- `duplicate_story_shape`
-- `cluster_cap_exceeded`
-- `beat_cap_full`
-- `source_verification_failed`
-- `homepage_level_source`
-- `missing_timestamped_evidence`
-- `beat_relevance_failed`
-- `score_too_low`
-- `approved_not_in_brief`
-- `publisher_approved`
-- `brief_included`
-
-Next action must be one of:
-- `repair_and_resubmit`
-- `hold_next_cycle`
-- `do_not_resubmit`
-- `watch_pending`
-- `record_win`
-- `needs_manual_review`
-
-Step 11 is incomplete unless:
-- status is recorded
-- publisher feedback is preserved verbatim
-- feedback label is assigned
-- next action is chosen
-- one specific lesson is written
-
-Return:
-- signal ID matched
-- status recorded
-- publisher feedback preserved
-- feedback label
-- next action
-- lesson
+Step 11 is incomplete unless `docs/publisher-feedback-rules.md` has been read and applied.
 
 
 ---
