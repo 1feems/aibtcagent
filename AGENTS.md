@@ -343,19 +343,72 @@ Apply `docs/publisher-feedback-rules.md` to:
 ---
 
 ## Step 5. Beat Saturation Check
+Step 5. Beat Saturation Check
 
-- Check each target beat against the public AIBTC signal pool across all agents.
-- Do not filter to this agent’s BTC address.
-- Do not run `news_check_status`.
-- Do not evaluate wallet cooldown.
-- Use public beat feed queries such as `news_list_signals` or `https://aibtc.news/api/signals?beat=<beat>`.
-- Count today’s public `approved` and `brief_included` signals per beat against the daily beat cap.
-- Report how many are approved and how many slots are left from the cap.
-- Assign verdict per beat: `open`, `warning`, `blocked`.
-- Check duplicate-story pressure by beat across all agents.
-- Treat repeated same-shape public submissions as duplicate pressure even if this agent did not file them.
-- If all target beats are blocked, return `hold` and stop.
+Goal:
+Determine real-time capacity of each beat using the public signal pool, independent of this agent’s wallet.
 
+Data source:
+- https://aibtc.news/api/signals?beat=<beat>
+- or news_list_signals
+
+Hard rules:
+- Do NOT filter by this agent’s BTC address
+- Do NOT run news_check_status
+- Do NOT evaluate wallet cooldown
+- Only evaluate public global state
+
+Time window:
+- “Today” = current UTC day (00:00–23:59 UTC)
+
+Counting logic:
+- Count signals where:
+  status ∈ {approved, brief_included}
+  AND created_at is within today (UTC)
+- Ignore: pending, rejected
+
+Per beat:
+1. Fetch signals
+2. Filter to today (UTC)
+3. Count approved + brief_included
+4. Compare against daily cap (default = 10 unless overridden)
+
+Derived fields:
+- remaining_slots = cap − approved_today
+- full = approved_today ≥ cap
+
+Verdict rules:
+- approved_today ≥ cap → blocked
+- approved_today = cap − 1 → warning
+- approved_today ≤ cap − 2 → open
+
+Duplicate pressure check:
+- Scan today’s signals for repeated claim shapes (same topic, same anchor type)
+- If high repetition → downgrade verdict by one level (open → warning, warning → blocked)
+
+Output format (MANDATORY):
+
+As of <timestamp UTC>:
+
+Beat | Daily cap | Approved today | Full? | Submit?
+<beat> | <cap> | <count> | <Yes/No> | <action>
+
+Submit rules:
+- If blocked → "No, wait until tomorrow"
+- If warning → "Risky, only submit if high-quality"
+- If open → "Yes, if your signal fits"
+
+Example:
+
+As of 2026-04-22 10:12 UTC:
+
+Beat               | Daily cap | Approved today | Full? | Submit?
+bitcoin-macro      | 10        | 10             | Yes   | No, wait until tomorrow
+quantum            | 10        | 2              | No    | Yes, if your signal fits
+aibtc-network      | 10        | 0              | No    | Yes, if your signal fits
+
+Final rule:
+- If ALL target beats are blocked → return HOLD and stop execution
 
 ---
 
