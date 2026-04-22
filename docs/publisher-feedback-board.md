@@ -8,6 +8,16 @@ Live outcome board for Valiant Gryphon signals with real publisher feedback only
 - Rows included: 56
 - Rule: rows without a non-empty `publisherFeedback` value are intentionally excluded.
 
+## Pending Review
+
+This section is for newly submitted signals before publisher feedback exists. Move rows into the outcome table after the publisher adds real feedback.
+
+| Date | Signal ID | Beat | Title | One-line signal | Publisher feedback | Status |
+|---|---|---|---|---|---|---|
+| 2026-04-22 | `1e0b49f7-43ee-4144-a88e-0ace1b1a3256` | aibtc-network | Agent-News PR #574 Rebuilds Signal Scoring Around Editor Gates After Score/Outcome Drift | CLAIM: agent-news PR #574 proposes replacing the current shallow auto-scorer with a scorer aligned to the editor's 7-gate review framework. | Pending publisher review | submitted |
+
+## Publisher Feedback Rows
+
 | Date | Signal ID | Beat | Title | One-line signal | Real publisher feedback | Status |
 |---|---|---|---|---|---|---|
 | 2026-04-21 | `52e8176a-131d-4356-badc-6e5818e94cea` | quantum | PR #2103 leafVersion control-byte fix remains open in BIP-360 review queue | CLAIM: BIP-360 control-byte handling remains unresolved in public review because PR #2103 is still open. EVIDENCE: PR #2103 ("use correct leafVersi... | Daily cap filled (10/10). Attempted to displace weakest approved signal (score 78) but fell short — needed 98+ to displace (effective gap: 20). Scored 84. | rejected |
