@@ -239,6 +239,7 @@ See docs/in-brief-success-checklist.md for the active build checklist and succes
   - `EVIDENCE:`
   - `IMPLICATION:`
   - `Directive:`
+- Attach `sources` as a required payload part; sources must be structured objects, not loose prose.
 
 - Enforce output quality:
   - article-shaped, not internal-note-shaped
@@ -275,6 +276,7 @@ See docs/in-brief-success-checklist.md for the active build checklist and succes
 ## Step 9. Signal Filer (Helper-Executed)
 
 - Validate the final helper-ready payload JSON before operator handoff.
+- Prepare the final filing-ready payload JSON for the helper.
 - Confirm required fields are present and non-empty:
   - `beat`
   - `headline`
@@ -286,6 +288,7 @@ See docs/in-brief-success-checklist.md for the active build checklist and succes
   - `canFileSignal: true`
 - Handoff package to operator for Xverse signing flow:
   - `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
+- Operator runs the helper filing flow in terminal; this agent waits for the pasted confirmation output.
 - Wait for operator to paste terminal filing response.
 - Parse and verify filing result from pasted response:
   - signal ID
