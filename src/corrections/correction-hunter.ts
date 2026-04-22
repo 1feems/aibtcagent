@@ -3,16 +3,13 @@
  *
  * Scans recent aibtc.news signals for verifiable factual errors using
  * deterministic regex/math checks (no LLM). Writes correction candidates to
- * data/corrections/pending/YYYY-MM-DD.json and optionally auto-files via the
- * classifieds bun script.
+ * data/corrections/pending/YYYY-MM-DD.json for operator review.
  *
  * Quota: hard-capped at MAX_DAILY (3) found candidates per calendar day.
  * Fast-exit if quota is already exhausted — costs one file read, nothing else.
  *
  * Run standalone:
- *   bun run src/corrections/correction-hunter.ts [YYYY-MM-DD] [--auto-file]
- *
- * Auto-file requires wallet to be unlocked (signing skill + classifieds script).
+ *   bun run src/corrections/correction-hunter.ts [YYYY-MM-DD]
  */
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -26,8 +23,6 @@ const MEMPOOL_PRICE_URL = "https://mempool.space/api/v1/prices";
 const STACKS_INFO_URL = "https://api.mainnet.hiro.so/v2/info";
 const QUOTA_PATH = "data/state/correction-quota.json";
 const PENDING_DIR = "data/corrections/pending";
-const CLASSIFIEDS_SCRIPT = "skills/aibtc-news-classifieds/aibtc-news-classifieds.ts";
-
 const MAX_DAILY = 3;
 const BTC_PRICE_TOLERANCE = 0.02; // 2% — matches SKILL.md threshold
 const MAX_CORRECTION_CHARS = 500;
@@ -247,38 +242,6 @@ function checkBlockHeight(
   return null;
 }
 
-// ── Auto-file via classifieds bun script ──────────────────────────────────────
-
-async function autoFileCorrection(
-  candidate: CorrectionCandidate,
-  btcAddress: string
-): Promise<boolean> {
-  try {
-    const { spawn } = await import("node:child_process");
-    await new Promise<void>((done, reject) => {
-      const proc = spawn(
-        "bun",
-        [
-          "run", CLASSIFIEDS_SCRIPT,
-          "corrections", "file",
-          "--signal-id", candidate.signalId,
-          "--content", candidate.content,
-          "--btc-address", btcAddress
-        ],
-        { cwd: resolve(process.cwd()), stdio: "inherit" }
-      );
-      proc.on("close", (code: number | null) => {
-        if (code === 0) done();
-        else reject(new Error(`classifieds exit ${code}`));
-      });
-    });
-    return true;
-  } catch (err) {
-    process.stderr.write(`[correction-hunter] auto-file failed: ${(err as Error).message}\n`);
-    return false;
-  }
-}
-
 // ── Pending queue output ───────────────────────────────────────────────────────
 
 async function savePending(candidates: CorrectionCandidate[], date: string): Promise<string> {
@@ -294,8 +257,7 @@ async function savePending(candidates: CorrectionCandidate[], date: string): Pro
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 export async function runCorrectionHunter(
-  date?: string,
-  autoFile = false
+  date?: string
 ): Promise<CorrectionHunterResult> {
   const today = date ?? new Date().toISOString().slice(0, 10);
   const quota = await loadQuota(today);
@@ -344,31 +306,10 @@ export async function runCorrectionHunter(
     }
   }
 
-  let autoFiled = 0;
-
   if (candidates.length > 0) {
     const pendingPath = await savePending(candidates, today);
     process.stdout.write(`[correction-hunter] ${candidates.length} candidate(s) written to ${pendingPath}\n`);
-
-    if (autoFile) {
-      const btcAddress = process.env["AIBTC_BITCOIN_ADDRESS"] ?? "";
-      if (!btcAddress) {
-        process.stderr.write("[correction-hunter] --auto-file requires AIBTC_BITCOIN_ADDRESS env var\n");
-      } else {
-        for (const candidate of candidates) {
-          process.stdout.write(`[correction-hunter] filing ${candidate.signalId} via classifieds script...\n`);
-          const ok = await autoFileCorrection(candidate, btcAddress);
-          if (ok) autoFiled++;
-        }
-      }
-    } else {
-      process.stdout.write("[correction-hunter] to file corrections:\n");
-      for (const c of candidates) {
-        process.stdout.write(
-          `  bun run ${CLASSIFIEDS_SCRIPT} corrections file --signal-id ${c.signalId} --content "${c.content.slice(0, 60)}..." --btc-address $AIBTC_BITCOIN_ADDRESS\n`
-        );
-      }
-    }
+    process.stdout.write("[correction-hunter] queued for operator review; auto-file is intentionally disabled\n");
 
     // Update quota with found candidates (prevents re-scanning same signals)
     quota.filedCount += candidates.length;
@@ -378,10 +319,10 @@ export async function runCorrectionHunter(
   await saveQuota(quota);
 
   process.stdout.write(
-    `[correction-hunter] done — ${candidates.length} flaw(s) found in ${toScan.length} scanned, ${autoFiled} auto-filed\n`
+    `[correction-hunter] done — ${candidates.length} flaw(s) found in ${toScan.length} scanned, 0 auto-filed\n`
   );
 
-  return { scanned: toScan.length, candidates, autoFiled, quota };
+  return { scanned: toScan.length, candidates, autoFiled: 0, quota };
 }
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
@@ -389,8 +330,7 @@ export async function runCorrectionHunter(
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const date = args.find((a) => /^\d{4}-\d{2}-\d{2}$/.test(a));
-  const autoFile = args.includes("--auto-file");
-  await runCorrectionHunter(date, autoFile);
+  await runCorrectionHunter(date);
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : null;

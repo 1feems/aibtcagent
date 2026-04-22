@@ -798,143 +798,15 @@ Status: done on 2026-04-04
 
 ---
 
-## Beat Editor Role — Infrastructure ✅ COMPLETE (2026-04-06)
+## Retired Separate Editor Role
 
-This section tracks implementation of the Infrastructure Beat Editor function.
-The correspondent pipeline (Priorities 1–15) is independent and continues unchanged.
-The editor loop is a separate execution path.
+The standalone infrastructure editor loop was removed during the 2026-04-22 focus cleanup.
+It is not part of the active 12-step filing contract in `AGENTS.md`.
 
-**All 10 priorities (P16–P25) implemented and passing.** Build is clean. Editor regression suite: 8/8 tests pass.
-
-**Role:** Review submitted signals on the `infrastructure` beat, score and annotate each one, submit structured reviews for Publisher spot-check. Two hops: Correspondent → Beat Editor → Publisher.
-
-**API surface (two calls only):**
-- Fetch: `GET /api/signals?beat=infrastructure&status=submitted`
-- Submit: `POST /api/signals/{id}/corrections` with `type: "editorial_review"`
-
-**Platform dependency note:** Per aibtcdev/agent-news#360, `type: "editorial_review"` on the corrections endpoint, beat editor registration, and editor earnings tracking are not yet live. Reviews submitted before those land will be retroactively integrated. Do not block implementation on platform readiness — build the loop now and activate it when the role is confirmed.
-
-### Priority 16: Signal fetch loop ✅
-
-- Implement `src/editor/fetch-signals.ts`
-- Call `GET /api/signals?beat=infrastructure&status=submitted`
-- Normalize response into typed `SubmittedSignal[]`
-- Filter out already-reviewed signal IDs (check against `data/state/editor-memory.json`)
-- Write raw fetched signals to `data/editor/fetched/YYYY-MM-DD.json`
-- Success condition: running `npm run editor-fetch YYYY-MM-DD` produces a dated JSON file of unreviewed infrastructure signals
-
-### Priority 17: Review engine ✅
-
-- Implement `src/editor/review-engine.ts`
-- Score each signal across four dimensions:
-  - Verification: 0–40
-  - Operational impact: 0–30
-  - Source quality: 0–20
-  - Clarity / actionability: 0–10
-- Apply infrastructure beat checklist:
-  - PR-based: confirm PR number, repo, state, diff behavior — not just PR title
-  - Release-based: confirm tag, release notes, shipped code
-  - Operational: verify against live endpoints or chain state
-  - Never trust relay `healthy` boolean alone
-  - Distinguish "fix merged" from "deployed to production"
-- Apply score caps: no Tier 1 source → max 60; unverified deployment → max 75; off-beat → max 55
-- Set `beat_relevance`: `core | tangential | off-beat`
-- Set `recommendation`: `approve | revise | reject`
-- Set `confidence`: `low | medium | high`
-- Produce typed `EditorAnnotation` per signal
-- Success condition: review engine produces a valid annotation for each fetched signal with explicit score breakdown and recommendation
-
-### Priority 18: Review submission ✅
-
-- Implement `src/editor/submit-review.ts`
-- Build annotation payload:
-  ```json
-  {
-    "signal_id": "uuid",
-    "correspondent": "bc1q...",
-    "score": 0,
-    "factcheck": { "verified": [], "flagged": [], "sources_checked": [] },
-    "edit_suggestions": null,
-    "beat_relevance": "core | tangential | off-beat",
-    "recommendation": "approve | revise | reject",
-    "feedback_for_correspondent": null
-  }
-  ```
-- POST to `POST /api/signals/{id}/corrections` with `type: "editorial_review"`
-- Record submission result in `data/state/editor-memory.json`
-- Write submitted annotation to `data/editor/submitted/YYYY-MM-DD.json`
-- Success condition: annotation is POSTed and recorded without duplicate submission
-
-### Priority 19: Editor state memory ✅
-
-- Add `data/state/editor-memory.json` — separate from `editorial-memory.json` (which is correspondent memory)
-- Track per reviewed signal: `signal_id`, `score`, `recommendation`, `confidence`, `submitted_at`, `spot_check_result` (when known)
-- Track aggregate stats: total reviewed, approve/revise/reject counts, spot-check pass rate
-- Track per-correspondent quality patterns: repeat error types
-- Rule: editor loop reads this file first to skip already-reviewed signals
-- Success condition: re-running the editor loop on the same day never double-reviews a signal
-
-### Priority 20: Weekly beat health report ✅
-
-- Implement `src/editor/beat-health-report.ts`
-- Output: `data/editor/reports/YYYY-MM-DD-beat-health.md`
-- Report contents:
-  - Signals reviewed this week, approve/revise/reject breakdown
-  - Turnaround time (fetch → submission)
-  - Top 3 rejection patterns observed
-  - Correspondent quality trends: repeat errors, measurable improvements
-  - Source reliability notes
-  - Unresolved infrastructure patterns to monitor next week
-  - Spot-check pass rate and any Publisher feedback received
-- Success condition: `npm run editor-report YYYY-MM-DD` produces a complete weekly beat health report
-
-### Priority 21: Editor runtime integration ✅
-
-- Add `src/editor/run-editor-loop.ts` — standalone entry point, does not depend on correspondent loop
-- Wire: fetch → review → submit → update editor-memory → log
-- Add npm script: `npm run editor-loop YYYY-MM-DD`
-- Add types to `src/types/`: `SubmittedSignal`, `EditorAnnotation`, `EditorMemory`
-- Success condition: `npm run editor-loop YYYY-MM-DD` runs end-to-end, reviews all unreviewed infrastructure signals, submits annotations, updates state, exits cleanly
-
----
-
-### Priority 22: BIP-137 authentication for editor POST submissions ✅
-
-- Determine how `POST /api/signals/{id}/corrections` authenticates editors when `type: "editorial_review"` lands on the platform
-- Option A: human-assisted via Xverse helper (same pattern as signal filing) — add an editor submission endpoint to `helper-server.ts`
-- Option B: programmatic signing via a signing library once wallet automation is permitted
-- Do not implement Option B before the build plan's wallet/signing restriction is explicitly lifted
-- For now: build the annotation payload fully and queue it for human-assisted submission via the helper, identical to how filing works today
-- Success condition: editor annotation reaches the corrections endpoint via the same helper flow as signal filing, with BTC address in the payload
-
-### Priority 23: Live source verification tooling ✅
-
-- Implement `src/editor/source-verifier.ts` — beat-specific live verification for infrastructure claims
-- Reuse `src/sources/github-fetcher.ts` for PR/release/commit verification (already exists, do not re-implement)
-- Add relay health endpoint check: fetch live relay state and compare against signal's health claim
-- Add Hiro API status check: confirm endpoint availability for claims about Hiro API changes
-- Expose a `verifyInfrastructureClaim(claim, sources)` function that returns `verified | unverified | inconclusive`
-- Wire into review engine (Priority 17) so factcheck `verified[]` and `flagged[]` are populated from live checks, not manual annotation only
-- Success condition: review engine can programmatically verify relay health claims and GitHub PR claims against live state
-
-### Priority 24: Spot-check outcome polling ✅
-
-- Implement `src/editor/spot-check-poller.ts`
-- Poll for Publisher decisions on submitted reviews (check corrections endpoint or a dedicated feedback endpoint once available)
-- Update `data/state/editor-memory.json` with `spot_check_result: pass | fail | pending` per reviewed signal
-- Track aggregate spot-check pass rate
-- Surface spot-check failures in the weekly beat health report (Priority 20)
-- Success condition: editor-memory reflects real Publisher spot-check outcomes and pass rate is computable from state
-
-### Priority 25: Editor regression tests ✅
-
-- Add `tests/editor/` test suite
-- Assert: known-approve infrastructure signals produce `recommendation: "approve"` with score ≥ 80
-- Assert: PR-title-only signals produce `recommendation: "reject"` with `pr_title_bias` in flagged
-- Assert: already-reviewed signal IDs are skipped on re-run (no double submission)
-- Assert: off-beat signals produce `beat_relevance: "off-beat"` and `recommendation: "reject"`
-- Follow the same fixture pattern as Priority 12 (`data/editor/fixtures/`)
-- Success condition: editor regression suite passes in CI alongside correspondent tests
+Current beat-editor usage is local guidance only:
+- read `docs/beat-editors/*.md` during Steps 3, 6, and 8
+- apply the selected beat editor as a drafting and validation constraint
+- do not run a separate editor fetch/review/submit loop
 
 **Diagnosis (as of 2026-04-05, rank #104, slipped from #80):**
 - Score ~260: estimated 1 brief inclusion, 34 signals, 10d streak
@@ -1206,12 +1078,11 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
 - Publisher announced guild roles: fact-checker and editor earn leaderboard points independently of correspondent filing
 - `approved_corrections × 15` = second-highest scoring lever, worth 3× a raw signal
 - When the 30-slot cap is already hit or candidates are below winner bar: shift to fact-checker instead of filing weak signals
-- Fact-checker path: find published signals with verifiable metric errors, submit a signed correction (max 3/24h), earn +15 per approved correction
-- Infrastructure already built: `src/editor/source-verifier.ts` for claim verification; `src/editor/submit-review.ts` for annotation submission
-- BIP-137 flow: `helper-server.ts` `POST /api/local/editor-review/submit` already proxies corrections to `aibtc.news/api/signals/:id/corrections`; BIP-137 signature field is optional until API enforces it
+- Fact-checker path: find published signals with verifiable metric errors and queue correction candidates for operator review
+- Standalone editor review/submission tooling was removed during the 2026-04-22 focus cleanup because it is not part of the active `AGENTS.md` 12-step filing loop
 - **Tracking (2026-04-06):**
   - `src/filing/state.ts`: added `approved_corrections?: number` to `FiledSignalsState` and exported `incrementApprovedCorrections()`
-  - `src/editor/spot-check-poller.ts`: when a correction poll result transitions to `pass`, calls `incrementApprovedCorrections()` to persist the running total in `data/state/filed-signals.json`
+  - `src/corrections/correction-hunter.ts`: scans for high-confidence correction candidates and writes pending JSON for operator review; it does not auto-file
   - `src/sources/live-pre-submission.ts`: reads `approved_corrections` from filed-signals state and adds two notes to every daily prep run:
     1. `correctionScoreNote` — current count + leaderboard pts value
     2. `correctionOpportunityNote` — if ≥10:00 UTC, tells agent to switch to fact-checker corrections instead of filing weak candidates
@@ -1249,11 +1120,8 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
   - source URLs
   - map update status
   - pending/accepted/rejected tracking
-- Added weekly DRI synthesis generation in `src/reporting/quantum-weekly-synthesis.ts`.
-  - Writes GitHub-ready markdown + JSON to `data/reports/quantum-weekly/YYYY-MM-DD.{md,json}`
-  - Uses tracked quantum filings, score changes, and the latest readiness snapshot
-- Added `src/reporting/quantum-weekly.ts` plus `npm run quantum-weekly` for direct synthesis generation.
-- Wired `src/agent/run-daily.ts` to refresh the quantum snapshot and emit the weekly synthesis draft during the daily runtime.
+- Weekly DRI synthesis generation was retired during the 2026-04-22 focus cleanup.
+  The active loop keeps quantum-specific validation and intake, but does not emit a separate weekly reporting lane.
 
 **Build-plan audit outcome:**
 - Already implemented before this priority:
@@ -1848,9 +1716,8 @@ If it conflicts with `Current Priority Order`, follow `Current Priority Order`.
 **Superseded gaps**
 
 1. Old `agent-skills`, `deal-flow`, `agent-trading`, `bitcoin-yield`, and `onboarding` beat labels have been removed from active monitored configs.
-2. `src/editor/beat-health-report.ts` remains an editor-side artifact, not the correspondent filing source of truth.
-3. `src/prep/daily-prep.ts` should be updated separately if it still emits old `infrastructure` / `agent-skills` focus text; do not use that stale wording as filing guidance.
-4. `src/filing/quantum-map.ts` and `src/filing/quantum-intake.ts` remain quantum-specific support code inside the active `quantum` beat.
+2. `src/prep/daily-prep.ts` should be updated separately if it still emits old `infrastructure` / `agent-skills` focus text; do not use that stale wording as filing guidance.
+3. `src/filing/quantum-map.ts` and `src/filing/quantum-intake.ts` remain quantum-specific support code inside the active `quantum` beat.
 
 **Memory write-back spec**
 - Proposed smallest `beatLessons` write-back shape for `editor-memory.json`:
@@ -1870,7 +1737,6 @@ If it conflicts with `Current Priority Order`, follow `Current Priority Order`.
   - Feeds into `trackQuantumFiledSignal` when `readyToFile === true`
 
 **Completed this chat**
-- `src/editor/beat-health-report.ts` — title updated to `Beat Health Report (Infrastructure + Quantum)`, `formatBeatLessons` helper added, quantum Beat Lessons section inserted before `_Generated at_` footer. `tsc --noEmit` passes.
 - `src/filing/quantum-intake.ts` — created. `QuantumCandidateIntake` interface and `evaluateQuantumCandidate(source, snapshot)` function. Gates: subject in live map, score readable, `primarySourceUrl` present. `readyToFile: true` only when all gates pass. Feeds into `trackQuantumFiledSignal`. `tsc --noEmit` passes.
 - `src/filing/quantum-intake.ts` gate logic fix — `mapEntryFound` and `currentMapScore` gates now only fire for `score_update_signal`. `quantum_signal` types (original threat intel) gate only on `primarySourceUrl`. Resolves false-reject for subjects like "AIBTC Correspondents" not present in the quantum map developer dataset. `tsc --noEmit` passes.
 

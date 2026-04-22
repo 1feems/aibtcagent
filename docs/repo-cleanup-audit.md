@@ -76,7 +76,6 @@ Reason:
 - `tests/leaderboard-recovery.test 2.js`
 - `tests/outcome-ingestion.test 2.js`
 - `tests/pre-submit-audit.test 2.js`
-- `tests/quantum-weekly.test 2.js`
 - `tests/report-date.test 2.js`
 - `tests/runtime-enforcement.test 2.js`
 - `tests/signal-guard.test 2.js`
@@ -154,12 +153,6 @@ These are not ideal long-term, but they still have live reasons to exist.
   Reason:
   - still back test legacy lane behavior and packaging expectations
   - should be revisited only when corresponding source modules are retired
-
-- `docs/paperboy-application.md`
-- `src/paperboy/*`
-- `src/loop/paperboy-run.ts`
-  Reason:
-  - not part of the core filing loop, but still intentionally present as a separate capability
 
 ## Follow-Up Risks
 

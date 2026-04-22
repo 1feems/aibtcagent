@@ -10,6 +10,4 @@ export * from "./source.js";
 export * from "./submission-package.js";
 export * from "./validation-result.js";
 export * from "./validation-subject.js";
-export * from "./paperboy.js";
 export * from "./filing-gate.js";
-export * from "./editor.js";
