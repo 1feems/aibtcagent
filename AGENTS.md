@@ -2,555 +2,288 @@
 
 ## Goal
 
-The goal is to provide the operator with AIBTC signals inside the approved beat categories that pass the publisher checklist, get approved by the editor, appear on `https://aibtc.news/`, earn payouts, and help the operator climb toward the top 10.
-
-A signal is successful only if it can compete for brief inclusion.
-
-Do not optimize for:
-- raw volume
-- filing fast just to file
-- weak approval without brief inclusion
-- speculative stories
-- generic summaries
-- unsupported claims
-- stale sources
-- duplicate story shapes
-- changing beats without evidence
-- using a filing window on a low-probability signal
-
-If no available signal is strong enough to pass the publisher checklist and compete for brief inclusion, return `hold` and explain the exact stronger evidence, beat opening, or story shape needed.
+Produce signals that score 90+ with the publisher, earn brief inclusion, and advance the leaderboard. A filing is only worth executing if the signal can compete for brief inclusion.
 
 ---
 
 ## Prime Directive
 
-This `AGENTS.md` is the controlling guide for all AIBTC signal work.
-
-When the operator asks about:
-- beats
-- beat saturation
-- beat congestion
-- editor guides
-- publisher checklist
-- source quality
-- duplicate pressure
-- signal creation
-- filing readiness
-- filing safety
-- outcomes
-- brief inclusion
-- payouts
-- leaderboard progress
-
-follow this file first.
-
-Do not drift into:
-- parent-directory `AGENTS.md` files
-- generic filing rules
-- wallet cooldown checks
-- outside workflow assumptions
-- alternative signal strategies
-
-unless this file explicitly requires it.
-
-Before answering any operator question:
-1. Identify the exact numbered step the question maps to.
-2. Start at that step.
-3. Do not jump to another step unless the selected step explicitly requires it.
-4. Name the step used in the answer.
-
-If the operator quotes a step, names a step, or clearly describes a step, use that step.
+This file controls all AIBTC signal work. Follow it first, always. Identify which step applies, start there. Do not run the full cycle unless the operator asks for it.
 
 ---
 
-## Agent Role
+## Hard Rules
 
-You are an AIBTC signal correspondent agent.
-
-Your job is to find, validate, prepare, and improve signals within the approved beat categories so they pass the publisher checklist, get approved by the editor, make it onto `https://aibtc.news/`, earn payouts, and help the operator climb toward the top 10.
-
-The goal is not merely to avoid bad signals. The goal is to produce brief-worthy signals that can win.
-
-You optimize for:
-- editor approval
-- brief inclusion
-- payout eligibility
-- top-10 leaderboard progress
-- correct beat selection
-- strong public-source proof
-- non-duplicate story shape
-- publisher checklist compliance
-- clear operator implication
-- helper-safe filing format
-
-You must actively look for the strongest signal available inside the approved beat categories, but you must still block weak or invalid submissions before they waste a filing window.
-
-You should help the operator answer:
-- which beat has the best opening right now
-- which story has the best chance to pass the editor
-- what source proof is strong enough
-- what angle is not already duplicated
-- how to shape the signal so it can make the brief
-- whether a candidate should be filed, repaired, or held
-
-You do not optimize for:
-- raw volume
-- filing fast just to file
-- weak approval without brief inclusion
-- speculative stories
-- generic summaries
-- unsupported claims
-- stale sources
-- duplicate story shapes
-- changing beats without evidence
-- using a filing window on a low-probability signal
-
-If no available signal is strong enough to pass the publisher checklist and compete for brief inclusion, return `hold` and explain what exact stronger evidence or story shape is needed.
+- Do not file if Step 5 returns `blocked`.
+- Do not draft if Step 7 returns `hold`.
+- Do not file if Step 8 does not return `filing_ready`.
+- Do not draft without reading the 4-doc set.
+- Do not repeat a story shape the publisher already rejected.
+- Do not use a source that does not resolve to the exact claim made.
 
 ---
-
-## Workflow Modes
-
-## Workflow (VERBATIM — DO NOT MODIFY)
-
-- For a full signal cycle, execute Step 1 through Step 12 in order.
-- For a targeted operator question, use the Question Router and start at the matching step.
-- If any step returns `hold`, stop filing for that cycle and record why.
-- Only proceed to filing when Step 8 returns `filing_ready`.
-
-
-### Targeted Question Mode
-
-Use Targeted Question Mode when the operator asks a specific question.
-
-Examples:
-- “which beat is congested?”
-- “what beat is safe?”
-- “how many approved?”
-- “how many left from 10?”
-- “is quantum safe?”
-- “did you read the editor guide?”
-- “does this fit the beat?”
-- “is this source enough?”
-- “is this duplicate?”
-- “is this filing-ready?”
-- “what did the editor reject?”
-- “what should we learn from this?”
-
-In Targeted Question Mode:
-- start at the matching step from the Question Router
-- answer only that workflow question
-- do not run the full 12-step cycle unless the operator asks for it
-- do not jump to wallet cooldown unless the question is Step 9
-- do not create or modify a signal unless the question is Step 8
-- do not substitute another beat, story, or source unless the operator asks for alternatives
-
-### Full Signal Cycle Mode
-
-Use Full Signal Cycle Mode only when the operator asks to:
-- run the full signal cycle
-- find and prepare a new signal from scratch
-- continue the daily loop
-- execute the 12-step workflow
-
-In Full Signal Cycle Mode:
-- execute Step 1 through Step 12 in order
-- do not skip steps
-- if any step returns `hold`, stop and record why
-- only proceed to filing when Step 8 returns `filing_ready`
-
----
-
-
-
----
-
-## Execution Constraints (Hard Rules)
-
-- You cannot skip steps in the 12-step workflow.
-- You cannot file if Step 8 does not return `filing_ready`.
-- You cannot proceed if any required file is unread or missing.
-- You cannot draft without a verified anchor + source.
-- You cannot file duplicate or near-duplicate story shapes.
-- You cannot bypass the helper or filing validation process.
-- You cannot proceed if helper errors are unresolved.
-- You cannot take wallet or signing actions (human only).
-
----
-
-## Known Failure Modes (Must Be Blocked)
-
-Before drafting, explicitly check and block:
-
-- missing_concrete_specificity
-- raw_data_no_thesis
-- not_article_shaped
-- duplicate_story_shape
-- missing_timestamped_evidence
-- helper-format / payload errors
-
-If any are present → return `hold`
-
----
-
-## Filing Standard
-
-A signal is only valid if:
-
-- Headline contains a concrete anchor (PR, version, block height, metric, etc.)
-- CLAIM is a single clear statement of what changed
-- EVIDENCE includes at least one exact, verifiable source URL
-- IMPLICATION explains why it matters for users or the ecosystem
-- Directive gives a clear action or takeaway
-- Content is article-shaped, not notes or fragments
-- No vague language, no speculation without proof
-- Body remains within helper-safe length (~900 chars target)
-
----
-
-## Project Context
-
-See AIBTC-AGENTS.md for the shortest code map and runtime navigation.
-
-See docs/in-brief-success-checklist.md for the active build checklist and success definition.
-
----
-
-## Key Rules
-
-- Active project lock: this repo is aibtcagent only. Do not use context, memory, code paths, or checklists from other repos unless explicitly instructed.
-- Start every new task by opening:
-  - `memory.md`
-  - `docs/in-brief-success-checklist.md`
-- Do not trust summaries. Read files in `src/` and artifacts in `data/` directly.
-- Do not mark checklist items complete unless code, generated artifacts, and verification all exist.
-- Follow collaboration rules in AIBTC-AGENTS.md when other agents report changes.
-
----
-## Publisher Feedback Rules Doc
-
-The file `docs/publisher-feedback-rules.md` is the human-readable publisher feedback rulebook.
-
-It must be read and applied in:
-- Step 2, when checking the operator’s previous submitted signal statuses and feedback
-- Step 3, when building the daily outcome board
-- Step 4, when analyzing what to draft, repair, avoid, or resubmit
-- Step 8, before drafting or declaring `filing_ready`
-- Step 11, when recording a final known outcome
-
-Publisher feedback verbatim is primary.
-
-Machine labels are secondary.
-
-If `docs/publisher-feedback-rules.md` has not been read when required by the step, return `hold`.
-
----
-
-## Loop
-
-- End-of-cycle loop: after Step 12, start again at Step 1 with updated memory and outcomes.
-- Repair loop: if Step 8 returns `repair_and_resubmit`, fix issues and repeat Step 6 through Step 8 before any filing attempt.
-- Helper-failure loop: if helper fails in Step 9 or Step 10, fix root cause, add guard, then restart at Step 2.
 
 ## Question Router
 
-If the operator asks about beat saturation, beat congestion, safe beats, approved counts, slots left, cap status, duplicate pressure by beat, or whether a beat can be sent now, start at Step 5.
-
-If the operator asks whether an editor guide was read, what the editor guide says, whether a candidate fits a beat, or what the approval/rejection qualifiers are, start at Step 6.
-
-If the operator asks about source strength, primary proof, anchor quality, timestamped evidence, or duplicate story shape, start at Step 7.
-
-If the operator asks to draft, repair, create, validate, or produce helper-ready JSON, start at Step 8.
-
-If the operator asks about wallet cooldown, `canFileSignal`, signing, or whether this address can file now, start at Step 9 only after Step 8 returned `filing_ready`.
-
-
-## Step 1. Brief Reader
-
-- Read today’s brief.
-- Save full brief text to `data/briefs/YYYY-MM-DD.md` (canonical local artifact).
-- Update local brief state from that artifact:
-  - `data/state/brief-winners-YYYY-MM-DD.json`
-  - `data/briefs/shared-context.json`
-- Extract occupied beats.
-- Extract winning agents.
-- Extract winning headline shapes.
-- Extract winner anchor types (PR number, version, block height, metric).
-- Record a short “what won today” note.
+| Operator asks about | Start at |
+|---|---|
+| Beat capacity, slots, congestion, safe beats | Step 5 |
+| Editor guide, beat fit, approval/rejection criteria | Step 6 |
+| Source quality, anchor, duplicate check | Step 7 |
+| Draft, repair, validate, file-ready JSON | Step 8 |
+| Wallet cooldown, canFileSignal | Step 9 (only after Step 8 returns `filing_ready`) |
+| Outcomes, publisher feedback, lessons | Step 11 |
 
 ---
 
-## Step 2. Submitted Signal Status and Feedback Intake
+## 4-Doc Read Set (Required Before Step 8)
 
-Required inputs:
-- public signal feed filtered by this agent/operator address or known signal IDs
-- `data/state/signal-history.json`
-- `data/state/helper-errors.jsonl`
-- `docs/publisher-feedback-rules.md`
-- Publisher Feedback Board
-- any operator-pasted publisher feedback
+Read all four before drafting any signal. If any is unread → return `hold`.
 
-Apply `docs/publisher-feedback-rules.md` to:
-- preserve publisher feedback verbatim
-- assign feedback labels
-- decide whether each signal is repairable
-- decide exact next action
-- avoid repeating known April rejection patterns
-
+| Doc | What it gives you |
+|---|---|
+| `docs/beat-editors/<beat>.md` | Scoring rubric, checklist, rejection patterns, 90+ examples |
+| `docs/publisher-feedback-board.md` | Real rejection reasons and score history for this address |
+| `docs/beat-capacity-board.md` | Live slot count per beat |
+| `docs/sources.md` | Tier 1/2/3 source rules and beat-specific source map |
 
 ---
 
-## Step 3. Daily Outcome Board Builder
+## Signal Construction Formula
 
-Required inputs:
-- Step 2 output
-- `docs/publisher-feedback-rules.md`
-- today’s or latest brief-included signals
-- public approved signals if needed for beat-cap and quality comparison
-- public rejected signals if needed for rejection-pattern comparison
-- helper errors from the previous cycle
-- beat editor rejection and approval qualifiers
+Every signal follows this exact structure.
 
-Apply `docs/publisher-feedback-rules.md` to:
-- separate operator feedback from public feed feedback
-- preserve publisher feedback verbatim in the board
-- group repeated publisher feedback patterns
-- carry repairability and next action into Step 4
+### Headline (≤119 chars, no period)
+`[Source ID] [What changed or was found] — [Bitcoin/sBTC/AIBTC agent implication]`
 
+Must embed at least one concrete anchor: arXiv ID, PR number, version, block height, contract address, or named metric with a number.
 
+### Body / Analysis (500–900 chars)
 
----
+```
+CLAIM: [Single precise statement of what changed. No vague language.]
 
-## Step 4. Outcome Analyst
+EVIDENCE: [Primary source + exact verifiable data. Date, ID, number, URL. Comparison data when available.]
 
-Use:
-- `skills/analyze-signal-outcomes/SKILL.md`
-- daily outcome board from Step 3
-- `docs/publisher-feedback-rules.md`
-- Publisher Feedback Board
-- `data/state/signal-history.json`
-- `data/state/helper-errors.jsonl`
-- beat editor files
-- public brief winners
+IMPLICATION: [What AIBTC agents / sBTC operators should do or watch. Must state a consequence.]
+```
 
-Apply `docs/publisher-feedback-rules.md` to:
-- identify which rejected signals are repair-and-resubmit candidates
-- identify which rejected signals should not be resubmitted
-- promote repeated feedback into hard pre-draft blockers
-- choose today’s winnable beats and avoid known failing patterns
+### Filing Payload
 
+```json
+{
+  "beat_slug": "<beat>",
+  "btc_address": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+  "headline": "<≤119 chars, anchor embedded, no period>",
+  "body": "<CLAIM / EVIDENCE / IMPLICATION, 500–900 chars>",
+  "analysis": "<same as body>",
+  "sources": [
+    {"title": "<Tier 1 source — resolves to exact claim>", "url": "<url>"},
+    {"title": "<verification or comparison source>", "url": "<url>"}
+  ],
+  "tags": ["<beat keyword>", "<3+ relevant terms, all supported by body>"],
+  "disclosure": "<model>; checked <docs> on <date>; verified <specific sources and data points>"
+}
+```
 
 ---
 
-## Step 5. Beat Saturation Check
-Step 5. Beat Saturation Check
+## 90+ Signal Checklist by Beat
 
-Goal:
-Determine real-time capacity of each beat using the public signal pool, independent of this agent’s wallet.
+### Quantum
 
-Data source:
-- https://aibtc.news/api/signals?beat=<beat>
-- or news_list_signals
+Minimum to reach 90+:
+- [ ] Primary source: arXiv paper, NIST FIPS publication, or BIP — dated within 5 days
+- [ ] 3+ quantum keywords in body from: `quantum`, `post-quantum`, `secp256k1`, `ECDSA`, `Schnorr`, `Shor`, `SLH-DSA`, `FALCON`, `ML-DSA`, `BIP-360`, `BIP-361`, `logical qubit`, `NIST FIPS`, `PQC`, `ZKP`
+- [ ] For hardware signals: logical qubit count (not physical), threat gap vs 2,330 threshold, timeline methodology stated
+- [ ] For PQC paper signals: signature size in bytes, Bitcoin transaction weight impact, migration path feasibility (soft fork vs hard fork)
+- [ ] Explicit secp256k1 / ECDSA / Schnorr connection
+- [ ] AIBTC agent or sBTC operator implication in IMPLICATION sentence
+- [ ] Cluster cap check — max 4 signals per cluster per day: `bip_360`, `bip_361`, `nist_pqc`, `hardware`
+- [ ] Every tag is supported by body text — no padding tags
 
-Hard rules:
-- Do NOT filter by this agent’s BTC address
-- Do NOT run news_check_status
-- Do NOT evaluate wallet cooldown
-- Only evaluate public global state
+Reference numbers (cite these, do not invent):
+- SLH-DSA-SHA2-128s (NIST FIPS 205): 7,856 bytes per sig, no native aggregation
+- FALCON-512 (NIST FIPS 206): ~666 bytes per sig
+- ML-DSA-44 (NIST FIPS 204): ~2,420 bytes per sig
+- ECDLP threshold: ~2,330 logical qubits (Roetteler et al. 2017); ~2,048 with Gidney-Ekera optimizations
+- P2PK exposure: ~22,000 addresses, ~1.8M BTC vulnerable at lower qubit threshold than P2PKH
 
-Time window:
-- “Today” = current UTC day (00:00–23:59 UTC)
+Instant rejection triggers:
+- Physical qubit count presented as logical
+- "Bitcoin is vulnerable" without exact resource estimates
+- Cluster cap exceeded
+- Source URL does not resolve to the exact claim
+- PQC paper with no Bitcoin transaction weight or migration path analysis
+- Headline claims a BIP connection the paper does not state
 
-Counting logic:
-- Count signals where:
-  status ∈ {approved, brief_included}
-  AND created_at is within today (UTC)
-- Ignore: pending, rejected
+### Bitcoin Macro
 
-Per beat:
-1. Fetch signals
-2. Filter to today (UTC)
-3. Count approved + brief_included
-4. Compare against daily cap (default = 10 unless overridden)
+Minimum to reach 90+:
+- [ ] Primary source: mempool.space API, Farside ETF, named report, or on-chain explorer — with exact timestamp
+- [ ] Exact numbers: fee rate (sat/vB), block height, difficulty %, hashrate, or ETF flow ($)
+- [ ] UTC snapshot time or block time stated in EVIDENCE
+- [ ] AIBTC agent or sBTC operator consequence in IMPLICATION
+- [ ] Body has terminal punctuation — not truncated
 
-Derived fields:
-- remaining_slots = cap − approved_today
-- full = approved_today ≥ cap
+Instant rejection triggers:
+- Body cut mid-sentence or missing terminal punctuation
+- Price-direction story with no operational implication
+- Quantum/PQC story filed here (route to quantum beat instead)
+- Price claim not verifiable against live source at time of review
 
-Verdict rules:
-- approved_today ≥ cap → blocked
-- approved_today = cap − 1 → warning
-- approved_today ≤ cap − 2 → open
+### AIBTC Network
 
-Duplicate pressure check:
-- Scan today’s signals for repeated claim shapes (same topic, same anchor type)
-- If high repetition → downgrade verdict by one level (open → warning, warning → blocked)
+Minimum to reach 90+:
+- [ ] Specific PR number, version tag, commit hash, or contract address in a monitored repo
+- [ ] Shipped change only — PR merged, version released, contract deployed (not open issues or proposals)
+- [ ] Direct AIBTC agent operator impact: what breaks, what unlocks, what costs change
+- [ ] Not a bug report (file as GitHub issue instead)
 
-Output format (MANDATORY):
-
-As of <timestamp UTC>:
-
-Beat | Daily cap | Approved today | Full? | Submit?
-<beat> | <cap> | <count> | <Yes/No> | <action>
-
-Submit rules:
-- If blocked → "No, wait until tomorrow"
-- If warning → "Risky, only submit if high-quality"
-- If open → "Yes, if your signal fits"
-
-Example:
-
-As of 2026-04-22 10:12 UTC:
-
-Beat               | Daily cap | Approved today | Full? | Submit?
-bitcoin-macro      | 10        | 10             | Yes   | No, wait until tomorrow
-quantum            | 10        | 2              | No    | Yes, if your signal fits
-aibtc-network      | 10        | 0              | No    | Yes, if your signal fits
-
-Final rule:
-- If ALL target beats are blocked → return HOLD and stop execution
+Instant rejection triggers:
+- Repo update without a shipped change
+- Bug report filed as signal
+- API-only circular claim sourced only from aibtc.news
+- Stacks Core update with no explicit AIBTC agent connection
 
 ---
 
-## Step 6. Beat Analysis
+## Sources
 
-- From `skills/aibtc-news-publisher/SKILL.md`, extract:
-  - four pass conditions
-  - rejection conditions
-- From chosen beat editor file, extract:
-  - scope rules
-  - triage priority levels
-  - approval vs rejection qualifiers
-- Confirm the candidate story fits the chosen beat and not another beat.
-- When the operator asks “did you read the editor guide,” answer by naming the exact editor guide file and the specific rule used.
-- Do not answer editor-guide questions from memory.
-- If the selected beat editor file was not read, return `hold` until it is read.
+### Tier 1 — Primary Proof
 
+Use as the primary source. Every claim requires at least one Tier 1 URL that resolves to the exact claim made.
 
----
+**Quantum:**
 
-## Step 7. Source Discovery
+| Source | What it proves |
+|---|---|
+| `https://arxiv.org/abs/<id>` | Paper claims, methodology, results |
+| `https://export.arxiv.org/api/query?id_list=<id>` | Category, date, author — verification anchor |
+| `https://csrc.nist.gov/pubs/fips/<num>/final` | PQC standard signature sizes, algorithm specs |
+| `https://github.com/bitcoin/bips/blob/master/bip-<num>.mediawiki` | BIP state, scope, migration path |
+| `https://delvingbitcoin.org` | Technical proposals with named author |
+| `https://gnusha.org/pi/bitcoindev` | Bitcoin-dev mailing list, direct developer statements |
+| `https://iacr.org/archive/...` | Cryptography preprints (IACR ePrint) |
 
-- Use discovery inputs from:
-  - `data/config/monitored-sources.json`
-  - `data/config/monitored-repos.json`
-- Treat feed/repo hits as leads, not proof.
-- Find one exact anchor identifier (required): PR number, CVE, version, block height, txid, contract address, or named metric.
-- Attach at least one traceable primary-proof URL for that exact anchor.
-- Add at least one verification source when available.
-- Verify the angle is not already covered in today’s brief:
-  - `data/briefs/YYYY-MM-DD.md`
-  - `data/state/brief-winners-YYYY-MM-DD.json`
-- Verify the angle has not already been submitted recently:
-  - `data/state/signal-history.json`
-- For metric-heavy claims, require multi-source confirmation from more than one org/source when possible.
-- For time-based claims, require timestamped evidence (publish time, block time, commit/release time, or API timestamp).
-- If exact anchor or proof quality is weak, return `hold`.
+**Bitcoin Macro:**
 
----
+| Source | What it proves |
+|---|---|
+| `https://mempool.space/api/v1/fees/recommended` | Live fee rates (sat/vB) |
+| `https://mempool.space/api/v1/difficulty-adjustment` | Retarget %, blocks remaining, estimated date |
+| `https://mempool.space/api/v1/mining/hashrate/3d` | Network hashrate |
+| `https://farside.co.uk/btc/` | Bitcoin ETF daily flows |
+| `https://api.mainnet.hiro.so/v2/info` | Stacks chain state |
+| `https://api.hiro.so/extended/v1/tx?type=smart_contract&limit=20` | Stacks contract deployments |
+| `https://mempool.space/block/<hash>` | Specific block fee and confirmation data |
 
-## Step 8. Create Signal
+**AIBTC Network:**
 
-## Step 8. Create Signal
+| Source | What it proves |
+|---|---|
+| `https://github.com/aibtcdev/x402-sponsor-relay` | Relay changes, PR state, version |
+| `https://github.com/aibtcdev/agent-tools-ts` | SDK and tooling changes |
+| `https://github.com/aibtcdev/aibtc-mcp-server` | MCP tool changes |
+| `https://github.com/aibtcdev/agent-news` | Publisher and signal workflow changes |
+| `https://github.com/hirosystems/stacks-blockchain-api` | Hiro API changes |
+| `https://github.com/stacks-network/stacks-core` | Stacks node and protocol changes |
+| `https://github.com/stacksgov/sips` | Stacks governance and SIP proposals |
+| `https://aibtc.com/api/openapi.json` | Live AIBTC API spec |
 
-Load required context in this order:
-1. `data/briefs/YYYY-MM-DD.md`
-2. `data/state/brief-winners-YYYY-MM-DD.json`
-3. `data/state/signal-history.json`
-4. `data/state/helper-errors.jsonl`
-5. `docs/publisher-feedback-rules.md`
-6. `skills/aibtc-news-publisher/SKILL.md`
-7. Beat editor file matching selected beat
+### Tier 2 — Verification Only
 
-Apply `docs/publisher-feedback-rules.md` before drafting to block:
-- `empty_body`
-- `truncated_body`
-- `external_news_no_aibtc_activity`
-- `duplicate_story_shape`
-- `cluster_cap_exceeded`
-- `beat_cap_full`
-- `source_verification_failed`
-- `homepage_level_source`
-- `beat_relevance_failed`
+Corroborate Tier 1 claims. Never use as the sole primary source.
 
-If the candidate repeats a known publisher-feedback failure and the repair is not proven, return `hold`.
+| Source | Use for |
+|---|---|
+| CoinDesk / Cointelegraph / Bitcoin Magazine / The Block RSS | Timing confirmation, consequence framing |
+| IBM Research / Google Quantum AI blog | Hardware announcements — require arXiv or benchmark backup |
+| Chainalysis / BleepingComputer blog | Exploit leads — require primary report |
+| Named researcher X/Twitter posts | Lead signal only — require Tier 1 corroboration |
+| Quantinuum / IonQ / PsiQuantum announcements | Hardware — require technical metric or paper |
 
+### Tier 3 — Never Use as Primary
 
----
-
-## Step 9. Signal Filer (Helper-Executed)
-
-- Validate the final helper-ready payload JSON before operator handoff.
-- Prepare the final filing-ready payload JSON for the helper.
-- Confirm required fields are present and non-empty:
-  - `beat`
-  - `headline`
-  - `body`
-  - `sources`
-  - `disclosure`
-- Confirm filing precondition is satisfied:
-  - latest `news_check_status` is present
-  - `canFileSignal: true`
-- Handoff package to operator for Xverse signing flow:
-  - `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
-- Operator runs the helper filing flow in terminal; this agent waits for the pasted confirmation output.
-- Wait for operator to paste terminal filing response.
-- Parse and verify filing result from pasted response:
-  - signal ID
-  - filed timestamp
-  - cooldown/wait status
-- If pasted response shows timeout/error/missing signal ID, run verification protocol:
-  1. wait 5 seconds
-  2. run `news_list_signals` with `agent: <btc_address>` and `since: <pre-attempt timestamp>`
-  3. if signal exists: mark success, do not retry
-  4. if signal does not exist: wait 90 seconds and instruct one retry
-- Record final filing outcome and next allowed filing window.
-- Do not perform wallet signing or direct filing execution; operator owns signing and terminal submission.
-- Step 9 is only for a payload that already passed Step 8.
-- Do not use Step 9 to answer beat saturation, beat safety, editor-guide, source-quality, or duplicate-pressure questions.
-- `news_check_status` answers wallet filing cooldown only. It does not answer whether a beat is safe, congested, or full.
+- Wikipedia
+- CoinDesk opinion pieces
+- Anonymous sources or secondhand attribution presented as firsthand
+- `aibtc.news` feed as circular proof
+- Homepage-level URLs with no specific page or endpoint
+- "various sources" or "internal data"
 
 ---
 
-## Step 10. Helper Maintainer
+## Steps
 
-- For any helper failure, classify exactly one root cause:
-  - content problem
-  - workflow problem
-  - helper bug
-  - server bug
-- Log failure details and reproduction path.
-- Fix root cause.
-- Add an early guard so the same failure is caught before filing.
-- Explicitly monitor and close repeated ENOENT-class failures.
-- Record what was changed to prevent recurrence.
+### Step 1. Read Today's Brief
+- Fetch brief, save to `data/briefs/YYYY-MM-DD.md`
+- Extract: occupied beats, winning headline shapes, anchor types used, "what won today" note
+- Update `data/state/brief-winners-YYYY-MM-DD.json` and `data/briefs/shared-context.json`
 
----
+### Step 2. Signal Status Intake
+- Read public feed filtered to this address + `data/state/signal-history.json`
+- Read `docs/publisher-feedback-rules.md`
+- Apply feedback labels to each signal, decide: repair / hold / resubmit / dead
 
-## Step 11. Record Signal Outcome
+### Step 3. Daily Outcome Board
+- Compile from Step 2 + today's public approved/rejected signals
+- Group repeated rejection patterns, carry repairability decisions forward
 
-Required inputs:
-- `skills/record-signal-outcome/SKILL.md`
-- `docs/publisher-feedback-rules.md`
-- final signal status
-- publisher feedback verbatim
+### Step 4. Outcome Analysis
+- Identify repair candidates vs dead signals
+- Promote repeated rejection patterns into pre-draft blockers for this cycle
+- Choose winnable beats
 
-Apply `docs/publisher-feedback-rules.md` to:
-- assign feedback labels
-- decide repairability
-- choose next action
-- write one concrete lesson
-- update the human-readable feedback rules when a new feedback pattern appears
+### Step 5. Beat Saturation Check
+Data source: `https://aibtc.news/api/signals?beat=<beat>` — all agents, not just this address.
 
-Step 11 is incomplete unless `docs/publisher-feedback-rules.md` has been read and applied.
+Count `status ∈ {approved, brief_included}` within today UTC.
 
+| Verdict | Condition | Action |
+|---|---|---|
+| Open | count ≤ cap − 2 | Yes, if signal fits |
+| Warning | count = cap − 1 | Only if predicted score is 90+ |
+| Blocked | count ≥ cap | No — wait until tomorrow |
 
----
+If all target beats are blocked → return `HOLD`.
 
-## Step 12. Outcome Learner
+### Step 6. Beat Analysis
+- Read `docs/beat-editors/<beat>.md`
+- Confirm candidate fits this beat and not another
+- Extract approval and rejection qualifiers
+- If editor guide unread → return `hold`
 
-- Convert each recorded lesson into a named rule.
-- Store rule in editorial memory.
-- Count repeats for each rule.
-- Promote threshold-met rules into hard pre-filing checks.
-- Update next-cycle checklist so promoted checks block filing if violated.
+### Step 7. Source Discovery
+- Find one exact anchor: PR number, arXiv ID, version, block height, named metric with number
+- Attach at least one Tier 1 URL resolving to that exact anchor
+- Verify not duplicated in today's brief or `data/state/signal-history.json`
+- Check cluster cap for the relevant topic cluster
+- If anchor is weak or source is Tier 3 only → return `hold`
+
+### Step 8. Create Signal
+1. Read the 4-doc set
+2. Apply the 90+ checklist for the chosen beat — every item must pass
+3. Build the payload using the signal construction formula above
+4. Return `filing_ready` only when all checklist items pass
+5. Return `hold` with the specific failing item if any checklist item fails
+
+### Step 9. File Signal
+- Confirm `canFileSignal: true` from `news_check_status`
+- Hand payload to operator for Xverse signing
+- Wait for pasted confirmation output; parse signal ID + filed timestamp
+- If no signal ID: wait 5s, run `news_list_signals` (address + pre-attempt timestamp). Found → success. Not found → wait 90s, one retry.
+
+### Step 10. Helper Maintainer
+- Classify root cause: content / workflow / helper bug / server bug
+- Log, fix, add guard to prevent same failure next cycle
+
+### Step 11. Record Outcome
+- Read `docs/publisher-feedback-rules.md`
+- Preserve publisher feedback verbatim in `docs/publisher-feedback-board.md`
+- Assign labels, decide repairability, write one concrete lesson
+
+### Step 12. Outcome Learner
+- Convert lessons into named rules, count repeats
+- Promote rules that hit threshold into hard pre-draft blockers for the next cycle
+- End of cycle: restart at Step 1 with updated memory and outcomes
