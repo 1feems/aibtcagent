@@ -1,6 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { inferLifecycleFromQueueStatus, isAwaitingHumanApproval, type CandidateLifecycle, type FilingQueueStatus, type RankedCandidateDecision } from "../filing/lifecycle.js";
+import { advanceDispatchQueue, getNextDueDispatchCandidate, type StaggeredDispatchQueueState } from "../filing/staggered-dispatch.js";
+import { generateLiveCandidateSlate } from "../filing/live-candidates.js";
+import { verifyEditorialLearningProof } from "../brief/index.js";
 import { enforceConciseHeadline } from "../signals/headline-composer.js";
 import type { CandidateFilingReview, DailyOperatorSummary, DailyReport } from "../types/index.js";
 
@@ -39,6 +42,10 @@ interface FilingQueue {
     beatsRepresented?: string[];
     quotaNotes?: string[];
   };
+}
+
+function formatDispatchDueAt(dueAt: string | null): string {
+  return dueAt ?? "n/a";
 }
 
 interface FiledSignalsState {
@@ -312,7 +319,7 @@ async function buildCandidateReview(
       .filter((h): h is string => h !== undefined)
   );
 
-  return Promise.all(
+  const reviews = await Promise.all(
     items
       .filter((item) => isAwaitingHumanApproval(getItemLifecycle(item)))
       .map(async (item): Promise<CandidateFilingReview> => {
@@ -385,6 +392,8 @@ async function buildCandidateReview(
       };
     })
   );
+
+  return reviews.filter((review) => !review.alreadyFiled && review.briefReadiness === "ready");
 }
 
 function buildOperatorBoundary(): string[] {
@@ -395,7 +404,11 @@ function buildOperatorBoundary(): string[] {
   ];
 }
 
-function buildWorkingLoop(reportDate: string, candidateId: string | null): string[] {
+function buildWorkingLoop(
+  reportDate: string,
+  candidateId: string | null,
+  dispatchSummary: DailyOperatorSummary["staggeredDispatch"]
+): string[] {
   const base = [
     "Startup preflight: confirm this session is inside aibtcagent, then read README.md, AIBTC-AGENTS.md, and memory.md before trusting any prior chat context.",
     `Run agent-daily for ${reportDate}.`,
@@ -418,9 +431,49 @@ function buildWorkingLoop(reportDate: string, candidateId: string | null): strin
     `Review the top candidate dossier in data/candidate-history/${candidateId}.md when a candidate exists.`,
     `Approve the best candidate with npm run approve-filing -- --date ${reportDate} --candidate ${candidateId} --decision approve --reviewed-by <name> --approval-note "<why this should win>" only after data/state/operator-signability.json confirms wallet readiness, payload integrity, and beat permission.`,
     `Do not let the agent submit or sign wallet actions directly; submit the approved artifact from data/filing-ready/${reportDate}/${candidateId}.json through the Xverse filing helper.`,
+    ...(dispatchSummary.nextCandidateId
+      ? [
+          `Staggered dispatch next due candidate: ${dispatchSummary.nextCandidateId} (${dispatchSummary.nextStatus ?? "scheduled"}) at ${formatDispatchDueAt(dispatchSummary.nextDueAt)}. Require a fresh Xverse signature for that send and do not batch-sign later candidates.`
+        ]
+      : []),
     `Confirm filing state updated in data/state/filed-signals.json and data/filing-results/${reportDate}/${candidateId}.json.`,
     `Track whether the filed signal is approved and whether it makes In Brief via data/outcomes/approvals and data/candidate-history/${candidateId}.md.`
   ];
+}
+
+function buildDispatchSummary(
+  queue: StaggeredDispatchQueueState | null
+): DailyOperatorSummary["staggeredDispatch"] {
+  if (!queue) {
+    return {
+      queueStatus: "unavailable",
+      nextCandidateId: null,
+      nextHeadline: null,
+      nextDueAt: null,
+      nextStatus: null,
+      pendingCount: 0,
+      notes: ["No staggered dispatch queue exists for this report date yet."]
+    };
+  }
+
+  const nextCandidate = getNextDueDispatchCandidate(queue);
+  const pendingCount = queue.items.filter((item) => !["sent", "skipped", "cancelled", "failed"].includes(item.status)).length;
+  const notes = [
+    `Dispatch queue is ${queue.queueStatus}; spacing remains ${queue.dispatchIntervalMinutes} minutes between sends and ${queue.beatSpacingMinutes} minutes between repeat beat sends.`,
+    nextCandidate
+      ? `Next due candidate is ${nextCandidate.candidateId} (${nextCandidate.status}) at ${formatDispatchDueAt(queue.nextDueAt ?? nextCandidate.scheduledFor)}.`
+      : "No candidate is currently due to dispatch."
+  ];
+
+  return {
+    queueStatus: queue.queueStatus,
+    nextCandidateId: nextCandidate?.candidateId ?? null,
+    nextHeadline: nextCandidate?.headline ?? null,
+    nextDueAt: queue.nextDueAt ?? nextCandidate?.scheduledFor ?? null,
+    nextStatus: nextCandidate?.status ?? null,
+    pendingCount,
+    notes
+  };
 }
 
 function buildQueueGuidance(filingQueue: FilingQueue | null): string[] {
@@ -454,7 +507,9 @@ function pickOperatorTopCandidate(
   filingQueue: FilingQueue | null
 ): RankedQueueCandidate | null {
   const rankedCandidates = queue?.candidates ?? [];
-  if (rankedCandidates.length === 0) {
+  const recommendedCount = filingQueue?.recommendationSummary?.recommendedCount ?? 0;
+
+  if (rankedCandidates.length === 0 || recommendedCount === 0) {
     return null;
   }
 
@@ -652,6 +707,17 @@ interface ManualBriefFile {
   }>;
 }
 
+interface ManualBriefIngestState {
+  reports?: Array<{
+    reportDate: string;
+    inputPath: string;
+    briefJsonPath?: string;
+    briefSnapshotPath?: string;
+    entryCount?: number;
+    updatedAt?: string;
+  }>;
+}
+
 function buildUrgencyNotes(candidateReview: CandidateFilingReview[], generatedAt: string): string[] {
   const approvable = candidateReview.filter(
     (c) => !c.alreadyFiled && c.briefReadiness !== "not_ready"
@@ -715,14 +781,17 @@ function renderMarkdown(summary: DailyOperatorSummary): string {
     `# Operator Summary: ${summary.reportDate}`,
     "",
     `Generated at: ${summary.generatedAt}`,
+    `Dispatch queue: ${summary.staggeredDispatch.queueStatus}`,
+    `Next due candidate: ${summary.staggeredDispatch.nextCandidateId ?? "none"}`,
+    `Next due at: ${summary.staggeredDispatch.nextDueAt ?? "n/a"}`,
     `Top candidate: ${summary.topCandidate.candidateId ?? "none"}`,
     `Decision: ${summary.topCandidate.decision}`,
     `Score: ${summary.topCandidate.score ?? "n/a"}`,
     `Headline: ${summary.topCandidate.headline ?? "none"}`,
     "",
-    "## Candidate Filing Review",
+    "## Contender Slate",
     ...(summary.candidateReview.length === 0
-      ? ["- No candidates in awaiting_human_approval for this date."]
+      ? ["- No real contenders reached the human review slate for this date."]
       : summary.candidateReview.flatMap((c) => [
           `### ${c.briefReadiness.toUpperCase()} | Score ${c.score} | ${c.beat}`,
           `Headline: ${c.headline}`,
@@ -752,6 +821,14 @@ function renderMarkdown(summary: DailyOperatorSummary): string {
     "## Queue Guidance",
     ...summary.queueGuidance.map((line) => `- ${line}`),
     "",
+    "## Staggered Dispatch",
+    `- Queue status: ${summary.staggeredDispatch.queueStatus}`,
+    `- Pending candidates: ${summary.staggeredDispatch.pendingCount}`,
+    `- Next candidate: ${summary.staggeredDispatch.nextCandidateId ?? "none"}`,
+    `- Next due at: ${summary.staggeredDispatch.nextDueAt ?? "n/a"}`,
+    ...(summary.staggeredDispatch.nextHeadline ? [`- Next headline: ${summary.staggeredDispatch.nextHeadline}`] : []),
+    ...summary.staggeredDispatch.notes.map((line) => `- ${line}`),
+    "",
     "## Working Loop",
     ...summary.workingLoop.map((line) => `- ${line}`),
     "",
@@ -767,7 +844,17 @@ function renderMarkdown(summary: DailyOperatorSummary): string {
     "",
     "## Brief Ingest Status",
     `- Ingested: ${summary.briefIngestStatus.ingested ? "Yes" : "No"}`,
+    `- Learned: ${summary.briefIngestStatus.learned ? "Yes" : "No"}`,
     `- Input path: ${summary.briefIngestStatus.inputPath}`,
+    ...(summary.briefIngestStatus.verifiedFiles.length === 0
+      ? []
+      : [`- Verified files: ${summary.briefIngestStatus.verifiedFiles.join(", ")}`]),
+    ...(summary.briefIngestStatus.missingFiles.length === 0
+      ? []
+      : [`- Missing proof: ${summary.briefIngestStatus.missingFiles.join(", ")}`]),
+    ...(summary.briefIngestStatus.staleFiles.length === 0
+      ? []
+      : [`- Stale proof: ${summary.briefIngestStatus.staleFiles.join(", ")}`]),
     `- ${summary.briefIngestStatus.note}`,
     ""
   ].join("\n");
@@ -784,14 +871,19 @@ export async function generateDailyOperatorSummary(
     throw new Error(`Daily report for ${reportDate} is required before building operator summary.`);
   }
 
-  const briefInputPath = `data/briefs/${reportDate}.json`;
-  const [queue, filingQueue, filedSignals, agentBehavior, briefFile] = await Promise.all([
+  const defaultBriefInputPath = `data/briefs/${reportDate}.json`;
+  const [queue, filingQueue, filedSignals, agentBehavior, briefFile, briefIngestState] = await Promise.all([
     readJsonOrNull<RankedQueue>(resolve(root, `data/queues/${reportDate}.json`)),
     readJsonOrNull<FilingQueue>(resolve(root, `data/filing-queue/${reportDate}.json`)),
     readJsonOrNull<FiledSignalsState>(resolve(root, "data/state/filed-signals.json")),
     readJsonOrNull<AgentBehaviorState>(resolve(root, "data/state/brief-agent-behavior.json")),
-    readJsonOrNull<ManualBriefFile>(resolve(root, briefInputPath))
+    readJsonOrNull<ManualBriefFile>(resolve(root, defaultBriefInputPath)),
+    readJsonOrNull<ManualBriefIngestState>(resolve(root, "data/state/manual-brief-ingest.json"))
   ]);
+  const briefReport = (briefIngestState?.reports ?? []).find((entry) => entry.reportDate === reportDate) ?? null;
+  const briefInputPath = briefReport?.inputPath
+    ? briefReport.inputPath.replace(`${root}/`, "")
+    : defaultBriefInputPath;
   const yesterday = new Date(`${reportDate}T00:00:00Z`);
   yesterday.setUTCDate(yesterday.getUTCDate() - 1);
   const previousDate = yesterday.toISOString().slice(0, 10);
@@ -799,7 +891,16 @@ export async function generateDailyOperatorSummary(
     resolve(root, `data/reports/daily/${previousDate}.json`)
   );
 
-  const topCandidate = pickOperatorTopCandidate(queue, filingQueue);
+  const liveSlate = await generateLiveCandidateSlate(reportDate, root);
+  const liveCandidateIds = new Set(liveSlate.candidates.map((candidate) => candidate.candidateId));
+  const reviewCandidateId =
+    liveSlate.topCandidateId ??
+    filingQueue?.topCandidateId ??
+    filingQueue?.items?.find((item) => item.queueStatus === "awaiting_human_approval")?.candidateId ??
+    null;
+  const topCandidate = reviewCandidateId
+    ? (queue?.candidates ?? []).find((candidate) => candidate.candidateId === reviewCandidateId) ?? null
+    : null;
   const changedFromYesterday: string[] = [];
   if (previousReport !== null) {
     changedFromYesterday.push(
@@ -828,17 +929,28 @@ export async function generateDailyOperatorSummary(
       ];
 
   const candidateReview = await buildCandidateReview(
-    filingQueue?.items ?? [],
+    (filingQueue?.items ?? []).filter((item) => liveCandidateIds.has(item.candidateId)),
     filedSignals,
     agentBehavior,
     briefFile
   );
-  const briefIngested = briefFile !== null;
+  const dispatchQueue = await advanceDispatchQueue(reportDate, { now: generatedAt }, root).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  });
+  const staggeredDispatch = buildDispatchSummary(dispatchQueue);
+  const editorialLearning = await verifyEditorialLearningProof(reportDate, {
+    baseDir: root,
+    requireOperatorReport: false
+  });
 
   return {
     kind: "daily_operator_summary",
     reportDate,
     generatedAt,
+    staggeredDispatch,
     topCandidate: topCandidate === null
       ? { candidateId: null, score: null, decision: "none", headline: null, reasons: [] }
       : { candidateId: topCandidate.candidateId, score: topCandidate.score, decision: topCandidate.decision, headline: topCandidate.headline, reasons: topCandidate.reasons },
@@ -848,18 +960,24 @@ export async function generateDailyOperatorSummary(
     operatorBoundary: buildOperatorBoundary(),
     queueGuidance: [
       ...buildQueueGuidance(filingQueue),
+      ...liveSlate.notes,
+      ...staggeredDispatch.notes,
       ...buildOperatorLoadGuidance(report)
     ],
-    workingLoop: buildWorkingLoop(reportDate, filingQueue?.topCandidateId ?? null),
+    workingLoop: buildWorkingLoop(reportDate, reviewCandidateId, staggeredDispatch),
     changedFromYesterday,
     improving: buildImprovementAssessment(report, previousReport),
     urgencyNotes: buildUrgencyNotes(candidateReview, generatedAt),
     briefIngestStatus: {
-      ingested: briefIngested,
-      inputPath: briefInputPath,
-      note: briefIngested
-        ? "Manual brief was ingested for today — editorial context is available for scoring."
-        : `No manual brief found at ${briefInputPath}. Place it and re-run agent-daily to capture editorial notes (why slots were won). Without it, the system tracks who won but not why — this is the richest learning signal.`
+      ingested: editorialLearning.briefSaved,
+      learned: editorialLearning.verified,
+      inputPath: editorialLearning.inputPath || briefInputPath,
+      verifiedFiles: editorialLearning.verifiedFiles,
+      missingFiles: editorialLearning.missingFiles,
+      staleFiles: editorialLearning.staleFiles,
+      note: editorialLearning.briefSaved
+        ? editorialLearning.note
+        : `No manual brief found at ${defaultBriefInputPath}. Place a brief file at data/briefs/${reportDate}.json, .md, or .txt and re-run agent-daily to capture editorial notes (why slots were won). Without it, the system tracks who won but not why — this is the richest learning signal.`
     }
   };
 }

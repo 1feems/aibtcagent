@@ -1,72 +1,108 @@
 # AIBTC Agent Code Map
 
-This is the shortest path for any LLM to find the live agent code and the signing flow.
+This file is the runtime navigation map for LLM sessions in this repo.
+It must follow the canonical contracts in:
 
-## Start Here
+- `docs/architecture.md`
+- `docs/company-operating-model.md`
+- `docs/workflow.md`
 
-- Project boundary: if the user is talking about `aibtc`, `signals`, `In Brief`, filing, beats, correspondents, or rewards, stay inside this repo. Do not pull context from `Kizuna`, `MkondoMe`, `Synthesis`, or other workspace agents unless the user explicitly switches projects.
-- Open [`memory.md`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/memory.md) first for the current known failures, fixes, and anti-drift rules.
-- Runtime entrypoint: [`src/agent/run-daily.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/agent/run-daily.ts)
-- Fetch loop: [`src/loop/fetch-and-run.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/loop/fetch-and-run.ts)
-- Candidate ranking: [`src/scoring/candidate-queue.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/scoring/candidate-queue.ts)
-- Filing queue: [`src/filing/queue.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/filing/queue.ts)
-- Outcome tracking: [`src/outcomes/checker.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/outcomes/checker.ts)
-- Live pre-submission memory: [`src/sources/live-pre-submission.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/sources/live-pre-submission.ts)
+If this file conflicts with those docs, those docs win.
 
-## What To Read For The User's Main Goal
+## Project Boundary
 
-User goal:
-- produce 5 to 6 strong signal candidates per day
-- approve the best ones
-- manually sign the filing-ready artifact
-- maximize `In Brief` wins and BTC rewards
+- If the user is talking about `aibtc`, signals, beats, filing, correspondents, `In Brief`, or rewards, stay inside this repo.
+- Do not pull operating context from sibling repos unless the user explicitly switches projects.
 
-Read these next:
+## Canonical Read Order
 
-- Strategy memory: [`src/intelligence/strategy-memory.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/intelligence/strategy-memory.ts)
-- Signal sourcing rules: [`docs/signal-sourcing-checklist.md`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/docs/signal-sourcing-checklist.md)
-- Brief win rules: [`docs/brief-win-rules.md`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/docs/brief-win-rules.md)
-- Active success checklist: [`docs/in-brief-success-checklist.md`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/docs/in-brief-success-checklist.md)
-- Filing approval path: [`src/filing/approve.ts`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/src/filing/approve.ts)
+Load docs in this exact order:
 
-## Commands
+1. `README.md`
+2. `docs/architecture.md`
+3. `docs/company-operating-model.md`
+4. `docs/workflow.md`
+5. `docs/build-plan.md` (only when current implementation state is needed)
+6. task-specific docs only for the active step
 
-- Full run: `npm run agent-daily -- --date YYYY-MM-DD`
-- Build only: `npm run build`
-- Typecheck: `npm run check`
-- Generate signing preflight: `npm run signing-preflight -- --date YYYY-MM-DD --candidate <candidate-id>`
-- Approve for signing: `npm run approve-filing -- --date YYYY-MM-DD --candidate <candidate-id> --decision approve --reviewed-by <name> --approval-note "<why this should win>"`
+This is the repo's official progressive-loading contract.
+
+## Company Workflow Contract (Required)
+
+Signal cycles follow `docs/company-operating-model.md` Step 1 through Step 12 in order:
+
+1. Brief Reader
+2. Signal Status Checker
+3. Outcome Updater
+4. Outcome Analyst
+5. Beat Saturation Check
+6. Beat Analysis
+7. Source Discovery
+8. Create Signal (`filing_ready` or stop/repair)
+9. Signal Filer (helper-executed)
+10. Helper Maintainer
+11. Record Signal Outcome
+12. Outcome Learner
+
+Loop rules:
+
+- End-of-cycle loop: after Step 12, restart at Step 1.
+- Repair loop: if Step 8 returns `repair_and_resubmit`, repeat Step 6 through Step 8 before filing.
+- Helper-failure loop: if Step 9 or Step 10 fails, fix root cause, add guard, restart at Step 2.
+
+Filing gate rule:
+
+- Never attempt filing unless Step 8 returns `filing_ready`.
+- `news_check_status` before every filing attempt is mandatory.
+
+## Runtime And Loop Entry Points
+
+- Top-level orchestrator: `npm run agent-daily -- --date YYYY-MM-DD`
+- Signal packaging runtime: `npm run signal-loop -- --date YYYY-MM-DD`
+- Outcome and optimization refresh: `npm run daily-learn -- --date YYYY-MM-DD`
+- Outcome poller: `npm run check-outcomes`
+- Filing approval path: `npm run approve-filing -- --date YYYY-MM-DD --candidate <candidate-id> --decision approve --reviewed-by <name> --approval-note "<why this should win>"`
+- Signing preflight: `npm run signing-preflight -- --date YYYY-MM-DD --candidate <candidate-id>`
+- Helper server: `npm run filing-helper`
+
+Fetch loop note:
+
+- `src/loop/fetch-and-run.ts` is a compatibility entrypoint and delegates to `run-daily`.
+- Prefer `agent-daily` for canonical runtime behavior.
+
+## Architecture Map By Phase
+
+- Orchestration: `src/agent/run-daily.ts`, `.github/workflows/agent-daily.yml`
+- Detection and candidate creation: `src/loop/fetch-and-run.ts`, `src/prep/candidate-generator.ts`, `src/prep/create-signal.ts`, `src/sources/*`
+- Validation and queueing: `src/filing/validate-artifact.ts`, `src/filing/filing-gate-validator.ts`, `src/scoring/candidate-queue.ts`, `src/filing/queue.ts`
+- Human signing handoff: `src/filing/approve.ts`, `src/filing/helper-server.ts`, `tools/xverse-register/file-signal.html`
+- Outcome learning: `src/outcomes/checker.ts`, `src/loop/optimization.ts`, `src/learning/*`
+
+## Operational Rules
+
+- Only these beats are in scope: `aibtc-network`, `bitcoin-macro`, `quantum`.
+- Business success is `brief_included`; `approved_not_in_brief` is a failed business outcome.
+- Queue output must fail closed when signability evidence is missing.
+- Do not hand-write chat signal JSON; use `npm run chat-signal -- --input <create-signal-input.json>`.
+- Wallet, heartbeat, and claim signatures remain human-only.
 
 ## Outputs To Inspect
 
 - Ranked candidates: `data/queues/YYYY-MM-DD.json`
 - Filing queue: `data/filing-queue/YYYY-MM-DD.json`
-- Dry-run dossiers: `data/dry-runs/`
 - Filing-ready artifacts: `data/filing-ready/`
-- Daily KPI report: `data/reports/daily/YYYY-MM-DD.json` + `.md`
-- Operator summary: `data/reports/operator/YYYY-MM-DD.json` + `.md`
-- Competitor review: `data/reports/competitor-review/YYYY-MM-DD.json` + `.md`
-- Failure memos: `data/reports/failure-memos/YYYY-MM-DD/{candidateId}.json` + `.md`
+- Daily report: `data/reports/daily/YYYY-MM-DD.json` and `.md`
+- Operator summary: `data/reports/operator/YYYY-MM-DD.json` and `.md`
+- Competitor review: `data/reports/competitor-review/YYYY-MM-DD.json` and `.md`
+- Failure memos: `data/reports/failure-memos/YYYY-MM-DD/{candidateId}.json` and `.md`
 - Runtime history: `data/state/agent-runtime.json`
 - Operator signability preflight: `data/state/operator-signability.json`
-- Brief winners: `data/state/brief-winners-YYYY-MM-DD.json`
-- Style performance: `data/state/style-performance.json`
-- Competitor styles: `data/state/top_5_competitor_styles.json`
-
-## Current Important Behavior
-
-- `run-daily.ts` is the top-level orchestrator.
-- `queue.ts` can expose up to five `awaiting_human_approval` candidates, but only after duplicate, freshness, and operator-signability gates all pass.
-- If `data/state/operator-signability.json` is missing or does not confirm wallet readiness, payload integrity, and beat permission, the queue fails closed and the operator flow should not recommend signing anything.
 
 ## Collaboration Rule
 
 When another LLM reports a change:
 
-1. open the files above
-2. open `memory.md`
-3. open `docs/in-brief-success-checklist.md`
-4. verify the real paths in this repo
-5. inspect generated artifacts in `data/`
-6. do not trust summaries without checking the code and queue outputs
-7. do not import project memory from other repos unless the user explicitly switched projects
+1. Verify the claim in code and generated artifacts.
+2. Re-open `docs/architecture.md`, `docs/company-operating-model.md`, and `docs/workflow.md`.
+3. Confirm the change still satisfies the Step 1 through Step 12 workflow contract.
+4. Do not trust summaries without checking real files.

@@ -1,0 +1,21 @@
+{
+  "reportDate": "2026-04-21",
+  "generatedAt": "2026-04-21T09:07:31.500Z",
+  "phases": [
+    {
+      "skill": "analyze-signal-outcomes",
+      "status": "completed",
+      "detail": "daily-learn, outcome auto-labeling, snapshot memory, outcome feedback memory, runtime memory sync, brief tracking, daily-prep, and explicit analysis artifact completed before candidate drafting (/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/logs/signal-loop-analysis-2026-04-21.json)"
+    },
+    {
+      "skill": "create-signal",
+      "status": "completed",
+      "detail": "research, plan, and implementation artifacts completed; filing queue saved to /Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/filing-queue/2026-04-21.json; plan report: /Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/logs/signal-loop-plan-2026-04-21.json"
+    },
+    {
+      "skill": "record-signal-outcome",
+      "status": "not_run",
+      "detail": "submission outcome recording happens only after a real filed signal id/status exists"
+    }
+  ]
+}

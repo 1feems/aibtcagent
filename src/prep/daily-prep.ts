@@ -219,44 +219,6 @@ async function appendDurableLessons(learningsPath: string, lessons: string[]): P
   return appended;
 }
 
-async function writeBackBeatLessons(
-  root: string,
-  reportDate: string,
-  lessonsAdded: string[],
-  categories: string[]
-): Promise<void> {
-  if (lessonsAdded.length === 0) return;
-
-  const editorMemoryPath = resolve(root, "data/state/editor-memory.json");
-  let memory: Record<string, unknown> = {};
-  try {
-    memory = JSON.parse(await readFile(editorMemoryPath, "utf8")) as Record<string, unknown>;
-  } catch { /* first run */ }
-
-  const beatLessons = (memory.beatLessons ?? {}) as Record<string, Array<{ date: string; lesson: string; source: string }>>;
-
-  const beatKeywords: Array<[string, RegExp]> = [
-    ["infrastructure", /\b(cve|nonce|relay|patch|vulnerability|security|dependency|wallet bug|api update|merge|pr #|issue #)\b/i],
-    ["quantum", /\b(quantum|bip-360|ecdsa|whitepaper|cryptography|post-quantum)\b/i]
-  ];
-
-  for (const lesson of lessonsAdded) {
-    for (const [beat, pattern] of beatKeywords) {
-      const matchesCategory = categories.some((c) => c.toLowerCase().includes(beat === "infrastructure" ? "infrastructure" : "quantum"));
-      if (pattern.test(lesson) || matchesCategory) {
-        beatLessons[beat] ??= [];
-        const alreadyExists = beatLessons[beat].some((e) => e.lesson === lesson);
-        if (!alreadyExists) {
-          beatLessons[beat].push({ date: reportDate, lesson, source: "daily-prep" });
-        }
-        break;
-      }
-    }
-  }
-
-  memory.beatLessons = beatLessons;
-  await writeFile(editorMemoryPath, JSON.stringify(memory, null, 2) + "\n", "utf8");
-}
 
 function buildSignalReportBase(reportDate: string): string {
   return [
@@ -329,8 +291,6 @@ async function applyManualOutcomeLoop(
   const lessonsAdded = await appendDurableLessons(learningsPath, lessons);
   await updateSignalReport({ reportDate, signalReportPath, input, categories });
   await refreshLearningCache(root);
-  await refreshEditorialMemory(root);
-  await writeBackBeatLessons(root, reportDate, lessonsAdded, categories);
 
   return {
     inputFound: true,
@@ -790,6 +750,7 @@ export async function runDailyPrep(
     ? formatBeatCoverageSection(beatCoverage)
     : "- beat coverage data unavailable";
   const outcomeLoop = await applyManualOutcomeLoop(reportDate, root, paths.learnings);
+  await refreshEditorialMemory(root);
 
   const reportContent = buildDailyReportContent({
     reportDate,

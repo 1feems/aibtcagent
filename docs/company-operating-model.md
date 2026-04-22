@@ -1,3 +1,13 @@
+Workflow
+- Execute Step 1 through Step 12 in order for each signal cycle.
+- If any step returns `hold`, stop filing for that cycle and record why.
+- Only proceed to filing when Step 8 returns `filing_ready`.
+
+Loop
+- End-of-cycle loop: after Step 12, start again at Step 1 with updated memory and outcomes.
+- Repair loop: if Step 8 returns `repair_and_resubmit`, fix issues and repeat Step 6 through Step 8 before any filing attempt.
+- Helper-failure loop: if helper fails in Step 9 or Step 10, fix root cause, add guard, then restart at Step 2.
+
 Step 1. Brief Reader
 - Read today's brief.
 - Save today's brief to local state.
@@ -25,7 +35,7 @@ Step 3. Outcome Updater
 - Write the daily outcome report.
 
 Step 4. Outcome Analyst
-- Use `.agents/skills/analyze-signal-outcomes/SKILL.md`.
+- Use `skills/analyze-signal-outcomes/SKILL.md`.
 - Separate winning vs failing patterns.
 - Compare `brief_included` vs `rejected` vs `approved-not-in-brief`.
 - Name the exact structural differences.
@@ -47,7 +57,7 @@ Step 5. Beat Saturation Check
 - If all target beats are blocked, return `hold` and stop.
 
 Step 6. Beat Analysis
-- From `.agents/skills/aibtc-news-publisher/SKILL.md`, extract:
+- From `skills/aibtc-news-publisher/SKILL.md`, extract:
   - four pass conditions
   - rejection conditions
 - From chosen beat editor file, extract:
@@ -66,7 +76,7 @@ Step 7. Source Discovery
 - If exact identifier or proof is weak, return `hold`.
 
 Step 8. Create Signal
-- Use `.agents/skills/create-signal/SKILL.md`.
+- Use `skills/create-signal/SKILL.md`.
 - Apply every pre-filing editorial-memory rule.
 - Re-check non-duplication against brief and recent signals.
 - Draft all five required parts:
@@ -113,7 +123,7 @@ Step 10. Helper Maintainer
 
 Step 11. Record Signal Outcome
 - Operator confirms one final status: `pending`, `approved`, `rejected`, `brief_included`.
-- Use `.agents/skills/record-signal-outcome/SKILL.md` to record outcome.
+- Use `skills/record-signal-outcome/SKILL.md` to record outcome.
 - Capture rejection/approval feedback verbatim when available.
 - Write one specific lesson:
   - exactly what worked or failed

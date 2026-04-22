@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
 import { generateAndSaveDailyOptimizationSnapshot } from "../dist/loop/index.js";
 import { buildSubmissionPayload } from "../dist/newsroom/index.js";
-import { runProtocolUpdateLane } from "../dist/signals/index.js";
+import { runInfrastructureLane } from "../dist/signals/index.js";
 import {
   logAcceptedSubmission,
   logApprovalOutcome,
@@ -17,7 +17,7 @@ import {
 import { validateSubject } from "../dist/validation/index.js";
 
 function createSubject(id, summary, significance, causality, detectedAt) {
-  return runProtocolUpdateLane({
+  return runInfrastructureLane({
     id,
     detectedAt,
     chain: "stacks",
@@ -138,14 +138,14 @@ test(
 
       assert.equal(snapshot.kind, "daily_optimization");
       assert.equal(snapshot.beatPreferences.length, 1);
-      assert.equal(snapshot.beatPreferences[0].beat, "protocol-updates");
+      assert.equal(snapshot.beatPreferences[0].beat, "infrastructure");
       assert.equal(snapshot.beatPreferences[0].preference, "decrease");
       assert.equal(snapshot.beatPreferences[0].published, 1);
       assert.equal(snapshot.beatPreferences[0].duplicateLosses, 1);
       assert.equal(snapshot.rejectionThreshold.mode, "tightened");
       assert.match(snapshot.rejectionThreshold.drivers[0], /tighten duplicate rejection/i);
       assert.deepEqual(snapshot.duplicateLossPatterns[0], {
-        beat: "protocol-updates",
+        beat: "infrastructure",
         count: 1,
         candidateIds: ["protocol-update-opt-002"]
       });
@@ -155,7 +155,7 @@ test(
         snapshot.winningHeadlinePatterns.find((pattern) => pattern.pattern === "before-advantage")?.count,
         1
       );
-      assert.ok(snapshot.nextDayRecommendations.some((line) => /protocol-updates/.test(line)));
+      assert.ok(snapshot.nextDayRecommendations.some((line) => /infrastructure/.test(line)));
       assert.ok(snapshot.nextDayRecommendations.some((line) => /headline/i.test(line)));
       assert.ok(snapshot.trainingWinningTags.length > 0);
       assert.ok(snapshot.trainingRejectionTags.length > 0);
@@ -492,7 +492,7 @@ test(
       );
 
       assert.equal(snapshot.beatPreferences.length, 1);
-      assert.equal(snapshot.beatPreferences[0].beat, "protocol-updates");
+      assert.equal(snapshot.beatPreferences[0].beat, "infrastructure");
       assert.equal(snapshot.beatPreferences[0].approvals, 1);
       assert.equal(snapshot.beatPreferences[0].published, 0);
       assert.equal(snapshot.beatPreferences[0].preference, "hold");

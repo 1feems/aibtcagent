@@ -1,0 +1,24 @@
+{
+  "input": {
+    "prompt": "Run audited signal loop for 2026-04-21\nTighten prompt: include direct evidence with exact source anchors. Failures: missing_evidence",
+    "metadata": {
+      "reportDate": "2026-04-21",
+      "generatedAt": "2026-04-21T09:05:24.082Z",
+      "iteration": 2
+    }
+  },
+  "output": {
+    "claims": [
+      "Signal loop evaluated 2026-04-21 and produced 0 strong candidate(s)."
+    ],
+    "evidence": [],
+    "implications": [
+      "This means operators should add stronger manual candidates or refresh sources before the next filing window."
+    ]
+  },
+  "score": 3,
+  "failures": [
+    "missing_evidence"
+  ],
+  "iteration": 2
+}

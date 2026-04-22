@@ -15,5 +15,5 @@ export function getQuantumMapLocalDatasetPath(baseDir?: string): string {
     return process.env.AIBTC_QUANTUM_MAP_LOCAL_DATASET_PATH;
   }
 
-  return resolve(baseDir ?? process.cwd(), "../quantum-visualizer/public/data.json");
+  return resolve(baseDir ?? process.cwd(), "data/state/quantum-map-local/data.json");
 }

@@ -1,6 +1,5 @@
 export * from "./candidate-signal.js";
 export * from "./daily-report.js";
-export * from "./filing-gate.js";
 export * from "./memory-records.js";
 export * from "./model-disclosure.js";
 export * from "./optimization-loop.js";
@@ -12,4 +11,5 @@ export * from "./submission-package.js";
 export * from "./validation-result.js";
 export * from "./validation-subject.js";
 export * from "./paperboy.js";
+export * from "./filing-gate.js";
 export * from "./editor.js";

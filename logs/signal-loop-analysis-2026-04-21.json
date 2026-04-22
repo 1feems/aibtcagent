@@ -1,0 +1,63 @@
+{
+  "reportDate": "2026-04-21",
+  "generatedAt": "2026-04-21T09:05:24.082Z",
+  "skill": "analyze-signal-outcomes",
+  "reviewedInputs": {
+    "signalHistory": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/signal-history.json",
+      "available": true,
+      "detail": "reviewed canonical filed-signal ledger before candidate drafting",
+      "reviewMode": "compliance_verified"
+    },
+    "editorialMemory": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/editorial-memory.json",
+      "available": true,
+      "detail": "reviewed editorial-memory preFilingChecks and current brief context before candidate drafting",
+      "reviewMode": "compliance_verified"
+    },
+    "outcomeFeedbackMemory": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/outcome-feedback-memory.json",
+      "available": true,
+      "detail": "reviewed normalized repeated outcome labels before candidate drafting",
+      "reviewMode": "compliance_verified"
+    },
+    "helperErrors": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/helper-errors.jsonl",
+      "available": true,
+      "detail": "reviewed helper-errors.jsonl before candidate drafting; latest helper issue: \"Template issue: Headline must include an exact anchor such as a PR, issue, version, endpoint, error code, block height, or hard metric.\"",
+      "reviewMode": "compliance_verified"
+    },
+    "latestBrief": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/briefs/2026-04-21.md",
+      "available": true,
+      "detail": "reviewed latest brief artifact before candidate drafting: data/briefs/2026-04-21.md",
+      "reviewMode": "compliance_verified"
+    },
+    "distilledLearningBrief": {
+      "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/signal-learning-briefs/2026-04-21.json",
+      "available": true,
+      "detail": "reviewed distilled signal-learning-brief before candidate drafting",
+      "reviewMode": "compliance_verified"
+    },
+    "beatEditorGuidance": [
+      {
+        "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/docs/beat-editors/aibtc-network-skill.md",
+        "available": true,
+        "detail": "loaded aibtc-network-skill.md before create-signal candidate drafting; this records guidance availability, not proof that every beat-specific hard gate passed",
+        "reviewMode": "loaded_only"
+      },
+      {
+        "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/docs/beat-editors/bitcoin-macro-ivory-coda.md",
+        "available": true,
+        "detail": "loaded bitcoin-macro-ivory-coda.md before create-signal candidate drafting; this records guidance availability, not proof that every beat-specific hard gate passed",
+        "reviewMode": "loaded_only"
+      },
+      {
+        "path": "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/docs/beat-editors/quantum-zen-rocket.md",
+        "available": true,
+        "detail": "loaded quantum-zen-rocket.md before create-signal candidate drafting; this records guidance availability, not proof that every beat-specific hard gate passed",
+        "reviewMode": "loaded_only"
+      }
+    ]
+  }
+}

@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
 import { buildSubmissionPayload } from "../dist/newsroom/index.js";
 import { generateAndSaveDailyReport } from "../dist/reporting/index.js";
-import { runProtocolUpdateLane } from "../dist/signals/index.js";
+import { runInfrastructureLane } from "../dist/signals/index.js";
 import {
   logAcceptedSubmission,
   logApprovalOutcome,
@@ -18,7 +18,7 @@ import {
 import { validateSubject } from "../dist/validation/index.js";
 
 function createSubject(id, detectedAt, summarySuffix) {
-  return runProtocolUpdateLane({
+  return runInfrastructureLane({
     id,
     detectedAt,
     chain: "stacks",
@@ -153,7 +153,7 @@ test(
         "2026-03-25T09:10:00Z"
       );
       await logLeaderboardObservation(
-        "protocol-updates",
+        "infrastructure",
         "up_2",
         ["Beat remained less crowded than deal-flow."],
         "2026-03-25T09:15:00Z"
@@ -181,7 +181,7 @@ test(
       assert.equal(report.detections.totalDetected, 4);
       assert.equal(report.detections.totalSubmitted, 2);
       assert.equal(report.detections.submissionConversionRate, 0.5);
-      assert.deepEqual(report.detections.beats, ["protocol-updates"]);
+      assert.deepEqual(report.detections.beats, ["infrastructure"]);
       assert.equal(report.rejections.totalRejected, 2);
       assert.deepEqual(report.rejections.reasons[0], {
         reason: "likely_duplicate",

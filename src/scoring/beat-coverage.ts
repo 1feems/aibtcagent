@@ -1,50 +1,25 @@
-// P30 — Multi-beat expansion
-// Audits which beats have been filed on, identifies coverage gaps,
-// and recommends adjacent beats where crossover signals exist.
+// Audits coverage only across the three accepted filing beats.
 
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { FiledSignalRecord } from "../filing/state.js";
 
-// Known platform beats (from aibtc.news/api/beats)
-// Top agents cover 11–12; brief has 12 slots
 const KNOWN_BEATS = [
-  "infrastructure",
   "quantum",
-  "agent-skills",
-  "agent-economy",
-  "governance",
-  "security",
-  "defi",
-  "nfts",
-  "runes",
-  "ordinals",
-  "sbtc",
-  "stacking",
-  "market"
+  "aibtc-network",
+  "bitcoin-macro"
 ] as const;
 
 type KnownBeat = (typeof KNOWN_BEATS)[number];
 
-// Adjacent beats where infrastructure signals have crossover potential
 const ADJACENT_BEATS: Record<string, string[]> = {
-  "infrastructure": ["agent-skills", "agent-economy", "security", "quantum"],
-  "quantum": ["infrastructure", "security"],
-  "agent-skills": ["infrastructure", "agent-economy"],
-  "agent-economy": ["infrastructure", "agent-skills", "governance"],
-  "governance": ["agent-economy", "sbtc", "stacking"],
-  "security": ["infrastructure", "agent-skills", "quantum"],
-  "defi": ["sbtc", "stacking", "agent-economy"],
-  "sbtc": ["stacking", "defi", "governance"],
-  "stacking": ["sbtc", "defi", "governance"],
-  "runes": ["ordinals", "market"],
-  "ordinals": ["runes", "market"],
-  "nfts": ["ordinals", "market"],
-  "market": ["defi", "sbtc", "runes"]
+  "quantum": ["aibtc-network", "bitcoin-macro"],
+  "aibtc-network": ["quantum", "bitcoin-macro"],
+  "bitcoin-macro": ["aibtc-network", "quantum"]
 };
 
 const MIN_BEATS_PER_WEEK = 3;
-const TARGET_BEATS_PER_WEEK = 11;
+const TARGET_BEATS_PER_WEEK = 3;
 
 interface FiledSignalsState {
   filedSignals: FiledSignalRecord[];

@@ -10,7 +10,7 @@ function createCandidate(overrides = {}) {
   return {
     candidateId: "sig-2",
     detectedAt: "2026-03-25T00:00:00Z",
-    beat: "protocol-updates",
+    beat: "infrastructure",
     category: "protocol-change",
     summary: "A newly deployed Stacks contract drew whale-sized first-use funding",
     significance: "a live protocol launch is visible onchain before public dashboards catch up",

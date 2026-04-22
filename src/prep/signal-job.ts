@@ -18,6 +18,7 @@ import {
 import { evaluateSignalGuard, type SignalGuardResult } from "../filing/signal-guard.js";
 import { parseCanonicalSignalPayload } from "../filing/signal-contract.js";
 import { readSignalHistory, type SignalHistoryEntry } from "../filing/signal-history.js";
+import { validateArtifact } from "../filing/validate-artifact.js";
 import {
   hasConcreteDisclosureAnchors,
   hasExactHeadlineAnchor,
@@ -27,6 +28,7 @@ import {
 } from "../filing/template-rules.js";
 import { checkBeatSaturation, formatSaturationWarning } from "../scoring/beat-saturation.js";
 import { checkBriefWinShape, type BriefWinGateResult } from "../scoring/brief-win-gate.js";
+import { assessEditorialCompetitiveness } from "../scoring/editorial-contract.js";
 import { readDailyOptimizationSnapshot } from "../loop/optimization.js";
 import { materializeGeneratedCandidates } from "./candidate-generator.js";
 
@@ -42,11 +44,20 @@ interface SourceRef {
 }
 
 interface ManualSubmission {
+  kind?: string;
+  fileable?: boolean;
+  non_fileable?: boolean;
   status?: string;
   resubmission_for_signal_id?: string;
   beat_slug?: string;
   headline?: string;
   analysis?: string;
+  candidate_signal?: {
+    summary?: string;
+    significance?: string;
+    causality?: string;
+    source_type?: string;
+  };
   sources?: SourceRef[];
   tags?: string[];
   [key: string]: unknown;
@@ -86,6 +97,17 @@ interface DailyPrepHandoff {
   };
 }
 
+interface SignalJobContextReview {
+  fileName: string;
+  candidateId: string;
+  headline: string;
+  beat: string;
+  accepted: boolean;
+  preDraftAccepted: boolean;
+  preDraftScore: number;
+  reasons: string[];
+}
+
 interface CandidateReview {
   fileName: string;
   artifactPath: string;
@@ -119,6 +141,17 @@ interface BeatFocusState {
   primaryBeat: string | null;
   secondaryBeat: string | null;
   deprioritizedBeats: string[];
+}
+
+function isCanonicalCreateSignalArtifact(submission: ManualSubmission): boolean {
+  const record = submission as Record<string, unknown>;
+  return (
+    record.kind === "create_signal_artifact" &&
+    record.status === "in_queue" &&
+    record.non_fileable !== true &&
+    record.fileable !== false &&
+    Boolean(record.filing_gate && typeof record.filing_gate === "object" && !Array.isArray(record.filing_gate))
+  );
 }
 
 function getPriorDate(dateStr: string): string {
@@ -270,10 +303,10 @@ export function computePreDraftScore(
   let score = 0;
   const reasons: string[] = [];
 
-  if (publisherFit.missionAligned) score += 2; else reasons.push("pre-draft Q1 failed");
-  if (publisherFit.replicable) score += 2; else reasons.push("pre-draft Q2 failed");
-  if (publisherFit.inscribable) score += 2; else reasons.push("pre-draft Q3 failed");
-  if (publisherFit.valueCreating) score += 2; else reasons.push("pre-draft Q4 failed");
+  if (publisherFit.missionAligned) score += 1;
+  if (publisherFit.replicable) score += 1;
+  if (publisherFit.inscribable) score += 1;
+  if (publisherFit.valueCreating) score += 1;
 
   if (structural.exactAnchor) score += 2; else reasons.push("missing exact anchor at pre-draft stage");
   if (structural.directOperatorConsequence) score += 2; else reasons.push("missing direct operator consequence at pre-draft stage");
@@ -369,10 +402,7 @@ function buildGuardSection(guard: SignalGuardResult | null): string[] {
   if (!guard) {
     return [
       "- Ready-to-file gate:",
-      "  - `Q1 Mission-aligned`: unknown",
-      "  - `Q2 Replicable`: unknown",
-      "  - `Q3 Inscribable`: unknown",
-      "  - `Q4 Value-creating`: unknown",
+      "  - `Editor guidance`: unknown",
       "  - `Fact-check source verification`: unknown",
       "  - `Fact-check claim verification`: unknown",
       "  - `Duplicate-shape`: unknown",
@@ -388,10 +418,7 @@ function buildGuardSection(guard: SignalGuardResult | null): string[] {
 
   return [
     "- Ready-to-file gate:",
-    `  - \`Q1 Mission-aligned\`: ${guard.checks.publisherQ1}`,
-    `  - \`Q2 Replicable\`: ${guard.checks.publisherQ2}`,
-    `  - \`Q3 Inscribable\`: ${guard.checks.publisherQ3}`,
-    `  - \`Q4 Value-creating\`: ${guard.checks.publisherQ4}`,
+    `  - \`Editor guidance\`: ${guard.checks.editorGuidance ?? "enforced_by_create_signal_and_beat_editor"}`,
     `  - \`Fact-check source verification\`: ${guard.checks.factCheckerSourceVerification}`,
     `  - \`Fact-check claim verification\`: ${guard.checks.factCheckerClaimVerification}`,
     `  - \`Duplicate-shape\`: ${duplicatePass ? "pass" : "reject"}`,
@@ -500,7 +527,7 @@ export function buildSignalReport(args: {
         "Do not attempt to repair these. Return to Signal Discovery and generate new candidates from stronger source anchors.",
         "",
         ...args.rejected.map((review) =>
-          `- \`${review.fileName}\`: ${review.reasons.slice(0, 2).join("; ")}`
+          `- \`${review.fileName}\`: ${review.reasons.slice(0, 8).join("; ")}`
         )
       ].join("\n")
     );
@@ -615,6 +642,8 @@ async function reviewCandidate(
   const reasons: string[] = [];
   const preDraftReasons: string[] = [];
   const { payload, issues } = parseCanonicalSignalPayload(submission);
+  const artifactValidation = validateArtifact(submission);
+  const canonicalCreateSignalArtifact = isCanonicalCreateSignalArtifact(submission);
   const headline = payload?.headline ?? submission.headline?.trim() ?? "";
   const analysis = payload?.analysis ?? submission.analysis?.trim() ?? "";
   const sources = payload?.sources ?? [];
@@ -624,23 +653,48 @@ async function reviewCandidate(
 
   const publisherFit = buildPreDraftPublisherFit(headline, analysis, disclosure);
   const structural = buildStructuralScreen(headline, analysis);
+  const editorialCompetitiveness = assessEditorialCompetitiveness({
+    headline,
+    summary: submission.candidate_signal?.summary,
+    significance: submission.candidate_signal?.significance,
+    causality: submission.candidate_signal?.causality,
+    sourceUrls: sources.map((source) => source.url),
+    sourceTypes: submission.candidate_signal?.source_type
+      ? [String(submission.candidate_signal.source_type)]
+      : []
+  });
   const preDraft = computePreDraftScore(publisherFit, structural, beat, beatFocus);
   preDraftReasons.push(
-    `publisher-fit: Q1 ${publisherFit.missionAligned ? "pass" : "reject"}, Q2 ${publisherFit.replicable ? "pass" : "reject"}, Q3 ${publisherFit.inscribable ? "pass" : "reject"}, Q4 ${publisherFit.valueCreating ? "pass" : "reject"}`,
-    `structural: exact-anchor ${structural.exactAnchor ? "yes" : "no"}, operator-consequence ${structural.directOperatorConsequence ? "yes" : "no"}, claim-evidence-implication ${structural.claimEvidenceImplication ? "yes" : "no"}, action-line ${structural.actionLineViable ? "yes" : "no"}, displacement ${structural.displacementPotential ? "yes" : "no"}`
+    `publisher-fit (legacy informational only): missionAlignment ${publisherFit.missionAligned ? "pass" : "reject"}, replicable ${publisherFit.replicable ? "pass" : "reject"}, inscribable ${publisherFit.inscribable ? "pass" : "reject"}, valueCreating ${publisherFit.valueCreating ? "pass" : "reject"}`,
+    `structural: exact-anchor ${structural.exactAnchor ? "yes" : "no"}, operator-consequence ${structural.directOperatorConsequence ? "yes" : "no"}, claim-evidence-implication ${structural.claimEvidenceImplication ? "yes" : "no"}, action-line ${structural.actionLineViable ? "yes" : "no"}, displacement ${structural.displacementPotential ? "yes" : "no"}`,
+    `editorial-competitiveness: ${editorialCompetitiveness.status}`
   );
   preDraftReasons.push(...preDraft.reasons);
+  if (editorialCompetitiveness.reasons.length > 0) {
+    preDraftReasons.push(...editorialCompetitiveness.reasons);
+  }
 
   if (submission.status !== "in_queue") reasons.push("artifact status is not in_queue");
-  if (issues.length > 0) reasons.push(...issues.map((issue) => `canonical payload mismatch: ${issue.reason}`));
-  if (!headline) reasons.push("headline missing");
-  if (headline && !isLikelyCompleteHeadline(headline)) reasons.push("headline is incomplete, truncated, or exceeds 120 characters");
-  if (headline && !hasExactHeadlineAnchor(headline)) {
-    reasons.push("pre-draft kill: Q2 fast-check failed — headline has no exact anchor (PR#, issue#, version, block, sat amount, endpoint); label q2_incomplete and do not file");
+  if (artifactValidation.issues.length > 0) {
+    reasons.push(...artifactValidation.issues.map((issue) => `canonical create-signal artifact failed: ${issue.code} at ${issue.field}: ${issue.reason}`));
+  } else if (issues.length > 0) {
+    reasons.push(...issues.map((issue) => `canonical payload mismatch: ${issue.reason}`));
   }
-  if (headline && headlineAlreadyInBrief(headline, briefHeadlines)) reasons.push("headline already appears in today's brief");
+  if (!headline) reasons.push("headline missing");
+  if (!canonicalCreateSignalArtifact && headline && !isLikelyCompleteHeadline(headline)) reasons.push("headline is incomplete, truncated, or exceeds 120 characters");
+  if (!canonicalCreateSignalArtifact && headline && !hasExactHeadlineAnchor(headline)) {
+    reasons.push("pre-draft kill: headline-anchor fast-check failed — headline has no exact anchor (PR#, issue#, version, block, sat amount, endpoint); do not file");
+  }
+  if (headline && headlineAlreadyInBrief(headline, briefHeadlines)) {
+    const duplicateReason = "headline already appears in today's brief";
+    if (canonicalCreateSignalArtifact) {
+      preDraftReasons.push(`post-artifact duplicate warning: ${duplicateReason}`);
+    } else {
+      reasons.push(duplicateReason);
+    }
+  }
   if (!analysis) reasons.push("analysis/body missing");
-  if (analysis && !hasTemplateAnalysis(analysis)) {
+  if (!canonicalCreateSignalArtifact && analysis && !hasTemplateAnalysis(analysis)) {
     reasons.push("analysis must use Framework A (CLAIM/EVIDENCE/IMPLICATION/Directive) or Framework B (What changed/What it means/What to do) — freeform analysis is rejected");
   }
   if (sources.length === 0) reasons.push("sources missing");
@@ -649,13 +703,22 @@ async function reviewCandidate(
     reasons.push(`too many tags: ${tags.length} tags present, maximum is 2 — single-beat specialists earn 135K sats avg vs 26K for sprawl`);
   }
   const anchorCollision = findAnchorCollision(headline, analysis, duplicateContexts);
-  if (anchorCollision) reasons.push(`duplicate anchor collision: ${anchorCollision}`);
+  if (anchorCollision) {
+    const collisionReason = `duplicate anchor collision: ${anchorCollision}`;
+    if (canonicalCreateSignalArtifact) {
+      preDraftReasons.push(`post-artifact duplicate warning: ${collisionReason}`);
+    } else {
+      reasons.push(collisionReason);
+    }
+  }
 
-  if (!publisherFit.missionAligned) reasons.push("pre-draft kill: fails publisher Q1 mission-aligned test");
-  if (!publisherFit.replicable) reasons.push("pre-draft kill: fails publisher Q2 replicable test");
-  if (!publisherFit.inscribable) reasons.push("pre-draft kill: fails publisher Q3 inscribable test");
-  if (!publisherFit.valueCreating) reasons.push("pre-draft kill: fails publisher Q4 value-creating test");
-  if (preDraft.score < 10) reasons.push(`pre-draft kill: structural score ${preDraft.score} is below the minimum winner threshold`);
+  if (!canonicalCreateSignalArtifact && editorialCompetitiveness.status !== "competitive") {
+    reasons.push(
+      "pre-draft kill: headline/story shape is not competitive for In Brief — " +
+      editorialCompetitiveness.reasons.join("; ")
+    );
+  }
+  if (!canonicalCreateSignalArtifact && preDraft.score < 10) reasons.push(`pre-draft kill: structural score ${preDraft.score} is below the minimum winner threshold`);
 
   // P27: beat saturation check (non-blocking warning unless blocked)
   let beatSaturationMsg: string | null = null;
@@ -676,8 +739,8 @@ async function reviewCandidate(
   const briefWinGate = (headline && analysis)
     ? checkBriefWinShape(headline, analysis)
     : null;
-  if (briefWinGate && !briefWinGate.pass && briefWinGate.demotionReason) {
-    reasons.push(briefWinGate.demotionReason);
+  if (!canonicalCreateSignalArtifact && briefWinGate && !briefWinGate.pass && briefWinGate.demotionReason) {
+    reasons.push(`pre-draft kill: ${briefWinGate.demotionReason}`);
   }
 
   const preDraftAccepted = !reasons.some((reason) => reason.startsWith("pre-draft kill:"));
@@ -711,7 +774,7 @@ async function reviewCandidate(
         derivation_steps: payload.disclosure ? [payload.disclosure] : []
       }
     }, root);
-    if (!guard.ok) {
+    if (!guard.ok && !canonicalCreateSignalArtifact) {
       reasons.push(...guard.blockers.map((blocker) => `shared editorial guard: ${blocker}`));
       return {
         fileName,
@@ -968,6 +1031,16 @@ export async function runSignalJob(
       ],
       queueDir: paths.queueDir,
       queueFiles,
+      reviews: reviews.map((review) => ({
+        fileName: review.fileName,
+        candidateId: review.fileName.replace(/\.json$/, ""),
+        headline: review.submission.headline?.trim() ?? review.fileName.replace(/\.json$/, ""),
+        beat: review.submission.beat_slug?.trim() ?? "",
+        accepted: review.accepted,
+        preDraftAccepted: review.preDraftAccepted,
+        preDraftScore: review.preDraftScore,
+        reasons: review.reasons
+      } satisfies SignalJobContextReview)),
       acceptedCount: accepted.length,
       rejectedCount: rejected.length
     }, null, 2) + "\n",

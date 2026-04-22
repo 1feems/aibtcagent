@@ -95,12 +95,20 @@ async function fetchFeed(status: string): Promise<Map<string, ApiSignal>> {
 
 async function readState(): Promise<FiledSignalsState> {
   const absolutePath = resolve(process.cwd(), STATE_PATH);
-  const raw = await readFile(absolutePath, "utf8");
-  return JSON.parse(raw) as FiledSignalsState;
+  try {
+    const raw = await readFile(absolutePath, "utf8");
+    return JSON.parse(raw) as FiledSignalsState;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { filedSignals: [] };
+    }
+    throw error;
+  }
 }
 
 async function writeState(state: FiledSignalsState): Promise<void> {
   const absolutePath = resolve(process.cwd(), STATE_PATH);
+  await mkdir(dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, JSON.stringify(state, null, 2) + "\n", "utf8");
 }
 

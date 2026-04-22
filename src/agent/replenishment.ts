@@ -1,10 +1,18 @@
-import { runFetchAndRun } from "../loop/fetch-and-run.js";
 import { rankDryRunCandidates, saveRankedCandidateQueue, type RankedCandidate } from "../scoring/index.js";
 import { buildFilingQueue } from "../filing/index.js";
 import type { FilingQueueSnapshot } from "../filing/index.js";
 
 export const TARGET_STRONG_CANDIDATES = 6;
 export const MAX_REPLENISHMENT_PASSES = 4;
+
+export interface ReplenishmentPassResult {
+  results: Array<{ path: string; status: string }>;
+}
+
+export type ReplenishmentPassRunner = (
+  generatedAt: string,
+  reportDate: string
+) => Promise<ReplenishmentPassResult>;
 
 export function countStrongCandidates(queue: FilingQueueSnapshot): number {
   return queue.items.filter((item) => item.queueStatus === "awaiting_human_approval").length;
@@ -13,12 +21,14 @@ export function countStrongCandidates(queue: FilingQueueSnapshot): number {
 export async function replenishCandidateSlate(
   reportDate: string,
   generatedAt: string,
-  logPrefix: string
+  logPrefix: string,
+  runReplenishmentPass: ReplenishmentPassRunner
 ): Promise<{
   rankedCandidates: RankedCandidate[];
   queuePath: string;
   filingQueue: FilingQueueSnapshot;
   replenishmentPassesRun: number;
+  lastPassResult: ReplenishmentPassResult | null;
 }> {
   let rankedCandidates = await rankDryRunCandidates(reportDate);
   let queuePath = await saveRankedCandidateQueue(reportDate, rankedCandidates);
@@ -27,6 +37,7 @@ export async function replenishCandidateSlate(
   let filingQueue = await buildFilingQueue(reportDate, rankedCandidates);
   let strongCandidates = countStrongCandidates(filingQueue);
   let replenishmentPassesRun = 0;
+  let lastPassResult: ReplenishmentPassResult | null = null;
 
   while (
     strongCandidates < TARGET_STRONG_CANDIDATES &&
@@ -40,7 +51,8 @@ export async function replenishCandidateSlate(
     const passTime = new Date(
       new Date(generatedAt).getTime() + replenishmentPassesRun * 60_000
     ).toISOString();
-    const fetchResult = await runFetchAndRun(passTime, reportDate);
+    const fetchResult = await runReplenishmentPass(passTime, reportDate);
+    lastPassResult = fetchResult;
 
     rankedCandidates = await rankDryRunCandidates(reportDate);
     queuePath = await saveRankedCandidateQueue(reportDate, rankedCandidates);
@@ -74,5 +86,5 @@ export async function replenishCandidateSlate(
     strongCandidates = updatedStrongCandidates;
   }
 
-  return { rankedCandidates, queuePath, filingQueue, replenishmentPassesRun };
+  return { rankedCandidates, queuePath, filingQueue, replenishmentPassesRun, lastPassResult };
 }

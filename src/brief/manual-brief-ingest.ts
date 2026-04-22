@@ -30,9 +30,19 @@ interface ManualDailyBrief {
 }
 
 interface IngestedBriefState {
+  kind?: "manual_brief_ingest_state";
+  updatedAt?: string;
   entries: Array<{
     reportDate: string;
     headline: string;
+  }>;
+  reports?: Array<{
+    reportDate: string;
+    inputPath: string;
+    briefJsonPath: string;
+    briefSnapshotPath: string;
+    entryCount: number;
+    updatedAt: string;
   }>;
 }
 
@@ -391,7 +401,7 @@ async function updateTrainingFromBrief(
   reportDate: string,
   brief: ManualDailyBrief,
   baseDir?: string
-): Promise<void> {
+): Promise<IngestedBriefState> {
   const root = resolve(baseDir ?? process.cwd());
   const statePath = resolve(root, "data/state/manual-brief-ingest.json");
   const currentState = (await readJsonOrNull<IngestedBriefState>(statePath)) ?? { entries: [] };
@@ -407,8 +417,39 @@ async function updateTrainingFromBrief(
     seen.add(key);
   }
 
+  return currentState;
+}
+
+async function saveIngestState(
+  state: IngestedBriefState,
+  baseDir?: string
+): Promise<string> {
+  const root = resolve(baseDir ?? process.cwd());
+  const statePath = resolve(root, "data/state/manual-brief-ingest.json");
+  const normalized: IngestedBriefState = {
+    kind: "manual_brief_ingest_state",
+    updatedAt: new Date().toISOString(),
+    entries: state.entries,
+    reports: state.reports
+      ?.slice()
+      .sort((left, right) => left.reportDate.localeCompare(right.reportDate))
+  };
   await mkdir(dirname(statePath), { recursive: true });
-  await writeFile(statePath, JSON.stringify(currentState, null, 2), "utf8");
+  await writeFile(statePath, JSON.stringify(normalized, null, 2), "utf8");
+  return statePath;
+}
+
+function upsertIngestReport(
+  state: IngestedBriefState,
+  report: NonNullable<IngestedBriefState["reports"]>[number]
+): IngestedBriefState {
+  const reports = state.reports ?? [];
+  const nextReports = reports.filter((entry) => entry.reportDate !== report.reportDate);
+  nextReports.push(report);
+  return {
+    ...state,
+    reports: nextReports
+  };
 }
 
 function toSignal(entry: ManualBriefEntry | ManualApprovedNotInBrief, publishedAt: string | null): BriefWinnerSignal {
@@ -461,6 +502,56 @@ async function saveBriefWinnerSnapshot(
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(snapshot, null, 2), "utf8");
   return filePath;
+}
+
+async function findAvailableManualBriefDates(baseDir?: string): Promise<string[]> {
+  const root = resolve(baseDir ?? process.cwd());
+  const briefsDir = resolve(root, "data/briefs");
+  let files: string[] = [];
+  try {
+    files = await readdir(briefsDir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+
+  const dates = new Set<string>();
+  for (const fileName of files) {
+    const match = fileName.match(/^(\d{4}-\d{2}-\d{2})\.(json|md|txt)$/);
+    if (match) {
+      dates.add(match[1]);
+    }
+  }
+
+  return [...dates].sort();
+}
+
+async function ingestResolvedBrief(
+  params: {
+    reportDate: string;
+    brief: ManualDailyBrief;
+    inputPath: string;
+  },
+  baseDir?: string
+): Promise<{ state: IngestedBriefState; briefSnapshotPath: string }> {
+  const root = resolve(baseDir ?? process.cwd());
+  const state = await updateTrainingFromBrief(params.reportDate, params.brief, root);
+  const briefSnapshotPath = await saveBriefWinnerSnapshot(params.reportDate, params.brief, root);
+  const nextState = upsertIngestReport(state, {
+    reportDate: params.reportDate,
+    inputPath: params.inputPath,
+    briefJsonPath: resolve(root, `data/briefs/${params.reportDate}.json`),
+    briefSnapshotPath,
+    entryCount: params.brief.entries.length,
+    updatedAt: new Date().toISOString()
+  });
+  await saveIngestState(nextState, root);
+  return {
+    state: nextState,
+    briefSnapshotPath
+  };
 }
 
 async function updateAgentBehaviorState(
@@ -617,19 +708,49 @@ export async function ingestManualDailyBrief(
   competitorStylesPath: string;
 }> {
   const root = resolve(baseDir ?? process.cwd());
-  const loadedBrief = await readManualBrief(reportDate, root);
-  if (!loadedBrief) {
+  const availableDates = await findAvailableManualBriefDates(root);
+  if (availableDates.length === 0) {
     return null;
   }
-  const { brief, inputPath: briefInputPath } = loadedBrief;
+  let currentBrief:
+    | null
+    | {
+        brief: ManualDailyBrief;
+        inputPath: string;
+        briefSnapshotPath: string;
+      } = null;
 
-  await updateTrainingFromBrief(reportDate, brief, root);
-  const briefSnapshotPath = await saveBriefWinnerSnapshot(reportDate, brief, root);
+  for (const availableDate of availableDates) {
+    const loadedBrief = await readManualBrief(availableDate, root);
+    if (!loadedBrief) {
+      continue;
+    }
+    const { brief, inputPath } = loadedBrief;
+    const { briefSnapshotPath } = await ingestResolvedBrief(
+      {
+        reportDate: availableDate,
+        brief,
+        inputPath
+      },
+      root
+    );
+    if (availableDate === reportDate) {
+      currentBrief = {
+        brief,
+        inputPath,
+        briefSnapshotPath
+      };
+    }
+  }
+
+  if (!currentBrief) {
+    return null;
+  }
   const { analysisPath, behaviorPath, competitorStylesPath } = await updateAgentBehaviorState(reportDate, root);
 
   return {
-    briefInputPath,
-    briefSnapshotPath,
+    briefInputPath: currentBrief.inputPath,
+    briefSnapshotPath: currentBrief.briefSnapshotPath,
     analysisPath,
     behaviorPath,
     competitorStylesPath

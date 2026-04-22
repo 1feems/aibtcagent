@@ -101,6 +101,11 @@ export function serializeSubmissionPayload(payload: SubmissionPayload) {
     payload.candidateMetadata.whyThisStyleWasChosen || buildWhyThisStyleWasChosen(payload, styleTested);
 
   return {
+    kind: "intermediate_candidate_artifact",
+    fileable: false,
+    non_fileable: true,
+    intended_use: "ranking_only",
+    canonical_artifact_required: "create_signal_artifact",
     candidate_signal: {
       candidate_id: payload.candidateSignal.candidateId,
       detected_at: payload.candidateSignal.detectedAt,

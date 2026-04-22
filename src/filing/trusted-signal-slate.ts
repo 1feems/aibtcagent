@@ -45,12 +45,17 @@ function resolveArtifactPath(root: string, maybeRelativePath: string | undefined
 
 function buildFallbackSendPackage(
   artifact: FilingReadyArtifact,
-  canonicalSignal: CanonicalSignalPayload | null
+  canonicalSignal: CanonicalSignalPayload | null,
+  reportDate: string,
+  baseDir: string
 ): FilingReadyArtifact["sendPackage"] {
   if (!canonicalSignal) {
     return null;
   }
-  return buildHelperReadySignalPackage(canonicalSignal);
+  return buildHelperReadySignalPackage(canonicalSignal, undefined, {
+    reportDate,
+    baseDir
+  });
 }
 
 function renderGuardSummary(guard: SignalGuardResult | null): string[] {
@@ -65,10 +70,7 @@ function renderGuardSummary(guard: SignalGuardResult | null): string[] {
 
   return [
     "- Final guard:",
-    `  - Q1: \`${guard.checks.publisherQ1}\``,
-    `  - Q2: \`${guard.checks.publisherQ2}\``,
-    `  - Q3: \`${guard.checks.publisherQ3}\``,
-    `  - Q4: \`${guard.checks.publisherQ4}\``,
+    `  - Editor guidance: \`${guard.checks.editorGuidance ?? "enforced_by_create_signal_and_beat_editor"}\``,
     `  - Fact-check source verification: \`${guard.checks.factCheckerSourceVerification}\``,
     `  - Fact-check claim verification: \`${guard.checks.factCheckerClaimVerification}\``,
     `  - Duplicate-shape: \`${duplicatePass ? "pass" : "reject"}\``,
@@ -112,7 +114,7 @@ export async function writeTrustedSignalSlate(
       const enrichedArtifact: FilingReadyArtifact = {
         ...artifact,
         canonicalSignal: artifact.canonicalSignal ?? canonicalFromSource,
-        sendPackage: artifact.sendPackage ?? buildFallbackSendPackage(artifact, artifact.canonicalSignal ?? canonicalFromSource)
+        sendPackage: artifact.sendPackage ?? buildFallbackSendPackage(artifact, artifact.canonicalSignal ?? canonicalFromSource, reportDate, root)
       };
       const guard =
         enrichedArtifact.sendPackage?.headline && enrichedArtifact.sendPackage?.analysis

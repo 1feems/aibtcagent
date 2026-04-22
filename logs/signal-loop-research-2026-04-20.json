@@ -1,0 +1,21 @@
+{
+  "reportDate": "2026-04-20",
+  "generatedAt": "2026-04-21T07:44:11.821Z",
+  "phase": "research",
+  "candidateCounts": {
+    "total": 4,
+    "strong": 0,
+    "onHold": 4,
+    "rejected": 0,
+    "other": 0
+  },
+  "replenishment": {
+    "passesRun": 1,
+    "lastPassFoundEvents": 11,
+    "lastPassStatuses": [
+      "snapshot_saved"
+    ]
+  },
+  "verdict": "needs_more_evidence",
+  "summary": "Candidate artifacts exist, but none cleared the hard gates strongly enough for review."
+}

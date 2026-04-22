@@ -10,9 +10,9 @@ import { generateAndSaveDailyOptimizationSnapshot } from "./index.js";
 import { generateAndSaveDailyReport } from "../reporting/index.js";
 import {
   runGeneralNewsLane,
-  runProtocolUpdateLane,
+  runInfrastructureLane,
   type GeneralNewsRawEvent,
-  type ProtocolUpdateRawEvent
+  type InfrastructureRawEvent
 } from "../signals/index.js";
 import {
   logAcceptedSubmission,
@@ -93,19 +93,19 @@ async function writeJsonFile(filePath: string, data: unknown): Promise<string> {
 }
 
 function isGeneralNewsRawEvent(
-  value: ProtocolUpdateRawEvent | GeneralNewsRawEvent
+  value: InfrastructureRawEvent | GeneralNewsRawEvent
 ): value is GeneralNewsRawEvent {
   return "sourcePublication" in value && "articleUrl" in value;
 }
 
 export async function runDryRun(config: DryRunConfig): Promise<DryRunSummary> {
-  const rawEvent = await readJsonFile<ProtocolUpdateRawEvent | GeneralNewsRawEvent>(config.rawPath);
+  const rawEvent = await readJsonFile<InfrastructureRawEvent | GeneralNewsRawEvent>(config.rawPath);
   const preSubmissionRaw = await readJsonFile<Parameters<typeof buildPreSubmissionIntelligence>[0]>(
     config.preSubmissionPath
   );
   const subject = isGeneralNewsRawEvent(rawEvent)
     ? runGeneralNewsLane(rawEvent).subject
-    : runProtocolUpdateLane(rawEvent).subject;
+    : runInfrastructureLane(rawEvent).subject;
   const validation = validateSubject(subject);
   const intelligence = buildPreSubmissionIntelligence({
     ...preSubmissionRaw,

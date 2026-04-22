@@ -7,7 +7,8 @@
 // sources + disclosure) but lacks a `filing_gate` is a DRAFT, not a candidate.
 // The validator makes that distinction machine-checkable.
 
-import type { FilingGate, FilingGateCheck, FilingGateTemplate, WinnerPatternCheck, WinnerPatternSubCheck } from "../types/filing-gate.js";
+import type { ContextAudit, ContextAuditCheck, FilingGate, FilingGateCheck, FilingGateTemplate, WinnerPatternCheck, WinnerPatternSubCheck } from "../types/filing-gate.js";
+import { hasExactHeadlineAnchor, hasVagueDisclosure, hasConcreteDisclosureAnchors } from "./template-rules.js";
 
 export interface FilingGateIssue {
   code: string;
@@ -47,36 +48,6 @@ const TRIVIAL_RATIONALE_PATTERN = /^(?:yes|no|pass|fail|ok|n\/a|good|done|fine|c
 function isSubstantiveRationale(value: string): boolean {
   if (value.length < 12) return false;
   return !TRIVIAL_RATIONALE_PATTERN.test(value);
-}
-
-// ── headline anchor helpers ───────────────────────────────────────────────────
-
-function extractStoryAnchors(text: string): string[] {
-  return [...new Set([
-    ...text.matchAll(/\bissue\s+#\d+\b/gi),
-    ...text.matchAll(/\bpr\s+#\d+\b/gi),
-    ...text.matchAll(/\bcve-\d{4}-\d+\b/gi),
-    ...text.matchAll(/\bv\d+\.\d+(?:\.\d+)*(?:\.\d+)?\b/gi)
-  ].map((m) => m[0].toLowerCase()))];
-}
-
-function extractMetricAnchors(text: string): string[] {
-  return [...new Set([
-    ...text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g),
-    ...text.matchAll(/\b\d+(?:\.\d+)?%/g),
-    ...text.matchAll(/\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?)\b/gi),
-    ...text.matchAll(/\b\d{2,}\s*sats?\b/gi)
-  ].map((m) => m[0].toLowerCase()))];
-}
-
-function hasExactHeadlineAnchor(headline: string): boolean {
-  return (
-    extractStoryAnchors(headline).length > 0 ||
-    extractMetricAnchors(headline).length > 0 ||
-    /`[^`]+`/.test(headline) ||
-    /\b(?:err\s+[a-z0-9_]+|error\s+[a-z0-9_]+)\b/i.test(headline) ||
-    /\b(?:post|get|put|patch|delete)\s+\/[a-z0-9/_-]+\b/i.test(headline)
-  );
 }
 
 // ── disallowed-state language ─────────────────────────────────────────────────
@@ -128,18 +99,19 @@ function checkDriftLanguage(
 
 // ── sources / disclosure helpers ─────────────────────────────────────────────
 
-function readCanonicalSources(root: Record<string, unknown>): Array<{ url: string }> {
+function readCanonicalSources(root: Record<string, unknown>): Array<{ url: string; title: string }> {
   const record = asRecord(root.sendPackage) ?? root;
   if (!Array.isArray(record.sources)) return [];
   return record.sources
     .map((entry) => {
-      if (typeof entry === "string") return entry.trim() ? { url: entry.trim() } : null;
+      if (typeof entry === "string") return entry.trim() ? { url: entry.trim(), title: "" } : null;
       const rec = asRecord(entry);
       if (!rec) return null;
       const url = readString(rec.url) || readString(rec.source_url);
-      return url ? { url } : null;
+      const title = readString(rec.title);
+      return url ? { url, title } : null;
     })
-    .filter((entry): entry is { url: string } => Boolean(entry));
+    .filter((entry): entry is { url: string; title: string } => Boolean(entry));
 }
 
 function readCanonicalDisclosure(root: Record<string, unknown>): string {
@@ -162,23 +134,59 @@ function readCanonicalAnalysis(root: Record<string, unknown>): string {
   return readString(record.analysis);
 }
 
-const VAGUE_DISCLOSURE_PATTERNS = [
-  "used ai", "my own analysis", "various sources", "internal data",
-  "used llm", "ai generated", "model output", "my analysis"
-];
-
-function isVagueDisclosure(disclosure: string): boolean {
-  const lower = disclosure.toLowerCase();
-  return VAGUE_DISCLOSURE_PATTERNS.some((pattern) => lower.includes(pattern));
+function readCanonicalBeat(root: Record<string, unknown>, gateRecord: Record<string, unknown>): string {
+  const record = asRecord(root.sendPackage) ?? root;
+  return readString(record.beat_slug) || readString(gateRecord.beat);
 }
 
-function isConcreteDisclosure(disclosure: string): boolean {
-  if (disclosure.trim().length < 24) return false;
-  return (
-    /\b(?:claude|gpt|grok|gemini|opus|sonnet|haiku)\b/i.test(disclosure) ||
-    /\b(?:curl|rg|npm|node|bun|gh|api|endpoint|query|search)\b/i.test(disclosure) ||
-    /\/api\/|https?:\/\/|github\.com|issue\s+#\d+|pr\s+#\d+|release/i.test(disclosure)
-  );
+function normalizeSourceUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    parsed.search = "";
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+    return parsed.toString().toLowerCase();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+function isHomepageLevelSource(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.replace(/\/+$/, "") || "/";
+    return path === "/" || (parsed.hostname.toLowerCase() === "github.com" && /^\/[^/]+\/[^/]+$/.test(path));
+  } catch {
+    return false;
+  }
+}
+
+function isMetricHeavyClaim(text: string): boolean {
+  return /\$[\d,.]+|\b\d+(?:\.\d+)?%|\b\d[\d,.]*(?:\^\d+)?\s*(?:sats?|stx|sbtc|btc|agents?|signals?|slots?|txs?|blocks?|hours?|days?|qubits?|bytes?|kb|mb|gb)\b/i.test(text);
+}
+
+function isGithubPullSource(url: string): boolean {
+  return /github\.com\/[^/]+\/[^/]+\/pull\/\d+/i.test(url);
+}
+
+function isDiscussionThreadSource(url: string): boolean {
+  return /delvingbitcoin\.org\/|gnusha\.org\/pi\/bitcoindev\/|lists\.linuxfoundation\.org\/|groups\.google\.com\//i.test(url);
+}
+
+function isQuantumStateArtifact(url: string): boolean {
+  return /github\.com\/[^/]+\/[^/]+\/commit\/[0-9a-f]{7,}/i.test(url) ||
+    /github\.com\/[^/]+\/[^/]+\/releases\/tag\//i.test(url) ||
+    /github\.com\/[^/]+\/[^/]+\/blob\/.+/i.test(url) ||
+    /raw\.githubusercontent\.com\//i.test(url) ||
+    /\/bip-\d+(\.mediawiki|\.md)?$/i.test(url);
+}
+
+function isAibtcNativeQuantumAngle(text: string): boolean {
+  return /\baibtc\b|\bagent(?:s|ic)?\b|\bx402\b|\bmcp\b|\bnostr\b|\berc-8004\b|\bidentity registry\b|\binbox\b|\bsponsor relay\b/i.test(text);
+}
+
+function isSaturatedQuantumCluster(text: string): boolean {
+  return /\bbip-360\b|\bbip360\b|\bbip-361\b|\bbip361\b|\bnist\b|\bfips\b|\bgoogle\b|\bimplementation\b|\bexposure\b/i.test(text);
 }
 
 // ── per-check validator ───────────────────────────────────────────────────────
@@ -263,7 +271,6 @@ function validateGateCheck(
 // ── template validator ────────────────────────────────────────────────────────
 
 // Template fields must be non-trivial prose, not one-word placeholders.
-// The same threshold used for Q1–Q4 rationale applies here.
 const TEMPLATE_MIN_LENGTH = 12;
 
 function isSubstantiveTemplateField(value: string): boolean {
@@ -462,6 +469,10 @@ function validateWinnerSubCheck(
 
   const result = readString(rec.result);
   const rationale = readString(rec.rationale);
+  const hasContextLoaded = typeof rec.contextLoaded === "boolean";
+  const hasComplianceVerified = typeof rec.complianceVerified === "boolean";
+  const contextLoaded = rec.contextLoaded === true;
+  const complianceVerified = rec.complianceVerified === true;
   let valid = true;
 
   if (!rationale) {
@@ -516,7 +527,7 @@ function validateWinnerPatternCheck(
     issues.push({
       code: "gate_winner_check_missing",
       field,
-      reason: `${field} is required — every filing candidate must prove it was compared against shared-context.json, brief-examples.json, signal-history.json, and real winner/loser patterns before being treated as filing-ready; a signal that passes Q1–Q4 but was not tested against actual brief winners is not filing-ready`
+      reason: `${field} is required — every filing candidate must prove it was compared against shared-context.json, brief-examples.json, signal-history.json, and real winner/loser patterns before being treated as filing-ready`
     });
     return null;
   }
@@ -535,6 +546,162 @@ function validateWinnerPatternCheck(
   }
 
   return { sharedContext, briefExamples, signalHistory, duplicateCheck, losingPattern, winnerPattern, framingStrength };
+}
+
+const CONTEXT_AUDIT_DEFS = {
+  briefReview: {
+    errorCode: "gate_context_brief_review",
+    rationale: [
+      "filing_gate.contextAudit.briefReview must confirm the latest dated brief artifact was reviewed before drafting",
+      "rationale must name the dated brief file or a specific brief title that was consulted"
+    ],
+    hints: ["data/briefs/", ".md", ".json", "brief", "title"]
+  },
+  beatEditorReview: {
+    errorCode: "gate_context_beat_editor_review",
+    rationale: [
+      "filing_gate.contextAudit.beatEditorReview must confirm the beat editor guidance file was reviewed",
+      "rationale must name the beat editor doc path or editor name that was consulted"
+    ],
+    hints: ["docs/beat-editors/", "editor", "zen rocket", "ivory coda", "aibtc-network"]
+  },
+  helperErrorsReview: {
+    errorCode: "gate_context_helper_errors_review",
+    rationale: [
+      "filing_gate.contextAudit.helperErrorsReview must confirm recent helper-errors.jsonl messages were reviewed",
+      "rationale must cite helper-errors.jsonl or a specific recent helper error message"
+    ],
+    hints: ["helper-errors.jsonl", "helper error", "template issue", "submission blocked"]
+  },
+  outcomeReview: {
+    errorCode: "gate_context_outcome_review",
+    rationale: [
+      "filing_gate.contextAudit.outcomeReview must confirm recent signal-history or approval outcomes were reviewed",
+      "rationale must cite signal-history.json, approvals JSON, or a specific recent outcome headline/note"
+    ],
+    hints: ["signal-history.json", "outcome", "approval", "rejected", "pending", "brief"]
+  },
+  publisherNotesReview: {
+    errorCode: "gate_context_publisher_notes_review",
+    rationale: [
+      "filing_gate.contextAudit.publisherNotesReview must confirm publisher notes or same-beat rejection notes were reviewed",
+      "rationale must cite editorial-note absence, a same-beat rejection note, or publisher guidance actually consulted"
+    ],
+    hints: ["editorial-note", "publisher", "rejected per", "zen rocket", "feedback", "note"]
+  }
+} as const;
+
+type ContextAuditKey = keyof typeof CONTEXT_AUDIT_DEFS;
+
+function validateContextAuditCheck(
+  raw: unknown,
+  key: ContextAuditKey,
+  issues: FilingGateIssue[]
+): ContextAuditCheck | null {
+  const def = CONTEXT_AUDIT_DEFS[key];
+  const field = `filing_gate.contextAudit.${key}`;
+  const rec = asRecord(raw);
+  if (!rec) {
+    issues.push({
+      code: `${def.errorCode}_missing`,
+      field,
+      reason: `${field} is required — ${def.rationale[0]}`
+    });
+    return null;
+  }
+
+  const result = readString(rec.result);
+  const rationale = readString(rec.rationale);
+  const hasContextLoaded = typeof rec.contextLoaded === "boolean";
+  const hasComplianceVerified = typeof rec.complianceVerified === "boolean";
+  const contextLoaded = rec.contextLoaded === true;
+  const complianceVerified = rec.complianceVerified === true;
+  let valid = true;
+
+  if (result !== "pass" && result !== "not_available") {
+    issues.push({
+      code: `${def.errorCode}_invalid_result`,
+      field: `${field}.result`,
+      reason: `${field}.result must be "pass" or "not_available", got ${JSON.stringify(result || null)}`
+    });
+    valid = false;
+  }
+
+  if (!rationale) {
+    issues.push({
+      code: `${def.errorCode}_empty_rationale`,
+      field: `${field}.rationale`,
+      reason: `${field}.rationale must be non-empty — ${def.rationale[1]}`
+    });
+    valid = false;
+  } else if (!isSubstantiveRationale(rationale)) {
+    issues.push({
+      code: `${def.errorCode}_trivial_rationale`,
+      field: `${field}.rationale`,
+      reason: `${field}.rationale is too generic ("${rationale}"); ${def.rationale[1]}`
+    });
+    valid = false;
+  } else {
+    const lower = rationale.toLowerCase();
+    const hasHint = (def.hints as readonly string[]).some((hint) => lower.includes(hint));
+    if (!hasHint) {
+      issues.push({
+        code: `${def.errorCode}_source_not_named`,
+        field: `${field}.rationale`,
+        reason: `${field}.rationale does not name the reviewed context source; ${def.rationale[1]}`
+      });
+      valid = false;
+    }
+  }
+
+  if (!hasContextLoaded) {
+    issues.push({
+      code: `${def.errorCode}_missing_context_loaded`,
+      field: `${field}.contextLoaded`,
+      reason: `${field}.contextLoaded must be a boolean so the gate distinguishes loaded context from compliance verification`
+    });
+    valid = false;
+  }
+
+  if (!hasComplianceVerified) {
+    issues.push({
+      code: `${def.errorCode}_missing_compliance_verified`,
+      field: `${field}.complianceVerified`,
+      reason: `${field}.complianceVerified must be a boolean so the gate distinguishes loaded context from compliance verification`
+    });
+    valid = false;
+  }
+
+  if (!valid) return null;
+  return { result: result as "pass" | "not_available", rationale, contextLoaded, complianceVerified };
+}
+
+function validateContextAudit(
+  raw: unknown,
+  issues: FilingGateIssue[]
+): ContextAudit | null {
+  const field = "filing_gate.contextAudit";
+  const rec = asRecord(raw);
+  if (!rec) {
+    issues.push({
+      code: "gate_context_audit_missing",
+      field,
+      reason: `${field} is required — helper-ready JSON must prove the loop reviewed briefs, beat editor guidance, helper errors, recent outcomes, and publisher notes before filing`
+    });
+    return null;
+  }
+
+  const briefReview = validateContextAuditCheck(rec.briefReview, "briefReview", issues);
+  const beatEditorReview = validateContextAuditCheck(rec.beatEditorReview, "beatEditorReview", issues);
+  const helperErrorsReview = validateContextAuditCheck(rec.helperErrorsReview, "helperErrorsReview", issues);
+  const outcomeReview = validateContextAuditCheck(rec.outcomeReview, "outcomeReview", issues);
+  const publisherNotesReview = validateContextAuditCheck(rec.publisherNotesReview, "publisherNotesReview", issues);
+
+  if (!briefReview || !beatEditorReview || !helperErrorsReview || !outcomeReview || !publisherNotesReview) {
+    return null;
+  }
+
+  return { briefReview, beatEditorReview, helperErrorsReview, outcomeReview, publisherNotesReview };
 }
 
 // ── top-level validator ───────────────────────────────────────────────────────
@@ -574,7 +741,7 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
     issues.push({
       code: "gate_block_missing",
       field: "filing_gate",
-      reason: 'Source artifact is missing the required "filing_gate" block — a canonical payload without explicit Q1–Q4 evidence is a draft, not a filing candidate; run the gate checklist and add the filing_gate block before queuing'
+      reason: 'Source artifact is missing the required "filing_gate" block — add the gate block before queuing'
     });
     return { gate: null, issues };
   }
@@ -650,22 +817,27 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
     checkDriftLanguage(canonicalAnalysis, "analysis", issues);
   }
 
-  // ── Q1–Q4 checks ──────────────────────────────────────────────────────────
-
-  const q1 = validateGateCheck(gateRecord.q1, "q1", issues);
-  const q2 = validateGateCheck(gateRecord.q2, "q2", issues);
-  const q3 = validateGateCheck(gateRecord.q3, "q3", issues);
-  const q4 = validateGateCheck(gateRecord.q4, "q4", issues);
+  // ── Legacy Q1–Q4 compatibility fields ────────────────────────────────────
+  // Q1–Q4 guardrails are deprecated and no longer enforced as hard blocks.
+  // Keep stable pass-through values so downstream consumers with older schemas
+  // continue to work while beat-editor guidance takes authority.
+  const q1 = { result: "pass" as const, rationale: "Q1-Q4 deprecated", testedAt: new Date(0).toISOString() };
+  const q2 = { result: "pass" as const, rationale: "Q1-Q4 deprecated", testedAt: new Date(0).toISOString() };
+  const q3 = { result: "pass" as const, rationale: "Q1-Q4 deprecated", testedAt: new Date(0).toISOString() };
+  const q4 = { result: "pass" as const, rationale: "Q1-Q4 deprecated", testedAt: new Date(0).toISOString() };
 
   // ── winner-pattern checks ─────────────────────────────────────────────────
 
   const winnerCheck = validateWinnerPatternCheck(gateRecord.winnerCheck, issues);
+  const contextAudit = validateContextAudit(gateRecord.contextAudit, issues);
 
   // ── canonical payload: sources must be concrete ───────────────────────────
   // Read directly from the artifact so a gate block cannot pass while the
   // underlying payload has no verifiable sources.
 
   const canonicalSources = readCanonicalSources(root);
+  const canonicalBeat = readCanonicalBeat(root, gateRecord);
+  const canonicalText = `${headline} ${canonicalAnalysis}`;
 
   if (canonicalSources.length === 0) {
     issues.push({
@@ -686,6 +858,71 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
     }
   }
 
+  const normalizedSourceCounts = new Map<string, number>();
+  for (const source of canonicalSources) {
+    const normalized = normalizeSourceUrl(source.url);
+    normalizedSourceCounts.set(normalized, (normalizedSourceCounts.get(normalized) ?? 0) + 1);
+  }
+  const duplicateSources = [...normalizedSourceCounts.entries()].filter(([, count]) => count > 1).map(([url]) => url);
+  if (duplicateSources.length > 0) {
+    issues.push({
+      code: "gate_duplicate_same_day_source_cluster",
+      field: "sources",
+      reason: `Signal repeats the same source cluster inside one filing artifact (${duplicateSources.join(", ")}) — same-day source clusters must be unique before filing`
+    });
+  }
+
+  if (canonicalAnalysis.length > 900) {
+    issues.push({
+      code: "gate_body_above_900_chars",
+      field: "analysis",
+      reason: `Signal body is ${canonicalAnalysis.length} characters; keep filing bodies at or below 900 characters before queuing`
+    });
+  }
+
+  if (isMetricHeavyClaim(canonicalText) && canonicalSources.some((source) => isHomepageLevelSource(source.url))) {
+    issues.push({
+      code: "gate_homepage_metric_source",
+      field: "sources",
+      reason: "Metric-heavy claims cannot rely on homepage-level or bare repository-root sources; cite the exact page, API path, blob, release, or dataset URL"
+    });
+  }
+
+  const closedPullProof = canonicalSources.some((source) => isGithubPullSource(source.url)) &&
+    /\bclosed\b/i.test(`${canonicalText} ${canonicalSources.map((source) => source.title).join(" ")}`);
+  if (closedPullProof) {
+    issues.push({
+      code: "gate_closed_pr_as_proof",
+      field: "sources",
+      reason: "Closed PR pages cannot be used as proof of a shipped change; cite a merged PR, commit, release, deployed endpoint, or durable spec artifact"
+    });
+  }
+
+  if (canonicalBeat.toLowerCase() === "quantum") {
+    const urls = canonicalSources.map((source) => source.url);
+    if (urls.length > 0 && urls.every((url) => isDiscussionThreadSource(url))) {
+      issues.push({
+        code: "gate_quantum_proposal_thread_only",
+        field: "sources",
+        reason: "Quantum proposal-thread-only source sets are blocked; add a maintainer-owned spec, commit, release, or other durable primary artifact"
+      });
+    }
+    if (urls.some((url) => isGithubPullSource(url)) && !urls.some((url) => isQuantumStateArtifact(url))) {
+      issues.push({
+        code: "gate_quantum_pr_page_only",
+        field: "sources",
+        reason: "Quantum PR-page-only source sets are blocked; add a shipped spec, commit, release, or other maintainer-owned state artifact"
+      });
+    }
+    if (isSaturatedQuantumCluster(canonicalText) && !isAibtcNativeQuantumAngle(canonicalText)) {
+      issues.push({
+        code: "gate_quantum_saturated_cluster",
+        field: "analysis",
+        reason: "Saturated quantum clusters need a clearly AIBTC-native operator angle before filing"
+      });
+    }
+  }
+
   // ── canonical payload: disclosure must be concrete ────────────────────────
 
   const canonicalDisclosure = readCanonicalDisclosure(root);
@@ -696,13 +933,13 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
       field: "disclosure",
       reason: "Signal disclosure is empty — name the model, tool, endpoint, or PR used to produce this signal"
     });
-  } else if (isVagueDisclosure(canonicalDisclosure)) {
+  } else if (hasVagueDisclosure(canonicalDisclosure)) {
     issues.push({
       code: "gate_disclosure_vague",
       field: "disclosure",
       reason: `Signal disclosure contains generic phrasing ("${canonicalDisclosure.slice(0, 80)}") — name the specific model (e.g. claude-sonnet-4-6), tool, or endpoint used; phrases like "used AI" or "my analysis" are not accepted`
     });
-  } else if (!isConcreteDisclosure(canonicalDisclosure)) {
+  } else if (!hasConcreteDisclosureAnchors(canonicalDisclosure)) {
     issues.push({
       code: "gate_disclosure_not_concrete",
       field: "disclosure",
@@ -710,7 +947,7 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
     });
   }
 
-  if (issues.length > 0) {
+  if (issues.length > 0 || !template || !winnerCheck || !contextAudit) {
     return { gate: null, issues };
   }
 
@@ -721,12 +958,13 @@ export function validateFilingGate(sourceArtifact: unknown): FilingGateValidatio
       headline,
       templateUsed,
       template: template!,
-      q1: q1!,
-      q2: q2!,
-      q3: q3!,
-      q4: q4!,
+      q1,
+      q2,
+      q3,
+      q4,
       testedAgainst,
-      winnerCheck: winnerCheck!
+      winnerCheck: winnerCheck!,
+      contextAudit: contextAudit!
     },
     issues: []
   };

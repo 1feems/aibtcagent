@@ -3,11 +3,10 @@ import { resolve } from "node:path";
 import { getPacificReportDate } from "../utils/report-date.js";
 import { parseCanonicalSignalPayload, type CanonicalSignalPayload } from "./signal-contract.js";
 import {
-  hasConcreteDisclosureAnchors,
+  extractMetricAnchors,
+  extractStoryAnchors,
   hasExactHeadlineAnchor,
-  hasTemplateAnalysis,
-  hasTerminalDirective,
-  hasVagueDisclosure
+  hasTemplateAnalysis
 } from "./template-rules.js";
 
 interface SignalGuardFiledSignalRecord {
@@ -42,10 +41,7 @@ export interface SignalGuardDiagnostic {
   code: string;
   layer:
     | "duplicate"
-    | "publisher_q1"
-    | "publisher_q2"
-    | "publisher_q3"
-    | "publisher_q4"
+    | "editor_guidance"
     | "fact_check"
     | "helper_mismatch"
     | "format_mismatch"
@@ -124,16 +120,6 @@ function isLikelySameStory(a: string, b: string): boolean {
   return overlap.overlapCount >= 5 && (overlap.overlapRatio >= 0.5 || hasNumberAnchor);
 }
 
-function hasDirectOperatorConsequence(text: string): boolean {
-  const normalized = normalizeText(text);
-  if (!normalized) return false;
-  return [
-    "agent", "agents", "operator", "operators", "publisher", "publishers", "correspondent", "correspondents",
-    "relay", "relays", "node", "nodes", "filing", "brief", "payout", "settlement", "homepage", "ranking",
-    "priority", "payment", "payments", "inbox"
-  ].some((term) => normalized.includes(term));
-}
-
 function extractDomain(url: string): string | null {
   try {
     return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
@@ -144,6 +130,31 @@ function extractDomain(url: string): string | null {
 
 function normalizeRepoSourceDomain(domain: string): string {
   return domain.replace(/^www\./, "").toLowerCase();
+}
+
+function isHomepageLevelSource(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+
+  const path = parsed.pathname.replace(/\/+$/, "") || "/";
+  if (path === "/") return true;
+
+  if (/^\/[^/]+\/[^/]+$/.test(path) && normalizeRepoSourceDomain(parsed.hostname) === "github.com") {
+    return true;
+  }
+
+  return false;
+}
+
+function hasRepositoryRootSource(sources: SourceRef[]): boolean {
+  return sources.some((source) => {
+    const url = source.url?.trim() ?? "";
+    return url.length > 0 && isHomepageLevelSource(url);
+  });
 }
 
 function isProjectControlledSource(url: string): boolean {
@@ -192,28 +203,106 @@ function hasIndependentExternalSource(sources: SourceRef[]): boolean {
   });
 }
 
+function isQuantumBeat(beatSlug: string | null | undefined): boolean {
+  return (beatSlug ?? "").trim().toLowerCase() === "quantum";
+}
+
+function isDiscussionThreadSource(url: string): boolean {
+  return /delvingbitcoin\.org\/|gnusha\.org\/pi\/bitcoindev\/|lists\.linuxfoundation\.org\/|groups\.google\.com\//i.test(url);
+}
+
+function isGithubPullSource(url: string): boolean {
+  return /github\.com\/[^/]+\/[^/]+\/pull\/\d+/i.test(url);
+}
+
+function isClosedPullRequestProof(payload: SignalGuardPayload): boolean {
+  const sources = Array.isArray(payload.sources) ? payload.sources : [];
+  const pullSources = sources.filter((source) => isGithubPullSource(source.url?.trim() ?? ""));
+  if (pullSources.length === 0) return false;
+  const text = `${payload.headline ?? ""} ${payload.body ?? ""} ${pullSources.map((source) => source.title ?? "").join(" ")}`;
+  return /\bclosed\b/i.test(text);
+}
+
+function isQuantumStateArtifact(url: string): boolean {
+  return /github\.com\/[^/]+\/[^/]+\/commit\/[0-9a-f]{7,}/i.test(url) ||
+    /github\.com\/[^/]+\/[^/]+\/releases\/tag\//i.test(url) ||
+    /github\.com\/[^/]+\/[^/]+\/blob\/.+/i.test(url) ||
+    /raw\.githubusercontent\.com\//i.test(url) ||
+    /\/bip-\d+(\.mediawiki|\.md)?$/i.test(url);
+}
+
+function isDiscussionOnlyQuantumSourceSet(sources: SourceRef[]): boolean {
+  const urls = sources.map((source) => source.url?.trim()).filter(Boolean) as string[];
+  return urls.length > 0 && urls.every((url) => isDiscussionThreadSource(url));
+}
+
+function isPullOnlyQuantumSourceSet(sources: SourceRef[]): boolean {
+  const urls = sources.map((source) => source.url?.trim()).filter(Boolean) as string[];
+  return urls.some((url) => isGithubPullSource(url)) &&
+    !urls.some((url) => isQuantumStateArtifact(url));
+}
+
+function hasLogicalPhysicalQubitDistinction(text: string): boolean {
+  return /\blogical\b|\bphysical\b/i.test(text);
+}
+
+function isAibtcNativeQuantumAngle(text: string): boolean {
+  return /\baibtc\b|\bagent(?:s|ic)?\b|\bx402\b|\bmcp\b|\bnostr\b|\berc-8004\b|\bidentity registry\b|\binbox\b|\bsponsor relay\b/i.test(text);
+}
+
+function isSaturatedQuantumCluster(text: string): boolean {
+  return /\bbip-360\b|\bbip360\b|\bbip-361\b|\bbip361\b|\bnist\b|\bfips\b|\bgoogle\b|\bimplementation\b|\bexposure\b/i.test(text);
+}
+
+function normalizeSourceUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    parsed.search = "";
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "");
+    return parsed.toString().toLowerCase();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+async function loadSameDaySourceUrls(root: string, reportDate: string): Promise<Set<string>> {
+  const urls = new Set<string>();
+  const readyDir = resolve(root, "data/filing-ready", reportDate);
+  const entries = await readdir(readyDir).catch((error) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [] as string[];
+    throw error;
+  });
+  await Promise.all(entries.filter((entry) => entry.endsWith(".json")).map(async (entry) => {
+    try {
+      const parsed = JSON.parse(await readFile(resolve(readyDir, entry), "utf8")) as { sources?: SourceRef[] };
+      for (const source of parsed.sources ?? []) {
+        const url = source.url?.trim();
+        if (url) urls.add(normalizeSourceUrl(url));
+      }
+    } catch {
+      // Ignore malformed old artifacts while guarding the current payload.
+    }
+  }));
+  return urls;
+}
+
+function stripNonMetricAnchors(text: string): string {
+  return text
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/\b(?:pr|issue|topic|thread|discussion|block|height|tx|transaction|endpoint|error|version)\s*#?\d+\b/gi, " ")
+    .replace(/`\s*#?\d+\s*`/g, " ")
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g, " ")
+    .replace(/\b(?:v)?\d+\.\d+(?:\.\d+)?\b/gi, " ")
+    .replace(/\b\d+\s*-\s*(?:step|phase)\b/gi, " ");
+}
+
 function isMetricHeavyClaim(text: string): boolean {
-  return /\b\d+(?:\.\d+)?%|\b\d[\d,]*(?:\+|x)?\b/.test(text.toLowerCase());
-}
-
-function hasMissionAlignment(text: string): boolean {
-  const normalized = normalizeText(text);
-  const bitcoinRail = /\bbitcoin\b|\bbtc\b|\bsbtc\b|\bstacks\b|\bstx\b|\bx402\b|\binscription\b|\bordinal\b/i.test(normalized);
-  const aiOrNetworkActor = /\bai\b|\bagent\b|\bagents\b|\boperator\b|\boperators\b|\bapp\b|\bapps\b|\bcorrespondent\b|\bcorrespondents\b|\baibtc\b/i.test(normalized);
-  const economicOrOperationalUse = /\buse\b|\bearn\b|\btransact\b|\bpayment\b|\bpayments\b|\bpayout\b|\bpayouts\b|\bsettlement\b|\bbrief\b|\branking\b|\binbox\b|\btransaction\b|\btransactions\b|\bindexable\b|\bblock production\b/i.test(normalized);
-  return bitcoinRail && aiOrNetworkActor && economicOrOperationalUse;
-}
-
-function isInscribableNews(text: string): boolean {
-  const normalized = normalizeText(text);
-  const speculative = /\bsources say\b|\breportedly\b|\ballegedly\b|\brumored\b|\bcould soon\b|\bmay be planning\b|\bexpected to\b|\bunconfirmed\b/.test(normalized);
-  const hasDevelopment = /\bissue\s+#\d+\b|\bpr\s+#\d+\b|\brelease\b|\bships\b|\bshipped\b|\bfix(?:es|ed)?\b|\bpatch(?:es|ed)?\b|\badds?\b|\brestores?\b|\breplaces?\b|\bactivates?\b|\bratifies?\b|\bshows\b|\blive\b|\blaunch(?:es|ed)?\b|\bopens?\b|\bcut(?:s)?\b/i.test(text);
-  return !speculative && hasDevelopment;
-}
-
-function isValueCreating(text: string): boolean {
-  const normalized = normalizeText(text);
-  return /\bthis means\b|\bimplication\b|\bmatters because\b|\boperators need\b|\bagents should\b|\boperators should\b|\bwhich means\b|\bas a result\b|\bso that\b|\bchanges\b|\blowers\b|\bdelays\b|\benables\b|\bturns\b/i.test(normalized);
+  const normalized = stripNonMetricAnchors(text.toLowerCase());
+  return /\b\d+(?:\.\d+)?%/.test(normalized) ||
+    /(?:\$|~)\s?\d/.test(normalized) ||
+    /\b\d[\d,]*(?:\.\d+)?(?:\+|x)?\s?(?:btc|stx|sbtc|sat|sats|qubits?|blocks?|days?|hours?|weeks?|months?|years?|txs?|transactions?|channels?|nodes?|agents?|addresses?|outputs?|wallets?|ms|kb|mb|gb|tb|mvb|vb|sigs?|signatures?)\b/.test(normalized) ||
+    /\b\d[\d,]{3,}\b/.test(normalized);
 }
 
 function isCircularSourcing(sources: SourceRef[]): boolean {
@@ -232,24 +321,6 @@ function allSourcesFromSameOrg(sources: SourceRef[]): boolean {
   return domains.length === 1 && domains[0].length > 0;
 }
 
-function extractStoryAnchors(text: string): string[] {
-  return [...new Set([
-    ...text.matchAll(/\bissue\s+#\d+\b/gi),
-    ...text.matchAll(/\bpr\s+#\d+\b/gi),
-    ...text.matchAll(/\bcve-\d{4}-\d+\b/gi),
-    ...text.matchAll(/\bv\d+\.\d+(?:\.\d+)*(?:\.\d+)?\b/gi)
-  ].map((match) => normalizeText(match[0])))];
-}
-
-function extractMetricAnchors(text: string): string[] {
-  return [...new Set([
-    ...text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g),
-    ...text.matchAll(/\b\d+(?:\.\d+)?%/g),
-    ...text.matchAll(/\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?)\b/gi),
-    ...text.matchAll(/\b\d{2,}\s*sats?\b/gi)
-  ].map((match) => normalizeText(match[0])))];
-}
-
 function hasVerifiableSources(sources: SourceRef[]): boolean {
   if (sources.length === 0) return false;
   return sources.every((source) => {
@@ -257,19 +328,26 @@ function hasVerifiableSources(sources: SourceRef[]): boolean {
     const title = source.title?.trim() ?? "";
     if (!url || !title) return false;
     if (/twitter\.com|x\.com|medium\.com|substack\.com|coindesk\.com|cointelegraph\.com/i.test(url)) return false;
+    if (/arxiv\.org\/abs\/\d{4}\.\d{4,5}(v\d+)?/i.test(url)) return true;
+    if (/eprint\.iacr\.org\/\d{4}\/\d+/i.test(url)) return true;
+    if (/nist\.gov\/.+/i.test(url)) return true;
+    if (/research\.ibm\.com\/.+/i.test(url)) return true;
+    if (/quantumai\.google\/.+|research\.google\/.+/i.test(url)) return true;
+    if (/gnusha\.org\/pi\/bitcoindev\/.+/i.test(url)) return true;
+    if (/delvingbitcoin\.org\/.+/i.test(url)) return true;
     return /https?:\/\/.+/.test(url) &&
       (/github\.com|\/api\/|explorer\.|releases\/tag\/|issues\/\d+|pull\/\d+|bip-\d+|docs\./i.test(url));
   });
 }
 
 function hasAnchorCollision(candidateText: string, contextText: string): boolean {
-  const candidateAnchors = extractStoryAnchors(candidateText);
+  const candidateAnchors = extractStoryAnchors(candidateText).map(normalizeText);
   if (candidateAnchors.length === 0) return false;
-  const contextAnchors = extractStoryAnchors(contextText);
+  const contextAnchors = extractStoryAnchors(contextText).map(normalizeText);
   const sharedAnchors = candidateAnchors.filter((anchor) => contextAnchors.includes(anchor));
   if (sharedAnchors.length === 0) return false;
-  const candidateMetrics = extractMetricAnchors(candidateText);
-  const contextMetrics = extractMetricAnchors(contextText);
+  const candidateMetrics = extractMetricAnchors(candidateText).map(normalizeText);
+  const contextMetrics = extractMetricAnchors(contextText).map(normalizeText);
   const sharedMetrics = candidateMetrics.filter((metric) => contextMetrics.includes(metric));
   return sharedMetrics.length > 0 || isLikelySameStory(candidateText, contextText);
 }
@@ -362,6 +440,56 @@ function hasStructuredPrimaryAnchor(sources: SourceRef[]): boolean {
   });
 }
 
+function toUtcDateOnly(input: string): Date | null {
+  const trimmed = input.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const parsed = Date.parse(`${trimmed}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed)) return null;
+  return new Date(parsed);
+}
+
+function extractEvidenceDates(text: string): Date[] {
+  const matches = text.match(/\b\d{4}-\d{2}-\d{2}(?:t\d{2}:\d{2}:\d{2}(?:\.\d+)?z)?\b/gi) ?? [];
+  const parsed = matches
+    .map((value) => {
+      if (/t\d{2}:\d{2}:\d{2}/i.test(value)) {
+        const ts = Date.parse(value);
+        return Number.isFinite(ts) ? new Date(ts) : null;
+      }
+      return toUtcDateOnly(value);
+    })
+    .filter((value): value is Date => value instanceof Date && Number.isFinite(value.getTime()))
+    .sort((left, right) => right.getTime() - left.getTime());
+  return parsed;
+}
+
+function isStaleOpenStatusClaim(payload: CanonicalSignalPayload, reportDate: string): boolean {
+  const report = toUtcDateOnly(reportDate);
+  if (!report) return false;
+
+  const combinedText = `${payload.headline} ${payload.analysis}`.toLowerCase();
+  const hasPrOrIssueAnchor = /\b(?:pr|issue)\s*#\d+\b/.test(combinedText);
+  const hasOpenStateLanguage =
+    /\bopen\b|\bunmerged\b|\bnot merged\b|\bpending\b|\breview queue\b|\bawaiting merge\b/.test(combinedText);
+  const hasPersistenceLanguage =
+    /\bstill\b|\bremains?\b|\bcontinues?\b|\bas of\b/.test(combinedText);
+  if (!hasPrOrIssueAnchor || !hasOpenStateLanguage || !hasPersistenceLanguage) {
+    return false;
+  }
+
+  const evidenceDates = extractEvidenceDates(combinedText);
+  if (evidenceDates.length === 0) return false;
+  const freshestEvidence = evidenceDates[0];
+  const ageMs = report.getTime() - freshestEvidence.getTime();
+  if (ageMs <= 0) return false;
+  const ageDays = ageMs / (24 * 60 * 60 * 1000);
+
+  const hasFreshWindowCue =
+    /\blast\s*(?:24|48)\s*(?:h|hours)\b|\btoday\b|\byesterday\b/.test(combinedText);
+
+  return ageDays > 3 && !hasFreshWindowCue;
+}
+
 function evaluateFormatMismatch(payload: SignalGuardPayload): GuardCheckOutcome {
   const { issues } = parseCanonicalSignalPayload({
     beat_slug: payload.beat_slug ?? "",
@@ -429,69 +557,13 @@ function evaluateMemoryFreshness(editorialMemory: EditorialMemorySnapshot | null
   };
 }
 
-function evaluatePublisherChecks(payload: CanonicalSignalPayload): GuardCheckOutcome[] {
-  const combinedText = `${payload.headline} ${payload.analysis}`;
-  const disclosure = payload.disclosure;
-
-  return [
-    {
-      ok: hasMissionAlignment(combinedText),
-      blocker: "Fails publisher Q1 mission-aligned test; broaden to show how AI agents use, earn, transact with, or govern Bitcoin or sBTC",
-      value: hasMissionAlignment(combinedText) ? "pass" : "reject",
-      diagnostic: {
-        code: "publisher_q1_mission_alignment",
-        layer: "publisher_q1",
-        status: hasMissionAlignment(combinedText) ? "pass" : "reject",
-        message: hasMissionAlignment(combinedText)
-          ? "Publisher Q1 passed"
-          : "Publisher Q1 failed: the signal does not clearly connect AI-native actors to Bitcoin, sBTC, Stacks, or x402 activity"
-      }
-    },
-    {
-      ok: !hasVagueDisclosure(disclosure) && hasConcreteDisclosureAnchors(disclosure),
-      blocker: "Fails publisher Q2 replicable test; disclosure must name the specific model, endpoints, URLs, issues, PRs, releases, or queries used",
-      value: !hasVagueDisclosure(disclosure) && hasConcreteDisclosureAnchors(disclosure) ? "pass" : "reject",
-      diagnostic: {
-        code: "publisher_q2_replicable",
-        layer: "publisher_q2",
-        status: !hasVagueDisclosure(disclosure) && hasConcreteDisclosureAnchors(disclosure) ? "pass" : "reject",
-        message: !hasVagueDisclosure(disclosure) && hasConcreteDisclosureAnchors(disclosure)
-          ? "Publisher Q2 passed"
-          : "Publisher Q2 failed: disclosure is empty, vague, or not reproducible enough"
-      }
-    },
-    {
-      ok: isInscribableNews(combinedText),
-      blocker: "Fails publisher Q3 inscribable test; speculative or stable-baseline framing is not suitable for permanent record",
-      value: isInscribableNews(combinedText) ? "pass" : "reject",
-      diagnostic: {
-        code: "publisher_q3_inscribable",
-        layer: "publisher_q3",
-        status: isInscribableNews(combinedText) ? "pass" : "reject",
-        message: isInscribableNews(combinedText)
-          ? "Publisher Q3 passed"
-          : "Publisher Q3 failed: the signal reads as speculative, baseline-only, or not like a durable development"
-      }
-    },
-    {
-      ok: isValueCreating(payload.analysis) && hasDirectOperatorConsequence(combinedText),
-      blocker: "Fails publisher Q4 value-creating test; add a measurable operator, payout, settlement, routing, identity, or security consequence",
-      value: isValueCreating(payload.analysis) && hasDirectOperatorConsequence(combinedText) ? "pass" : "reject",
-      diagnostic: {
-        code: "publisher_q4_value_creating",
-        layer: "publisher_q4",
-        status: isValueCreating(payload.analysis) && hasDirectOperatorConsequence(combinedText) ? "pass" : "reject",
-        message: isValueCreating(payload.analysis) && hasDirectOperatorConsequence(combinedText)
-          ? "Publisher Q4 passed"
-          : "Publisher Q4 failed: the signal does not land a measurable AI-native economy consequence"
-      }
-    }
-  ];
-}
-
 function evaluateTemplateChecks(payload: CanonicalSignalPayload): GuardCheckOutcome[] {
   const analysis = payload.analysis ?? "";
   const headline = payload.headline ?? "";
+  const likelyTruncated =
+    analysis.trim().length >= 950 &&
+    !/[.!?]"?$/.test(analysis.trim());
+  const overSoftLimit = analysis.trim().length > 900;
 
   return [
     {
@@ -508,14 +580,14 @@ function evaluateTemplateChecks(payload: CanonicalSignalPayload): GuardCheckOutc
       }
     },
     {
-      ok: hasTemplateAnalysis(analysis) && hasTerminalDirective(analysis),
-      blocker: "Template check failed: analysis must use CLAIM/EVIDENCE/IMPLICATION/Directive or What changed/What it means/What to do, and it must end with an operator directive",
-      value: hasTemplateAnalysis(analysis) && hasTerminalDirective(analysis) ? "pass" : "reject",
+      ok: hasTemplateAnalysis(analysis),
+      blocker: "Template check failed: analysis must use CLAIM/EVIDENCE/IMPLICATION or What changed/What it means/What to do",
+      value: hasTemplateAnalysis(analysis) ? "pass" : "reject",
       diagnostic: {
         code: "template_analysis_framework",
         layer: "format_mismatch",
-        status: hasTemplateAnalysis(analysis) && hasTerminalDirective(analysis) ? "pass" : "reject",
-        message: hasTemplateAnalysis(analysis) && hasTerminalDirective(analysis)
+        status: hasTemplateAnalysis(analysis) ? "pass" : "reject",
+        message: hasTemplateAnalysis(analysis)
           ? "Template analysis framework check passed"
           : "Template analysis framework check failed"
       }
@@ -532,21 +604,50 @@ function evaluateTemplateChecks(payload: CanonicalSignalPayload): GuardCheckOutc
           ? "Template source verifiability check passed"
           : "Template source verifiability check failed"
       }
+    },
+    {
+      ok: !likelyTruncated && !overSoftLimit,
+      blocker: overSoftLimit
+        ? "Template check failed: body is above 900 characters — shorten it before filing so the live API does not clip the stored signal"
+        : "Template check failed: body appears truncated near the submission limit — shorten it and end with complete terminal punctuation before filing",
+      value: likelyTruncated || overSoftLimit ? "reject" : "pass",
+      diagnostic: {
+        code: "template_truncation_guard",
+        layer: "format_mismatch",
+        status: likelyTruncated || overSoftLimit ? "reject" : "pass",
+        message: likelyTruncated || overSoftLimit
+          ? "Template truncation guard failed"
+          : "Template truncation guard passed"
+      }
     }
   ];
 }
 
-function evaluateFactCheckerChecks(payload: CanonicalSignalPayload): GuardCheckOutcome[] {
+function evaluateFactCheckerChecks(payload: CanonicalSignalPayload, reportDate: string): GuardCheckOutcome[] {
   const combinedText = `${payload.headline} ${payload.analysis}`;
   const claimTypes = detectClaimTypes(combinedText);
+  const quantumBeat = isQuantumBeat(payload.beat_slug);
+  const saturatedQuantum = quantumBeat && isSaturatedQuantumCluster(combinedText);
+  const aibtcNativeQuantum = quantumBeat && isAibtcNativeQuantumAngle(combinedText);
+  const missingQubitDistinction = quantumBeat && /\bqubits?\b/i.test(combinedText) && !hasLogicalPhysicalQubitDistinction(combinedText);
+  const homepageLevelMetricSourceFailure = isMetricHeavyClaim(combinedText) && hasRepositoryRootSource(payload.sources);
   const needsIndependentVerifier = claimTypes.includes("price") || claimTypes.includes("security");
   const needsNumericAnchor = claimTypes.some((type) => ["price", "payout", "block_height", "count"].includes(type));
   const primaryPlatformEvidencePass =
     !needsIndependentVerifier &&
     payload.sources.length >= 2 &&
     hasStructuredPrimaryAnchor(payload.sources);
+  const discussionOnlyQuantum = quantumBeat && isDiscussionOnlyQuantumSourceSet(payload.sources);
+  const pullOnlyQuantum = quantumBeat && isPullOnlyQuantumSourceSet(payload.sources);
+  const staleOpenStatusFailure = isStaleOpenStatusClaim(payload, reportDate);
   const sourceVerificationPass =
     payload.sources.length > 0 &&
+    !discussionOnlyQuantum &&
+    !pullOnlyQuantum &&
+    !staleOpenStatusFailure &&
+    !missingQubitDistinction &&
+    !(saturatedQuantum && !aibtcNativeQuantum) &&
+    !homepageLevelMetricSourceFailure &&
     (!isCircularSourcing(payload.sources) || primaryPlatformEvidencePass) &&
     (!needsIndependentVerifier || hasIndependentExternalSource(payload.sources)) &&
     (!(isMetricHeavyClaim(combinedText) && allSourcesFromSameOrg(payload.sources) && !primaryPlatformEvidencePass));
@@ -557,6 +658,18 @@ function evaluateFactCheckerChecks(payload: CanonicalSignalPayload): GuardCheckO
 
   const sourceVerificationMessage = !payload.sources.length
     ? "Fact-check source verification failed: no sources were provided"
+    : discussionOnlyQuantum
+      ? "Fact-check source verification failed: quantum filing relies only on discussion-thread sources without a maintainer-owned state artifact"
+    : pullOnlyQuantum
+      ? "Fact-check source verification failed: quantum filing uses PR pages without a commit, release, or spec artifact proving current implementation state"
+    : staleOpenStatusFailure
+      ? "Fact-check source verification failed: stale status-only PR/issue update — cite a fresh check (last 24-48h) or a new state change before filing"
+    : missingQubitDistinction
+      ? "Fact-check source verification failed: quantum filings that cite qubit counts must distinguish logical from physical qubits"
+    : saturatedQuantum && !aibtcNativeQuantum
+      ? "Fact-check source verification failed: saturated quantum clusters need a clearly AIBTC-native operator angle before filing"
+    : homepageLevelMetricSourceFailure
+      ? "Fact-check source verification failed: metric-heavy claims cannot rely on homepage-level or bare repository-root sources"
     : primaryPlatformEvidencePass
       ? "Fact-check source verification passed using structured primary platform evidence"
     : isCircularSourcing(payload.sources)
@@ -619,18 +732,10 @@ function buildDuplicateFirstResult(args: {
       priorBriefs: args.priorBriefMatches.length > 0 ? "reject" : "pass",
       priorApprovedNotInBrief: args.approvedNotInBriefMatches.length > 0 ? "reject_or_reframe" : "pass",
       priorMatchedRejection: args.filedMatch ? "repair_using_publisher_feedback" : "pass",
-      directOperatorConsequence: "skipped_due_to_duplicate",
-      missionAlignment: "skipped_due_to_duplicate",
-      publisherQ1: "skipped_due_to_duplicate",
-      publisherQ2: "skipped_due_to_duplicate",
-      publisherQ3: "skipped_due_to_duplicate",
-      publisherQ4: "skipped_due_to_duplicate",
+      editorGuidance: "skipped_due_to_duplicate",
       metricSourcing: "skipped_due_to_duplicate",
       factCheckerSourceVerification: "skipped_due_to_duplicate",
       factCheckerClaimVerification: "skipped_due_to_duplicate",
-      vagueDisclosure: "skipped_due_to_duplicate",
-      inscribable: "skipped_due_to_duplicate",
-      valueCreating: "skipped_due_to_duplicate",
       circularSourcing: "skipped_due_to_duplicate",
       helperPayloadContract: "skipped_due_to_duplicate",
       editorialMemoryFreshness: "skipped_due_to_duplicate",
@@ -649,14 +754,9 @@ function buildDuplicateFirstResult(args: {
   };
 }
 
-function hasStructuredAnalysis(text: string): boolean {
-  const lower = text.toLowerCase();
-  const hasClaim = /\bclaim\s*:/.test(lower);
-  const hasEvidence = /\bevidence\s*:/.test(lower) &&
-    /(#\d+|0x[0-9a-f]+|block\s*\d{6,}|\d[\d,]+\s*sats|\d[\d,.]+\s*stx|arxiv|cve-\d)/i.test(text);
-  const hasImplication = /\bimplication\s*:/.test(lower) &&
-    /\b(update|upgrade|avoid|redeploy|watch|pause|check|migrate|monitor)\b/i.test(text);
-  return hasClaim && hasEvidence && hasImplication;
+function getMissingFrameworkALabels(text: string): string[] {
+  const required = ["CLAIM:", "EVIDENCE:", "IMPLICATION:"];
+  return required.filter((label) => !new RegExp(`(^|\\n)${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(text));
 }
 
 export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?: string): Promise<SignalGuardResult> {
@@ -675,7 +775,7 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
   }).payload;
   const briefPath = resolve(root, `data/briefs/${reportDate}.md`);
   const filedPath = resolve(root, "data/state/filed-signals.json");
-  const [briefText, filedState, priorBriefMatches, approvedNotInBriefMatches, editorialMemory, repairMemory] = await Promise.all([
+  const [briefText, filedState, priorBriefMatches, approvedNotInBriefMatches, editorialMemory, repairMemory, sameDaySourceUrls] = await Promise.all([
     readFile(briefPath, "utf8").catch(() => ""),
     readJsonIfExists<{ filedSignals?: SignalGuardFiledSignalRecord[] }>(filedPath),
     loadRecentBriefMatches(reportDate, headline, 2, root),
@@ -683,16 +783,56 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
     readJsonIfExists<EditorialMemorySnapshot>(resolve(root, "data/state/editorial-memory.json")),
     readJsonIfExists<{ contracts?: Array<{ feedbackMessage?: string; signalId?: string | null }> }>(
       resolve(root, "data/state/repairable-candidates.json")
-    )
+    ),
+    loadSameDaySourceUrls(root, reportDate)
   ]);
   const briefLines = briefText.split("\n").map((line) => line.replace(/^[-*]\s*/, "").trim()).filter((line) => line.length >= 20);
   const briefMatch = briefLines.find((line) => isLikelySameStory(headline, line)) ?? null;
   const filedMatch = (filedState?.filedSignals ?? []).find((entry) => entry.headline ? isLikelySameStory(headline, entry.headline) : false) ?? null;
 
+  const freshnessOutcome = evaluateMemoryFreshness(editorialMemory, reportDate);
+  if (!freshnessOutcome.ok) {
+    return {
+      ok: false,
+      reportDate,
+      blockers: [freshnessOutcome.blocker!],
+      checks: {
+        currentBrief: "skipped_due_to_stale_memory",
+        priorBriefs: "skipped_due_to_stale_memory",
+        priorApprovedNotInBrief: "skipped_due_to_stale_memory",
+        priorMatchedRejection: "skipped_due_to_stale_memory",
+        editorGuidance: "skipped_due_to_stale_memory",
+        metricSourcing: "skipped_due_to_stale_memory",
+        factCheckerSourceVerification: "skipped_due_to_stale_memory",
+        factCheckerClaimVerification: "skipped_due_to_stale_memory",
+        circularSourcing: "skipped_due_to_stale_memory",
+        helperPayloadContract: "skipped_due_to_stale_memory",
+        editorialMemoryFreshness: "reject",
+        winnerBar: "skipped_due_to_stale_memory"
+      },
+      diagnostics: [
+        freshnessOutcome.diagnostic,
+        { code: "editor_guidance_pipeline", layer: "editor_guidance", status: "skip", message: "Skipped due to stale editorial memory" },
+        { code: "fact_check_source_verification", layer: "fact_check", status: "skip", message: "Skipped due to stale editorial memory" },
+        { code: "fact_check_claim_verification", layer: "fact_check", status: "skip", message: "Skipped due to stale editorial memory" },
+        { code: "format_payload_contract", layer: "format_mismatch", status: "skip", message: "Skipped due to stale editorial memory" }
+      ],
+      briefMatch: null,
+      priorBriefMatches: [],
+      approvedNotInBriefMatches: [],
+      filedMatch: null
+    };
+  }
+
   const blockers: string[] = [];
   const diagnostics: SignalGuardDiagnostic[] = [];
   if (body && !hasTemplateAnalysis(body)) {
-    blockers.push("analysis must follow the signal template — use CLAIM / EVIDENCE / IMPLICATION / Directive or What changed / What it means / What to do");
+    const missingLabels = getMissingFrameworkALabels(body);
+    blockers.push(
+      missingLabels.length > 0
+        ? `analysis must follow the signal template — missing ${missingLabels.join(", ")}`
+        : "analysis must follow the signal template — use CLAIM / EVIDENCE / IMPLICATION / Directive or What changed / What it means / What to do"
+    );
   }
   if (briefMatch) {
     blockers.push(`Headline looks already present in data/briefs/${reportDate}.md`);
@@ -770,30 +910,33 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
       message: `Duplicate-first gate failed: story anchors already appear in repair memory${repairCollision.signalId ? ` for signal ${repairCollision.signalId}` : ""}`
     });
   }
+  const duplicateSameDaySourceUrls = sources
+    .map((source) => normalizeSourceUrl(source.url?.trim() ?? ""))
+    .filter((url) => url && sameDaySourceUrls.has(url));
+  if (duplicateSameDaySourceUrls.length > 0) {
+    blockers.push(`Duplicate same-day source cluster already exists for ${duplicateSameDaySourceUrls.join(", ")}; choose a materially different source cluster before filing`);
+    diagnostics.push({
+      code: "duplicate_same_day_source_cluster",
+      layer: "duplicate",
+      status: "reject",
+      message: "Duplicate-first gate failed: source URL already appears in today's filing-ready artifacts"
+    });
+  }
+  if (isClosedPullRequestProof(payload)) {
+    blockers.push("Closed PR pages cannot be used as proof of a shipped change; cite a merged PR, commit, release, deployed endpoint, or durable spec artifact");
+    diagnostics.push({
+      code: "closed_pr_as_proof",
+      layer: "fact_check",
+      status: "reject",
+      message: "Closed PR page used as proof without merged/shipped/released state evidence"
+    });
+  }
 
   if (blockers.length > 0) {
     diagnostics.push(
       {
-        code: "publisher_q1_mission_alignment",
-        layer: "publisher_q1",
-        status: "skip",
-        message: "Skipped because duplicate-first gate already failed"
-      },
-      {
-        code: "publisher_q2_replicable",
-        layer: "publisher_q2",
-        status: "skip",
-        message: "Skipped because duplicate-first gate already failed"
-      },
-      {
-        code: "publisher_q3_inscribable",
-        layer: "publisher_q3",
-        status: "skip",
-        message: "Skipped because duplicate-first gate already failed"
-      },
-      {
-        code: "publisher_q4_value_creating",
-        layer: "publisher_q4",
+        code: "editor_guidance_pipeline",
+        layer: "editor_guidance",
         status: "skip",
         message: "Skipped because duplicate-first gate already failed"
       },
@@ -814,12 +957,6 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
         layer: "format_mismatch",
         status: "skip",
         message: "Skipped because duplicate-first gate already failed"
-      },
-      {
-        code: "stale_editorial_memory_cycle",
-        layer: "stale_memory",
-        status: "skip",
-        message: "Skipped because duplicate-first gate already failed"
       }
     );
     return buildDuplicateFirstResult({
@@ -835,12 +972,11 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
 
   const outcomes: GuardCheckOutcome[] = [];
   outcomes.push(evaluateFormatMismatch(payload));
-  outcomes.push(evaluateMemoryFreshness(editorialMemory, reportDate));
+  outcomes.push(freshnessOutcome);
 
   if (canonical) {
-    outcomes.push(...evaluatePublisherChecks(canonical));
     outcomes.push(...evaluateTemplateChecks(canonical));
-    outcomes.push(...evaluateFactCheckerChecks(canonical));
+    outcomes.push(...evaluateFactCheckerChecks(canonical, reportDate));
   }
 
   for (const outcome of outcomes) {
@@ -849,15 +985,9 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
       blockers.push(outcome.blocker);
     }
   }
-
-  const disclosure = [...(payload.model_disclosure?.tools_used ?? []), ...(payload.model_disclosure?.derivation_steps ?? [])].join(" ");
-
-  const missionAlignment = hasMissionAlignment(`${headline} ${body}`);
-  const replicable = !hasVagueDisclosure(disclosure) && hasConcreteDisclosureAnchors(disclosure);
-  const inscribable = isInscribableNews(`${headline} ${body}`);
-  const valueCreating = canonical ? isValueCreating(canonical.analysis) && hasDirectOperatorConsequence(`${headline} ${body}`) : false;
-  const factCheckerSourceVerification = canonical ? evaluateFactCheckerChecks(canonical)[0] : null;
-  const factCheckerClaimVerification = canonical ? evaluateFactCheckerChecks(canonical)[1] : null;
+  const factCheckerOutcomes = canonical ? evaluateFactCheckerChecks(canonical, reportDate) : [];
+  const factCheckerSourceVerification = factCheckerOutcomes[0] ?? null;
+  const factCheckerClaimVerification = factCheckerOutcomes[1] ?? null;
   const formatCheck = outcomes[0];
   const freshnessCheck = outcomes[1];
 
@@ -870,22 +1000,14 @@ export async function evaluateSignalGuard(payload: SignalGuardPayload, baseDir?:
       priorBriefs: priorBriefMatches.length > 0 ? "reject" : "pass",
       priorApprovedNotInBrief: approvedNotInBriefMatches.length > 0 ? "reject_or_reframe" : "pass",
       priorMatchedRejection: failureReason ? "repair_using_publisher_feedback" : "pass",
-      directOperatorConsequence: hasDirectOperatorConsequence(`${headline} ${body}`) ? "pass" : "reject",
-      missionAlignment: missionAlignment ? "pass" : "reject",
-      publisherQ1: missionAlignment ? "pass" : "reject",
-      publisherQ2: replicable ? "pass" : "reject",
-      publisherQ3: inscribable ? "pass" : "reject",
-      publisherQ4: valueCreating ? "pass" : "reject",
+      editorGuidance: "enforced_by_create_signal_and_beat_editor",
       metricSourcing: isMetricHeavyClaim(`${headline} ${body}`) && sources.length > 0 && allSourcesFromSameOrg(sources) ? "reject_or_rewrite" : "pass",
       factCheckerSourceVerification: factCheckerSourceVerification?.value ?? "reject",
       factCheckerClaimVerification: factCheckerClaimVerification?.value ?? "reject",
-      vagueDisclosure: replicable ? "pass" : "reject",
-      inscribable: inscribable ? "pass" : "reject",
-      valueCreating: valueCreating ? "pass" : "reject",
       circularSourcing: isCircularSourcing(sources) ? "reject" : "pass",
       helperPayloadContract: formatCheck.value,
       editorialMemoryFreshness: freshnessCheck.value,
-      winnerBar: hasExactHeadlineAnchor(headline) && hasTemplateAnalysis(body) && hasTerminalDirective(body) && hasVerifiableSources(sources) ? "pass" : "reject"
+      winnerBar: hasExactHeadlineAnchor(headline) && hasTemplateAnalysis(body) && hasVerifiableSources(sources) ? "pass" : "reject"
     },
     diagnostics,
     briefMatch,

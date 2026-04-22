@@ -1,3 +1,5 @@
+import { hasExactAnchor } from "../filing/template-rules.js";
+
 export interface WinnerGateSource {
   url?: string;
   title?: string;
@@ -17,22 +19,6 @@ export interface WinnerGateResult {
 
 function normalizeText(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function hasExactAnchor(text: string): boolean {
-  return (
-    /\bissue\s+#\d+\b/i.test(text) ||
-    /\bpr\s+#\d+\b/i.test(text) ||
-    /\bcve-\d{4}-\d+\b/i.test(text) ||
-    /\bv\d+\.\d+(?:\.\d+)*(?:\.\d+)?\b/i.test(text) ||
-    /\$\d[\d,]*(?:\.\d+)?/.test(text) ||
-    /\b\d+(?:\.\d+)?%/.test(text) ||
-    /\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?|blocks?)\b/i.test(text) ||
-    /\b\d[\d,.]*[KMBk]?\s*sats?\b/i.test(text) ||
-    /\bhttp\s*(?:4\d\d|5\d\d)\b/i.test(text) ||
-    /\bcvss\s*\d+(?:\.\d+)?\b/i.test(text) ||
-    /\bblock(?:\s+height)?\s*\d{5,}\b/i.test(text)
-  );
 }
 
 function hasAnchorInHeadline(headline: string): boolean {

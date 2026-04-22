@@ -7,4 +7,4 @@ export * from "./outcome-feedback.js";
 export * from "./repair-memory.js";
 export * from "./runtime-memory.js";
 export * from "./snapshot-memory.js";
-export * from "./build-plan-memory.js";
+export * from "./signal-learning-brief.js";

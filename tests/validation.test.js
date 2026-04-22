@@ -15,7 +15,7 @@ function createValidSubject() {
     candidate: {
       candidateId: "sig-1",
       detectedAt: "2026-03-25T00:00:00Z",
-      beat: "protocol-updates",
+      beat: "infrastructure",
       category: "protocol-change",
       summary: "A new contract launched",
       significance: "it may signal a live protocol",

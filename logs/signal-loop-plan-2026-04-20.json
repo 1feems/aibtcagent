@@ -1,0 +1,11 @@
+{
+  "reportDate": "2026-04-20",
+  "generatedAt": "2026-04-21T07:44:11.821Z",
+  "phase": "plan",
+  "chosenAction": "source_more_evidence",
+  "reasons": [
+    "4 candidate(s) exist but none are strong",
+    "the bottleneck is evidence strength or displacement, not a total lack of stories"
+  ],
+  "nextOperatorAction": "Repair the best existing candidate with harder anchors, fresher evidence, or a sharper operator consequence before drafting anything new."
+}

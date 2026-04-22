@@ -1,4 +1,4 @@
-const PACIFIC_TIME_ZONE = "America/Los_Angeles";
+const REPORT_TIME_ZONE = "UTC";
 
 function formatDateInTimeZone(value: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -25,7 +25,7 @@ export function getPacificReportDate(input: string | Date = new Date()): string 
     throw new Error(`Invalid date input: ${String(input)}`);
   }
 
-  return formatDateInTimeZone(value, PACIFIC_TIME_ZONE);
+  return formatDateInTimeZone(value, REPORT_TIME_ZONE);
 }
 
-export { PACIFIC_TIME_ZONE };
+export { REPORT_TIME_ZONE };

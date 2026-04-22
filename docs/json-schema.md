@@ -87,7 +87,7 @@
   "candidate_signal": {
     "candidate_id": "sig-2026-03-25-001",
     "detected_at": "2026-03-25T05:12:00Z",
-    "beat": "protocol-updates",
+    "beat": "infrastructure",
     "category": "protocol-change",
     "summary": "A new Stacks contract deployed with immediate first-use activity",
     "significance": "the contract appears live before broad public visibility",

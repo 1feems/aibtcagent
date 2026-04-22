@@ -1,33 +1,30 @@
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDailyLearn } from "../loop/index.js";
-import { runFetchAndRun } from "../loop/fetch-and-run.js";
+import { autoLabelResolvedOutcomes } from "../learning/index.js";
 import { runDailyPrep } from "../prep/daily-prep.js";
 import { runSignalJob } from "../prep/signal-job.js";
 import {
   replenishCandidateSlate,
   countStrongCandidates
 } from "./replenishment.js";
+import { runCandidateSourcingPass } from "./sourcing-pass.js";
 import {
-  autoLabelResolvedOutcomes,
-  refreshOutcomeFeedbackMemory,
-  refreshSnapshotMemory,
-  syncRuntimeMemory
-} from "../learning/index.js";
-import { ingestManualDailyBrief, trackBriefWinners } from "../brief/index.js";
-import { saveFilingQueue, writeTrustedSignalSlate } from "../filing/index.js";
-import { fetchAndCacheQuantumMapSnapshot } from "../filing/index.js";
+  ingestManualDailyBrief,
+  ingestTopCorrespondentSets,
+  trackBriefWinners,
+  verifyEditorialLearningProof
+} from "../brief/index.js";
+import { saveFilingQueue } from "../filing/index.js";
+import { generateLiveCandidateSlate, saveLiveCandidateSlate } from "../filing/index.js";
 import { generateDailyOperatorSummary, saveDailyOperatorSummary } from "../ops/index.js";
 import { generateDailyStabilityReport, saveDailyStabilityReport } from "../ops/index.js";
 import { appendRuntimeHistory } from "../ops/index.js";
 import { generateDailyCompetitorReview, saveDailyCompetitorReview } from "../ops/index.js";
 import { generateDailyFailureMemos, saveDailyFailureMemos } from "../ops/index.js";
 import { generateHeartbeatReminder, saveHeartbeatReminder } from "../ops/index.js";
-import { generateAndSaveQuantumWeeklySynthesis } from "../reporting/index.js";
-import { generateActivityDashboard, saveActivityDashboard } from "../reporting/index.js";
-import { runCorrectionHunter } from "../corrections/correction-hunter.js";
-import { getPacificReportDate } from "../utils/report-date.js";
+import { writeDailyOutcomeBoard } from "../ops/index.js";
+import type { FilingQueueSnapshot } from "../filing/index.js";
 import type { DailyOperatorSummary } from "../types/index.js";
 
 interface AgentDailyConfig {
@@ -77,6 +74,10 @@ function summarizeManualActions(
   return actions;
 }
 
+export function shouldRunSecondSourcingPass(queue: FilingQueueSnapshot): boolean {
+  return countStrongCandidates(queue) < 5;
+}
+
 function parseArgs(argv: string[]): AgentDailyConfig {
   const parsed = new Map<string, string>();
 
@@ -100,7 +101,7 @@ function parseArgs(argv: string[]): AgentDailyConfig {
   const now = new Date().toISOString();
 
   return {
-    reportDate: parsed.get("date") ?? getPacificReportDate(now),
+    reportDate: parsed.get("date") ?? now.slice(0, 10),
     generatedAt: parsed.get("generated-at") ?? now
   };
 }
@@ -112,19 +113,8 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
     "[agent-daily] startup preflight: confirm you are in aibtcagent and start from README.md/AIBTC-AGENTS.md, not cross-repo chat memory\n"
   );
   process.stdout.write(
-    "[agent-daily] goal: maximize In Brief wins and sats; approvals alone do not count\n"
+    "[agent-daily] goal: maximize expected earnings over the next 30 days through In Brief wins, sats, streak protection, leaderboard gains, and monetizable signal quality; approvals alone do not count\n"
   );
-
-  try {
-    const quantumSnapshot = await fetchAndCacheQuantumMapSnapshot({
-      fetchedAt: config.generatedAt
-    });
-    process.stdout.write(
-      `[agent-daily] quantum map snapshot refreshed (${quantumSnapshot.summary.source}) — metadata composite ${quantumSnapshot.summary.metadataCompositeScore ?? "n/a"}, derived composite ${quantumSnapshot.summary.derivedCompositeScore}\n`
-    );
-  } catch (error) {
-    process.stderr.write(`[agent-daily] quantum map snapshot refresh failed: ${(error as Error).message}\n`);
-  }
 
   await runDailyLearn([
     "--date",
@@ -135,24 +125,6 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
 
   const autoLabel = await autoLabelResolvedOutcomes();
   process.stdout.write(`[agent-daily] auto-labeled ${autoLabel.labeledCount} resolved outcome(s)\n`);
-  const snapshotMemory = await refreshSnapshotMemory();
-  process.stdout.write(
-    `[agent-daily] snapshot memory refreshed from ${snapshotMemory.sourceFiles.length} raw snapshot file(s) with ${snapshotMemory.lessonCount} derived lesson(s)\n`
-  );
-  const outcomeFeedbackMemory = await refreshOutcomeFeedbackMemory();
-  process.stdout.write(
-    `[agent-daily] outcome feedback memory refreshed with ${outcomeFeedbackMemory.repeatedLabels.length} repeated label pattern(s)\n`
-  );
-  const runtimeMemory = await syncRuntimeMemory("agent-daily");
-  const editorialMemory = JSON.parse(
-    await readFile(runtimeMemory.editorialMemoryPath, "utf8")
-  ) as { preFilingChecks?: unknown[] };
-  process.stdout.write(`[agent-daily] objective memory refreshed at ${runtimeMemory.objectiveMemoryPath}\n`);
-  process.stdout.write(
-    `[agent-daily] editorial memory refreshed with ${(editorialMemory.preFilingChecks ?? []).length} pre-filing check(s)\n`
-  );
-  process.stdout.write(`[agent-daily] competition memory refreshed at ${runtimeMemory.competitionMemoryPath}\n`);
-  process.stdout.write(`[agent-daily] brief examples refreshed at ${runtimeMemory.briefExamplesMemoryPath}\n`);
 
   const manualBrief = await ingestManualDailyBrief(config.reportDate);
   if (manualBrief) {
@@ -169,60 +141,57 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
     }
   }
 
+  const topCorrespondents = await ingestTopCorrespondentSets(config.reportDate);
+  if (topCorrespondents) {
+    process.stdout.write(`[agent-daily] top correspondents snapshot saved to ${topCorrespondents.dailySnapshotPath}\n`);
+    process.stdout.write(`[agent-daily] top correspondent behavior saved to ${topCorrespondents.behaviorPath}\n`);
+  }
+
+  const dailyPrep = await runDailyPrep(config.reportDate, config.generatedAt);
+  if (dailyPrep.skipped) {
+    process.stdout.write(
+      `[agent-daily] daily-prep skipped: ${dailyPrep.skipReason ?? "unknown reason"}\n`
+    );
+  } else {
+    process.stdout.write(`[agent-daily] daily-prep report saved to ${dailyPrep.reportPath}\n`);
+  }
+
+  const outcomeBoard = await writeDailyOutcomeBoard(config.reportDate, config.generatedAt);
+  process.stdout.write(`[agent-daily] outcome board saved to ${outcomeBoard.statePath}\n`);
+
+  const signalJob = await runSignalJob(config.reportDate, config.generatedAt);
+  if (signalJob.skipped) {
+    process.stdout.write(
+      `[agent-daily] signal-job skipped: ${signalJob.skipReason ?? "unknown reason"}\n`
+    );
+  } else {
+    process.stdout.write(`[agent-daily] signal-job report saved to ${signalJob.outputPath}\n`);
+  }
+
   process.stdout.write(
     "[agent-daily] operator boundary: wallet signing, heartbeat signing, and claim signing remain manual via Xverse helper flows\n"
   );
-
-  const dailyPrepResult = await runDailyPrep(config.reportDate, config.generatedAt);
-  if (dailyPrepResult.skipped) {
-    process.stdout.write(`[agent-daily] daily prep skipped: ${dailyPrepResult.skipReason}\n`);
-  } else {
-    process.stdout.write(`[agent-daily] daily prep report saved to ${dailyPrepResult.reportPath}\n`);
-    if (!dailyPrepResult.briefFound) {
-      process.stdout.write(
-        `[agent-daily] daily prep ran without brief artifact — place data/briefs/${config.reportDate}.md before next run for full analysis\n`
-      );
-    }
-  }
-
-  await runFetchAndRun(config.generatedAt, config.reportDate);
-
-  const signalJobResult = await runSignalJob(config.reportDate, config.generatedAt);
-  if (signalJobResult.skipped) {
-    process.stdout.write(`[agent-daily] signal job skipped: ${signalJobResult.skipReason}\n`);
-    if (signalJobResult.outputPath) {
-      process.stdout.write(
-        `[agent-daily] signal job wrote an explicit blocked report to ${signalJobResult.outputPath}\n`
-      );
-    }
-  } else {
-    process.stdout.write(`[agent-daily] signal report saved to ${signalJobResult.outputPath}\n`);
-  }
 
   const {
     rankedCandidates,
     queuePath,
     filingQueue,
     replenishmentPassesRun
-  } = await replenishCandidateSlate(config.reportDate, config.generatedAt, "agent-daily");
+  } = await replenishCandidateSlate(
+    config.reportDate,
+    config.generatedAt,
+    "agent-daily",
+    runCandidateSourcingPass
+  );
   const initialStrongCandidates = 0;
   const secondSourcingPassTriggered = replenishmentPassesRun > 0;
 
   const finalStrongCandidates = countStrongCandidates(filingQueue);
-
-  if (finalStrongCandidates === 0) {
-    process.stdout.write(
-      `[agent-daily] SLATE EMPTY — 0 strong candidates after ${replenishmentPassesRun} replenishment pass(es). ` +
-      `Auto-source pipeline has consumed all available events. ` +
-      `To fill the slate: write candidate JSON files to data/manual-submissions/${config.reportDate}/ and re-run agent-daily. ` +
-      `Do NOT generate signals in chat — write the JSON files and execute the script.\n`
-    );
-  }
-
   const filingQueuePath = await saveFilingQueue(filingQueue);
   process.stdout.write(`[agent-daily] filing queue saved to ${filingQueuePath}\n`);
-  const trustedSignalSlatePath = await writeTrustedSignalSlate(config.reportDate);
-  process.stdout.write(`[agent-daily] trusted signal slate saved to ${trustedSignalSlatePath}\n`);
+  const liveSlate = await generateLiveCandidateSlate(config.reportDate);
+  const liveSlatePath = await saveLiveCandidateSlate(liveSlate);
+  process.stdout.write(`[agent-daily] live candidate slate saved to ${liveSlatePath}\n`);
 
   const operatorSummary = await generateDailyOperatorSummary(
     config.reportDate,
@@ -232,6 +201,18 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
   process.stdout.write(
     `[agent-daily] operator summary saved to ${operatorSummaryPaths.jsonPath}\n`
   );
+  const editorialLearning = await verifyEditorialLearningProof(config.reportDate, {
+    requireOperatorReport: true
+  });
+  if (editorialLearning.verified) {
+    process.stdout.write(
+      `[agent-daily] brief learned proof verified: ${editorialLearning.verifiedFiles.join(", ")}\n`
+    );
+  } else {
+    process.stdout.write(
+      `[agent-daily] do not say the brief was learned yet: ${editorialLearning.note}\n`
+    );
+  }
 
   const stabilityReport = await generateDailyStabilityReport(config.reportDate);
   const stabilityPaths = await saveDailyStabilityReport(stabilityReport);
@@ -256,31 +237,6 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
   process.stdout.write(
     `[agent-daily] failure memos saved: ${failureMemoPaths.length}\n`
   );
-
-  const activityDashboard = await generateActivityDashboard();
-  const activityDashboardPaths = await saveActivityDashboard(activityDashboard);
-  process.stdout.write(
-    `[agent-daily] activity dashboard saved to ${activityDashboardPaths.repoPath}\n`
-  );
-
-  try {
-    const quantumWeekly = await generateAndSaveQuantumWeeklySynthesis(config.reportDate);
-    process.stdout.write(
-      `[agent-daily] quantum weekly synthesis draft saved to ${quantumWeekly.paths.markdownPath}\n`
-    );
-  } catch (error) {
-    process.stderr.write(`[agent-daily] quantum weekly synthesis skipped: ${(error as Error).message}\n`);
-  }
-
-  // Correction-hunting loop — deterministic, zero-LLM, capped at 3/day
-  try {
-    const correctionResult = await runCorrectionHunter(config.reportDate);
-    process.stdout.write(
-      `[agent-daily] correction hunt: ${correctionResult.candidates.length} flaw(s) found, ${correctionResult.scanned} signal(s) scanned (quota ${correctionResult.quota.filedCount}/${3})\n`
-    );
-  } catch (error) {
-    process.stderr.write(`[agent-daily] correction hunt skipped: ${(error as Error).message}\n`);
-  }
 
   const runtimeHistoryPath = await appendRuntimeHistory({
     reportDate: config.reportDate,
@@ -312,11 +268,7 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
       );
       await saveHeartbeatReminder(heartbeatReport, heartbeatState);
       heartbeatReminderNeeded = heartbeatReport.reminderNeeded;
-      if (heartbeatReport.status === "skipped") {
-        process.stdout.write(
-          `[agent-daily] heartbeat check skipped: ${heartbeatReport.note}\n`
-        );
-      } else if (heartbeatReport.reminderNeeded) {
+      if (heartbeatReport.reminderNeeded) {
         process.stdout.write(
           `[agent-daily] HEARTBEAT REMINDER: check-in count has not increased since last run (${heartbeatReport.previousCheckInCount ?? "unknown"} → ${heartbeatReport.checkInCount ?? "unknown"}). Open tools/xverse-register/heartbeat.html to submit a manual heartbeat.\n`
         );

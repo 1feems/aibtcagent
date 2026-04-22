@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import type { GeneralNewsRawEvent } from "../signals/index.js";
+import type { GeneralNewsRawEvent } from "../signals/raw-events.js";
 
 interface NewsFeedConfig {
   id: string;
@@ -149,36 +149,16 @@ function inferBeat(text: string, fallbackBeat: string): string {
   const normalized = text.toLowerCase();
   const mappings: Array<{ beat: string; keywords: string[] }> = [
     {
-      beat: "quantum",
-      keywords: ["quantum", "post-quantum", "pqc", "crqc", "qubit", "bip-360", "dilithium", "falcon", "sphincs", "secp256k1", "taproot"]
-    },
-    {
-      beat: "security",
-      keywords: ["exploit", "hack", "vulnerability", "malware", "breach", "ransomware", "audit", "cve", "seed phrase", "wallet drain"]
-    },
-    {
-      beat: "deal-flow",
-      keywords: ["series a", "funding", "raises", "closes", "ats", "sponsorship", "contract", "bounty", "custody", "marketplace"]
-    },
-    {
-      beat: "agent-economy",
-      keywords: ["x402", "agent payment", "wallet standard", "wallet layer", "agent economy", "micropayment", "commerce", "payment rail"]
+      beat: "bitcoin-macro",
+      keywords: ["bitcoin", "btc", "mempool", "fee", "sat/vb", "hashrate", "miner", "mining", "etf", "treasury", "macro", "price", "liquidity"]
     },
     {
       beat: "aibtc-network",
-      keywords: ["leaderboard", "genesis", "check-in", "check in", "achievement", "referral", "registration", "onboarding"]
+      keywords: ["leaderboard", "genesis", "check-in", "check in", "achievement", "referral", "registration", "onboarding", "x402", "agent payment", "wallet standard", "payment rail"]
     },
     {
-      beat: "agent-trading",
-      keywords: ["trending", "token", "dex", "order book", "listing", "liquidity", "trading", "market cap", "boosts"]
-    },
-    {
-      beat: "bitcoin-yield",
-      keywords: ["tvl", "yield", "stacking", "stacks yield", "liquidation", "pool", "apr", "lending"]
-    },
-    {
-      beat: "dev-tools",
-      keywords: ["release", "upgrade", "api", "mcp", "relay", "node", "signer", "queue", "nonce", "deployment", "protocol", "wallet", "browserbase"]
+      beat: "quantum",
+      keywords: ["quantum", "post-quantum", "pqc", "dilithium", "secp256k1", "bip-360"]
     }
   ];
 
@@ -194,26 +174,14 @@ function inferBeat(text: string, fallbackBeat: string): string {
 function buildAgentConsequence(beat: string, text: string): string {
   const normalized = text.toLowerCase();
 
-  if (beat === "quantum") {
-    return "Operators should translate the post-quantum milestone into a Bitcoin key, wallet, or migration action before exposure assumptions go stale";
+  if (beat === "bitcoin-macro") {
+    return "Agents should track the Bitcoin market or settlement condition because it can alter treasury, routing, or transaction timing decisions";
   }
-  if (beat === "security") {
-    return "Agents should review exposure and mitigation steps before the threat pattern reaches their stack";
-  }
-  if (beat === "deal-flow") {
-    return "Agents should track the capital or market-structure change because it can alter where real money flows next";
-  }
-  if (beat === "agent-economy") {
-    return "Agents should reassess payment and wallet workflows because the agent economy rails just changed";
-  }
-  if (beat === "onboarding") {
+  if (beat === "aibtc-network") {
     return "Agents should compare their own progression against the network baseline because the leaderboard signal changed";
   }
-  if (beat === "agent-trading") {
-    return "Trading agents should decide whether the new market split changes their positioning or screening logic";
-  }
-  if (beat === "bitcoin-yield") {
-    return "Yield agents should reassess venue risk and capital allocation before the next rebalance";
+  if (beat === "quantum") {
+    return "Quantum operators should verify the Bitcoin-specific source before treating the migration risk as actionable";
   }
   if (normalized.includes("mandatory") || normalized.includes("must")) {
     return "Operators should act on the required upgrade before the deadline hits";
@@ -229,20 +197,14 @@ function buildSignificance(beat: string, text: string, hardNumber: string): stri
     return firstSentence.slice(0, 280);
   }
 
-  if (beat === "security") {
-    return `The security signal is notable because ${hardNumber} anchors a named threat that operators can act on now`.slice(0, 280);
-  }
-  if (beat === "deal-flow") {
-    return `The deal-flow signal matters because ${hardNumber} points to a real capital or market-structure change, not just commentary`.slice(0, 280);
-  }
-  if (beat === "agent-economy") {
-    return `The agent-economy signal matters because ${hardNumber} suggests agent payment or wallet infrastructure is maturing in public`.slice(0, 280);
+  if (beat === "bitcoin-macro") {
+    return `The bitcoin-macro signal matters because ${hardNumber} marks a Bitcoin market, fee, or settlement condition agents may need to act on`.slice(0, 280);
   }
   if (beat === "quantum") {
-    return `The quantum signal matters because ${hardNumber} ties a post-quantum milestone to explicit Bitcoin wallet, key, or migration risk`.slice(0, 280);
+    return `The quantum signal matters because ${hardNumber} anchors a Bitcoin migration or signing-risk change`.slice(0, 280);
   }
 
-  return `The infrastructure signal matters because ${hardNumber} marks a concrete change operators may need to react to`.slice(0, 280);
+  return `The AIBTC-network signal matters because ${hardNumber} marks a concrete change operators may need to react to`.slice(0, 280);
 }
 
 function isLikelyPublisherValuable(beat: string, text: string, hardNumber: string | null): boolean {
@@ -251,9 +213,6 @@ function isLikelyPublisherValuable(beat: string, text: string, hardNumber: strin
   }
 
   const normalized = text.toLowerCase();
-  if (beat === "agent-skills") {
-    return false;
-  }
   if (
     normalized.includes("general availability") ||
     normalized.includes("supports mcp") ||
@@ -296,45 +255,10 @@ function isLikelyPublisherValuable(beat: string, text: string, hardNumber: strin
     "leaderboard",
     "yield",
     "tvl",
-    "custody",
-    "quantum",
-    "post-quantum",
-    "pqc",
-    "bip-360",
-    "dilithium",
-    "taproot",
-    "secp256k1",
-    "x402",
-    "payment rail",
-    "agent payment",
-    "agent wallet"
+    "custody"
   ];
 
   return highSignalTerms.some((term) => normalized.includes(term));
-}
-
-async function fetchLiveBtcPrice(): Promise<number | null> {
-  try {
-    const response = await fetch("https://mempool.space/api/v1/prices");
-    if (!response.ok) return null;
-    const data = await response.json() as { USD?: number };
-    return typeof data.USD === "number" ? data.USD : null;
-  } catch {
-    return null;
-  }
-}
-
-function extractBtcSpotClaim(hardNumber: string | null): number | null {
-  if (!hardNumber) return null;
-  // Match bare dollar amounts in BTC spot price range ($20k–$200k), no M/B/T suffix
-  const match = hardNumber.match(/^\$?([\d,]+)$/);
-  if (!match) return null;
-  const value = Number(match[1].replace(/,/g, ""));
-  return value >= 20_000 && value <= 200_000 ? value : null;
-}
-
-function isPriceClaimStale(claimedPrice: number, livePrice: number): boolean {
-  return Math.abs(claimedPrice - livePrice) / livePrice > 0.02;
 }
 
 function toIsoDate(value: string | null, fallbackNow: string): string {
@@ -376,8 +300,7 @@ function shouldIncludeFeedItem(
 function buildNewsEvent(
   config: NewsFeedConfig,
   item: ParsedFeedItem,
-  now: string,
-  liveBtcPrice: number | null
+  now: string
 ): GeneralNewsRawEvent | null {
   const combined = stripTags(`${item.title}. ${item.description}`);
   const beat = inferBeat(combined, config.defaultBeat);
@@ -385,19 +308,6 @@ function buildNewsEvent(
 
   if (!isLikelyPublisherValuable(beat, combined, hardNumber)) {
     return null;
-  }
-
-  // Fact-checker tolerance check: if this candidate claims a BTC spot price, verify it
-  // against live mempool.space data. >2% off = stale source, fail the dashboard-source gate.
-  let usesDashboardAsPrimarySource = false;
-  if (liveBtcPrice !== null) {
-    const claimedPrice = extractBtcSpotClaim(hardNumber);
-    if (claimedPrice !== null && isPriceClaimStale(claimedPrice, liveBtcPrice)) {
-      process.stdout.write(
-        `[sources] price stale: candidate claims $${claimedPrice} vs live $${liveBtcPrice} (>2% off) — ${item.title.slice(0, 60)}\n`
-      );
-      usesDashboardAsPrimarySource = true;
-    }
   }
 
   const publishedAt = toIsoDate(item.publishedAt, now);
@@ -419,7 +329,7 @@ function buildNewsEvent(
     agentConsequence: buildAgentConsequence(beat, combined).slice(0, 280),
     proofUrl: item.link,
     proofNote: `${config.publication} published a directly linked item titled "${summary}" on ${publishedAt.slice(0, 10)}`.slice(0, 280),
-    usesDashboardAsPrimarySource,
+    usesDashboardAsPrimarySource: false,
     likelyDuplicate: false
   };
 }
@@ -503,15 +413,6 @@ export async function fetchNewsFeedEvents(now: string): Promise<string[]> {
   const cutoff = new Date(Date.now() - config.lookbackHours * 60 * 60 * 1000);
   const newPaths: string[] = [];
 
-  // Fact-checker: fetch live BTC price once before scanning feeds so price claims
-  // can be verified against the 2% tolerance threshold during candidate building.
-  const liveBtcPrice = await fetchLiveBtcPrice();
-  if (liveBtcPrice !== null) {
-    process.stdout.write(`[sources] live BTC price: $${liveBtcPrice} (mempool.space)\n`);
-  } else {
-    process.stdout.write(`[sources] live BTC price unavailable — price staleness check skipped\n`);
-  }
-
   for (const feed of sortFeedsForPriority(config.newsFeeds)) {
     process.stdout.write(`[sources] checking ${feed.name}\n`);
 
@@ -534,7 +435,7 @@ export async function fetchNewsFeedEvents(now: string): Promise<string[]> {
         continue;
       }
 
-      const event = buildNewsEvent(feed, item, now, liveBtcPrice);
+      const event = buildNewsEvent(feed, item, now);
       seen.add(item.key);
       if (!event) {
         continue;

@@ -61,6 +61,21 @@ export interface WinnerPatternCheck {
   framingStrength: WinnerPatternSubCheck;
 }
 
+export interface ContextAuditCheck {
+  result: "pass" | "not_available";
+  rationale: string;
+  contextLoaded: boolean;
+  complianceVerified: boolean;
+}
+
+export interface ContextAudit {
+  briefReview: ContextAuditCheck;
+  beatEditorReview: ContextAuditCheck;
+  helperErrorsReview: ContextAuditCheck;
+  outcomeReview: ContextAuditCheck;
+  publisherNotesReview: ContextAuditCheck;
+}
+
 /**
  * A single Q1–Q4 gate check.
  *
@@ -106,7 +121,7 @@ export interface FilingGateTemplate {
  * `headline`      — the exact headline as written (cross-checked against
  *                   the canonical headline at validation time).
  * `templateUsed`  — the name/version of the signal template applied, e.g.
- *                   "general-news-v1", "deal-flow-v1", "protocol-updates-v1".
+ *                   "general-news-v1", "deal-flow-v1", "infrastructure-v1".
  * `template`      — the four structured template fields extracted from the
  *                   analysis body.
  * `q1`            — Q1: Mission alignment.  The signal must show AI-native
@@ -139,4 +154,5 @@ export interface FilingGate {
   q4: FilingGateCheck;
   testedAgainst: string;
   winnerCheck: WinnerPatternCheck;
+  contextAudit: ContextAudit;
 }

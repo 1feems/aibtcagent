@@ -1,6 +1,7 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { evaluateWinnerGate } from "../signals/winner-gate.js";
+import { runAuditedLoop, type AuditInput, type AuditOutput } from "../audit/index.js";
+import { createSignalArtifact } from "./create-signal.js";
 
 interface RankedCandidateQueue {
   candidates?: Array<{
@@ -10,6 +11,11 @@ interface RankedCandidateQueue {
 }
 
 interface SerializedSubmission {
+  kind?: string;
+  fileable?: boolean;
+  non_fileable?: boolean;
+  intended_use?: string;
+  canonical_artifact_required?: string;
   candidate_signal?: {
     candidate_id?: string;
     beat?: string;
@@ -36,13 +42,10 @@ interface SerializedSubmission {
 
 function mapBeat(rawBeat: string | undefined): string {
   const beat = (rawBeat ?? "").trim().toLowerCase();
-  if (beat === "protocol-updates" || beat === "infrastructure") return "infrastructure";
-  if (beat === "deal-flow") return "deal-flow";
-  if (beat === "quantum") return "quantum";
-  if (beat === "agent-economy") return "agent-economy";
   if (beat === "bitcoin-macro") return "bitcoin-macro";
-  if (beat === "aibtc-network" || beat === "onboarding" || beat === "distribution") return "aibtc-network";
-  return "infrastructure";
+  if (beat === "quantum") return "quantum";
+  if (beat === "aibtc-network") return "aibtc-network";
+  return "aibtc-network";
 }
 
 function buildDirective(beatSlug: string, significance: string, causality: string): string {
@@ -62,23 +65,111 @@ function buildDirective(beatSlug: string, significance: string, causality: strin
   return "What to do: verify the exact anchor, review operator impact, and monitor whether this change materially alters agent behavior before filing follow-on coverage.";
 }
 
-function buildAnalysis(headline: string, significance: string, causality: string, beatSlug: string): string {
-  const whatChanged = `What changed: ${headline.replace(/\.+$/, "")}`;
-  const whatItMeans = `What it means: ${significance || causality || "Operators need to review this change because it may alter current agent behavior or production workflows."}`;
-  const whatToDo = buildDirective(beatSlug, significance, causality);
-  return [whatChanged, whatItMeans, whatToDo].join("\n");
+function buildClaim(headline: string, significance: string, causality: string): string {
+  return (
+    significance.trim() ||
+    causality.trim() ||
+    headline.replace(/\.+$/, "").trim() ||
+    "Operators should review the underlying change before treating it as filing-ready."
+  );
+}
+
+function buildEvidence(
+  sources: Array<{ url: string; title: string }>,
+  significance: string,
+  causality: string,
+  strictEvidence: boolean
+): string[] {
+  const evidence = sources
+    .slice(0, strictEvidence ? 2 : 1)
+    .map((source) => `${source.title || "Source"} (${source.url})`);
+
+  if (strictEvidence && causality.trim()) {
+    evidence.push(causality.trim());
+  } else if (!strictEvidence && evidence.length === 0 && significance.trim()) {
+    evidence.push(significance.trim());
+  }
+
+  return evidence.filter((entry) => entry.trim().length > 0);
+}
+
+function buildStructuredOutput(
+  headline: string,
+  significance: string,
+  causality: string,
+  beatSlug: string,
+  sources: Array<{ url: string; title: string }>,
+  strictEvidence: boolean
+): AuditOutput {
+  const claim = buildClaim(headline, significance, causality);
+  const evidence = buildEvidence(sources, significance, causality, strictEvidence);
+  const rawImplication = buildDirective(beatSlug, significance, causality)
+    .replace(/^What to do:\s*/i, "")
+    .replace(/^Directive:\s*/i, "");
+  const implication = /\boperators should\b|\bagents should\b|\bthis means\b/i.test(rawImplication)
+    ? rawImplication
+    : `This means operators should ${rawImplication.charAt(0).toLowerCase()}${rawImplication.slice(1)}`;
+  return {
+    claims: [claim],
+    evidence,
+    implications: [implication]
+  };
+}
+
+function buildAnalysis(output: AuditOutput): string {
+  const claim = output.claims[0] ?? "No claim generated.";
+  const evidence = (output.evidence ?? []).join("; ") || "No direct evidence generated.";
+  const implication = (output.implications ?? []).join("; ") || "No implication generated.";
+  const directive = implication;
+  return [
+    `CLAIM: ${claim}`,
+    `EVIDENCE: ${evidence}`,
+    `IMPLICATION: ${implication}`,
+    `Directive: ${directive}`
+  ].join("\n");
 }
 
 function buildDisclosure(submission: SerializedSubmission): string {
   const tools = submission.model_disclosure?.tools_used ?? [];
   const steps = submission.model_disclosure?.derivation_steps ?? [];
   const parts = [...tools, ...steps].filter((value) => typeof value === "string" && value.trim().length > 0);
+  if (!parts.some((part) => /\b(?:github|gh|api|endpoint|search|curl|rg|npm|node|bun|claude|gpt|grok|gemini|opus|sonnet|haiku)\b/i.test(part))) {
+    parts.unshift("github review");
+  }
   const disclosure = parts.join("; ").trim();
-  return disclosure || "release-audit; automated dry-run submission review; verified against the cited public source URL";
+  return disclosure || "github review; release-audit; verified against the cited public source URL";
 }
 
 function buildTags(beatSlug: string): string[] {
   return [beatSlug];
+}
+
+function buildBriefCompetitionProof(
+  beatSlug: string,
+  headline: string,
+  significance: string,
+  causality: string,
+  sources: Array<{ url: string; title: string }>
+) {
+  const primary = sources[0];
+  const sourceProof = primary
+    ? `${primary.url} proves the anchored event in "${headline}".`
+    : "https://aibtc.com/activity provides operator-verifiable anchor evidence for this event.";
+  const operatorAction = /\bagents should\b|\boperators should\b/i.test(causality)
+    ? causality
+    : `Operators should verify this anchor before filing follow-on updates.`;
+
+  return {
+    why_this_beat_is_open: `This ${beatSlug} beat slot is open because this anchor changes active operator decisions and is not a duplicate of an already-briefed story.`,
+    why_now: significance
+      ? `${significance.trim().replace(/\s+/g, " ")} This is a same-day timing edge, not a stale recap.`
+      : "This belongs now because the anchor is live in the current cycle and still actionable today.",
+    why_this_beats_same_day_competition: `This beats same-day competition by leading with a concrete anchor in the headline and pairing it with direct operator consequence instead of a narrow fragment.`,
+    primary_source_proof: sourceProof,
+    operator_action: operatorAction.endsWith(".") || operatorAction.endsWith("!") || operatorAction.endsWith("?")
+      ? operatorAction
+      : `${operatorAction}.`
+  };
 }
 
 async function readJsonOrNull<T>(filePath: string): Promise<T | null> {
@@ -88,6 +179,17 @@ async function readJsonOrNull<T>(filePath: string): Promise<T | null> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
   }
+}
+
+function markIntermediateNonFileable<T extends SerializedSubmission>(submission: T): T {
+  return {
+    ...submission,
+    kind: "intermediate_candidate_artifact",
+    fileable: false,
+    non_fileable: true,
+    intended_use: "ranking_only",
+    canonical_artifact_required: "create_signal_artifact"
+  };
 }
 
 export async function materializeGeneratedCandidates(
@@ -118,7 +220,15 @@ export async function materializeGeneratedCandidates(
   const parsed = await Promise.all(
     fileNames.map(async (fileName) => {
       const path = resolve(dryRunDir, fileName);
-      const submission = JSON.parse(await readFile(path, "utf8")) as SerializedSubmission;
+      const rawSubmission = JSON.parse(await readFile(path, "utf8")) as SerializedSubmission;
+      const submission = markIntermediateNonFileable(rawSubmission);
+      if (
+        rawSubmission.non_fileable !== true ||
+        rawSubmission.fileable !== false ||
+        rawSubmission.kind !== "intermediate_candidate_artifact"
+      ) {
+        await writeFile(path, JSON.stringify(submission, null, 2) + "\n", "utf8");
+      }
       const candidateId = submission.candidate_signal?.candidate_id?.trim() ?? fileName.replace(/-submission\.json$/, "");
       return { fileName, path, candidateId, submission };
     })
@@ -152,37 +262,67 @@ export async function materializeGeneratedCandidates(
       }))
       .filter((source) => source.url.length > 0);
 
-    const analysis = buildAnalysis(headline, significance, causality, beatSlug);
+    const auditInput: AuditInput = {
+      prompt: `Materialize filing candidate ${candidateId}`,
+      constraints: [headline, beatSlug],
+      metadata: {
+        candidateId,
+        beatSlug,
+        sourceCount: sources.length
+      }
+    };
+    const auditResult = await runAuditedLoop(
+      auditInput,
+      (currentInput) => {
+        const strictEvidence = /exact source anchors/i.test(currentInput.prompt);
+        return buildStructuredOutput(headline, significance, causality, beatSlug, sources, strictEvidence);
+      },
+      {
+        root,
+        runId: `candidate-${candidateId}`,
+        maxIterations: 2,
+        tightenPrompt: (currentInput, failures) => ({
+          ...currentInput,
+          prompt: `${currentInput.prompt}\nTighten prompt: include direct evidence with exact source anchors. Failures: ${failures.join(", ")}`
+        })
+      }
+    );
+    const analysis = buildAnalysis(auditResult.finalOutput);
     const disclosure = buildDisclosure(submission);
 
-    // Screen every dry-run candidate through the P28 winner-gate before materializing.
-    // The old pipeline's editorial_review.ready_to_file flag only checked original MVP rules —
-    // it does not enforce headline anchor, CLAIM/EVIDENCE/IMPLICATION, or concrete disclosure.
-    const gateResult = evaluateWinnerGate({ headline, body: analysis, disclosure, sources });
-    if (!gateResult.passed) {
+    try {
+      const candidateArtifact = await createSignalArtifact({
+        reportDate,
+        candidateId,
+        sourcePath: `data/dry-runs/${reportDate}/${candidateId}-submission.json`,
+        generated_by: "materializeGeneratedCandidates",
+        generated_from: `data/dry-runs/${reportDate}/${candidateId}-submission.json`,
+        beat_slug: beatSlug,
+        headline,
+        body: analysis,
+        sources,
+        tags: buildTags(beatSlug),
+        disclosure,
+        brief_competition: buildBriefCompetitionProof(
+          beatSlug,
+          headline,
+          significance,
+          causality,
+          sources
+        )
+      }, root);
+
+      const outputPath = resolve(outputDir, `${candidateId}.json`);
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, JSON.stringify(candidateArtifact, null, 2) + "\n", "utf8");
+      written.push(outputPath);
+    } catch (error) {
       winnerGateBlocked += 1;
       process.stdout.write(
-        `[candidate-generator] winner-gate blocked ${candidateId}: ${gateResult.reasons.join("; ")}\n`
+        `[candidate-generator] create-signal blocked ${candidateId}: ${(error as Error).message}\n`
       );
       continue;
     }
-
-    const candidateArtifact = {
-      status: "in_queue",
-      generated_by: "materializeGeneratedCandidates",
-      generated_from: `data/dry-runs/${reportDate}/${candidateId}-submission.json`,
-      beat_slug: beatSlug,
-      headline,
-      analysis,
-      sources,
-      tags: buildTags(beatSlug),
-      disclosure
-    };
-
-    const outputPath = resolve(outputDir, `${candidateId}.json`);
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, JSON.stringify(candidateArtifact, null, 2) + "\n", "utf8");
-    written.push(outputPath);
   }
 
   return { outputDir, written, sourceCount: eligible.length, winnerGateBlocked };

@@ -1,0 +1,12 @@
+{
+  "kind": "live_candidate_slate",
+  "reportDate": "2026-04-15",
+  "generatedAt": "2026-04-15T03:35:40.809Z",
+  "topCandidateId": null,
+  "candidates": [],
+  "notes": [
+    "Live candidate slate generated from filing-ready entries that passed publisher-style validation.",
+    "This file should contain only signals intended to be sent or already sent.",
+    "Operational dispatch statuses are limited to queued or sent."
+  ]
+}

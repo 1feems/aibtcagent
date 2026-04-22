@@ -339,7 +339,7 @@ test("operator summary prefers the filing-queue top candidate over a higher-scor
           detectedCandidateIds: ["hold-story", "file-story"],
           submittedCandidateIds: ["file-story"],
           submittedHeadlines: ["File story"],
-          beats: ["protocol-updates"]
+          beats: ["infrastructure"]
         },
         rejections: { totalRejected: 0, rejectedCandidateIds: [], reasons: [] },
         approvalsAndRewards: {
@@ -413,14 +413,14 @@ test("operator summary prefers the filing-queue top candidate over a higher-scor
           targetRecommendations: 5,
           recommendedCount: 1,
           uniqueBeatCount: 1,
-          beatsRepresented: ["protocol-updates"],
+          beatsRepresented: ["infrastructure"],
           quotaNotes: []
         },
         items: [
           {
             candidateId: "file-story",
             headline: "File story",
-            beat: "protocol-updates",
+            beat: "infrastructure",
             score: 95,
             duplicateStatus: "clear",
             freshnessStatus: "clear",

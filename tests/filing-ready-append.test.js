@@ -25,14 +25,18 @@ const REPORT_DATE = "2026-04-08";
 const CANDIDATE_ID = "test-candidate-001";
 
 function makeValidArtifact(overrides = {}) {
+  const analysis = "Claim: PR #101 fixes the relay writeback path that stalled queued agent settlements. Evidence: GitHub PR #101 shows the writeback bug and the merged fix restoring the routing path. Implication: Agents and operators can submit queued payments without manual fallback. Directive: update relay config to enable the restored sBTC routing path from PR #101.";
   return {
+    beat_slug:  "aibtc-network",
     headline:   "PR #101 restores sBTC payment routing after relay writeback failures",
-    analysis:   "Claim: PR #101 fixes the relay writeback path that stalled queued agent settlements. Evidence: GitHub PR #101 shows the writeback bug and the merged fix restoring the routing path. Implication: Agents and operators can submit queued payments without manual fallback. Directive: update relay config to enable the restored sBTC routing path from PR #101.",
+    body:       analysis,
+    analysis,
     sources:    [{ url: "https://github.com/example/project/pull/101", title: "Primary proof" }],
+    tags:       ["aibtc-network"],
     disclosure: "claude-sonnet-4-6, GitHub review of PR #101, live fetch of relay endpoint /api/relay/status",
     filing_gate: {
       reportDate:    REPORT_DATE,
-      beat:          "infrastructure",
+      beat:          "aibtc-network",
       headline:      "PR #101 restores sBTC payment routing after relay writeback failures",
       templateUsed:  "general-news-v1",
       testedAgainst: "2026-04-08 brief, filed-signals.json, 2-day prior brief window",
@@ -114,7 +118,7 @@ function makeAppendOptions(artifact, overrides = {}) {
     operatorRationale: "Relay fix is confirmed merged and operators are unblocked.",
     sourcePath:       "data/my-signals/test-candidate-001.json",
     rawSubmission:    artifact,
-    canonicalSignal:  { headline: artifact.headline, analysis: artifact.analysis },
+    canonicalSignal:  { beat_slug: artifact.beat_slug, headline: artifact.headline, body: artifact.body, analysis: artifact.analysis, sources: artifact.sources, tags: artifact.tags, disclosure: artifact.disclosure },
     sendPackage:      null,
     ...overrides
   };

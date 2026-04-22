@@ -1,12 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { markCandidateFiled } from "./candidate-history.js";
-import { transitionLifecycleToFiled } from "./lifecycle.js";
-import { trackQuantumFiledSignal } from "./quantum-map.js";
 import { readFilingQueue, saveFilingQueue, type FilingQueueSnapshot } from "./queue.js";
-import { appendSignalHistory } from "./signal-history.js";
-import { syncRuntimeMemory } from "../learning/index.js";
-import { getPacificReportDate } from "../utils/report-date.js";
+import { markCandidateSent } from "./staggered-dispatch.js";
+import { resolveLiveReadyArtifactPath, type FilingReadyArtifact } from "./artifacts.js";
 
 export interface FiledSignalRecord {
   signalId: string;
@@ -15,36 +12,14 @@ export interface FiledSignalRecord {
   beat: string | null;
   filedAt: string | null;
   resolved: boolean;
-  // P26: brief conversion tracking
-  brief_included?: boolean;   // true = published in the brief (real KPI win)
-  approved?: boolean;         // true = editorially approved, regardless of brief
-  // P29: cap-blocked queue
-  cap_blocked?: boolean;      // true = approved but beat cap prevented brief inclusion
+  brief_included?: boolean;
+  approved?: boolean;
+  cap_blocked?: boolean;
 }
 
 export interface FiledSignalsState {
   filedSignals: FiledSignalRecord[];
-  // P35: fact-checker corrections approved by the publisher (worth 15 leaderboard pts each)
   approved_corrections?: number;
-}
-
-interface FilingReadyArtifact {
-  kind: "filing_ready_submission";
-  reportDate: string;
-  candidateId: string;
-  reviewedBy: string;
-  reviewedAt: string;
-  sourcePath: string;
-  canonicalSignal?: {
-    beat_slug?: string;
-  };
-  submission?: {
-    headline?: string;
-    candidate_signal?: {
-      beat?: string;
-    };
-    [key: string]: unknown;
-  };
 }
 
 export interface RecordFiledSignalConfig {
@@ -87,7 +62,7 @@ export async function readFiledSignalsState(baseDir?: string): Promise<FiledSign
     return await readJson<FiledSignalsState>(filePath);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return { filedSignals: [] };
+      return { filedSignals: [], approved_corrections: 0 };
     }
 
     throw error;
@@ -106,9 +81,10 @@ export async function saveFiledSignalsState(
 
 export async function incrementApprovedCorrections(baseDir?: string): Promise<number> {
   const state = await readFiledSignalsState(baseDir);
-  state.approved_corrections = (state.approved_corrections ?? 0) + 1;
+  const next = (state.approved_corrections ?? 0) + 1;
+  state.approved_corrections = next;
   await saveFiledSignalsState(state, baseDir);
-  return state.approved_corrections;
+  return next;
 }
 
 async function readReadyArtifact(
@@ -119,11 +95,12 @@ async function readReadyArtifact(
 ): Promise<{ path: string; artifact: FilingReadyArtifact }> {
   const path =
     readyArtifactPath ??
-    resolve(baseDir ?? process.cwd(), `data/filing-ready/${reportDate}/${candidateId}.json`);
-  return {
-    path,
-    artifact: await readJson<FilingReadyArtifact>(path)
-  };
+    resolveLiveReadyArtifactPath(reportDate, candidateId, baseDir);
+  const artifact = await readJson<FilingReadyArtifact>(path);
+  if (artifact.intendedUse === "helper_test") {
+    throw new Error(`Candidate ${candidateId} was stored as helper_test and cannot be recorded as a live filed signal.`);
+  }
+  return { path, artifact };
 }
 
 async function updateQueueStatus(
@@ -139,7 +116,6 @@ async function updateQueueStatus(
     }
 
     item.queueStatus = "filed";
-    item.lifecycle = transitionLifecycleToFiled();
     const nextAwaiting = queue.items.find((entry) => entry.queueStatus === "awaiting_human_approval");
     const updatedQueue: FilingQueueSnapshot = {
       ...queue,
@@ -168,7 +144,7 @@ export async function recordFiledSignal(
   const root = resolve(baseDir ?? process.cwd());
   const reportDate =
     config.reportDate ??
-    getPacificReportDate(config.filedAt ?? new Date().toISOString());
+    new Date(config.filedAt ?? new Date().toISOString()).toISOString().slice(0, 10);
   const filedAt = config.filedAt ?? new Date().toISOString();
   const { path: artifactPath, artifact } = await readReadyArtifact(
     reportDate,
@@ -201,25 +177,21 @@ export async function recordFiledSignal(
   }
 
   const statePath = await saveFiledSignalsState(state, root);
-
-  // canonical signal history — one entry per signal, outcome updated later by checker
-  await appendSignalHistory(
-    { signalId: config.signalId, candidateId: config.candidateId, headline, beat, filedAt, reportDate },
-    root
-  );
-
   const queuePath = await updateQueueStatus(reportDate, config.candidateId, root);
-  await markCandidateFiled(config.candidateId, config.signalId, filedAt, root);
-  await trackQuantumFiledSignal({
+  await markCandidateSent(
     reportDate,
-    candidateId: config.candidateId,
-    signalId: config.signalId,
-    filedAt,
-    headline,
-    beat: beat ?? artifact.canonicalSignal?.beat_slug ?? null,
-    sourceArtifact: artifact.submission ?? null
-  }, root);
-  await syncRuntimeMemory("record-filed-signal", root);
+    config.candidateId,
+    {
+      now: filedAt,
+      signalId: config.signalId
+    },
+    root
+  ).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  });
+  await markCandidateFiled(config.candidateId, config.signalId, filedAt, root);
 
   const receipt: FiledSignalReceipt = {
     kind: "filed_signal_receipt",

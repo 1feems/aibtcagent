@@ -7,6 +7,20 @@ import {
   refreshBriefExamplesMemory,
   refreshSnapshotMemory
 } from "../dist/learning/index.js";
+import { runOutcomeChecker } from "../dist/outcomes/index.js";
+
+test("outcome checker treats missing filed-signals state as an empty fresh branch", { concurrency: false }, async () => {
+  const originalCwd = process.cwd();
+  const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-outcome-checker-"));
+  process.chdir(tempDir);
+
+  try {
+    await runOutcomeChecker();
+  } finally {
+    process.chdir(originalCwd);
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
 
 test("same-day approval outcomes feed brief examples and snapshot lessons automatically", { concurrency: false }, async () => {
   const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-outcome-ingestion-"));

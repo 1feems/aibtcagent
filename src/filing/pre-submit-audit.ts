@@ -691,9 +691,8 @@ export async function runPreSubmitAudit(
   }
 
   // ── Filing gate check ────────────────────────────────────────────────────
-  // The gate MUST be present and fully passing before any other check runs.
-  // A signal that looks canonical but lacks explicit Q1–Q4 evidence is a
-  // draft; it cannot be promoted to a filing candidate.
+  // The gate block MUST be present before any other check runs.
+  // Without it the signal remains draft-only and cannot be promoted.
   const gateValidation = validateFilingGate(sourceArtifact);
   if (gateValidation.issues.length > 0) {
     reasons.push(...filingGateIssuesToBlockers(gateValidation.issues));
@@ -738,7 +737,10 @@ export async function runPreSubmitAudit(
     reasons.push("hard-blocked from signable queue because the dated signal report does not include this headline");
   }
   if (payload) {
-    const helperPackage = buildHelperReadySignalPackage(payload);
+    const helperPackage = buildHelperReadySignalPackage(payload, undefined, {
+      reportDate,
+      baseDir: root
+    });
     if (helperPackage.json.headline !== headline || helperPackage.json.analysis !== analysis) {
       reasons.push("hard-blocked from signable queue because helper-ready payload does not match the canonical artifact");
     }

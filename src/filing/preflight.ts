@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFilingQueue } from "./queue.js";
+import { ALLOWED_SIGNAL_BEATS } from "./signal-contract.js";
 import type { OperatorSignabilityState } from "./signability.js";
 
 interface HelperSessionState {
@@ -255,10 +256,15 @@ export async function generateOperatorSignabilityPreflight(
   const target = await resolveTargetCandidate(config.reportDate, config.candidateId, root);
   const payloadCheck = await validateHelperPayloadIntegrity(target.reportDate, target.candidateId, root);
 
-  const allowedBeats = [...new Set([
+  const automationAllowedBeats = [...new Set([
     ...parseAllowedBeatsFromEnv(),
     ...(primaryBeat ? [primaryBeat] : [])
   ])];
+  const canonicalAllowedBeats = [...new Set(ALLOWED_SIGNAL_BEATS.map((beat) => normalizeBeat(beat)))];
+  const canonicalSet = new Set(canonicalAllowedBeats);
+  const filteredAutomationBeats = automationAllowedBeats.filter((beat) => canonicalSet.has(beat));
+  const droppedStaleBeats = automationAllowedBeats.filter((beat) => !canonicalSet.has(beat));
+  const allowedBeats = canonicalAllowedBeats;
 
   const notes: string[] = [];
   if (expectedWalletAddress) {
@@ -268,9 +274,15 @@ export async function generateOperatorSignabilityPreflight(
   }
 
   if (allowedBeats.length > 0) {
-    notes.push(`Allowed beats from automation: ${allowedBeats.join(", ")}.`);
+    notes.push(`Allowed beats for helper/manual filing: ${allowedBeats.join(", ")}.`);
   } else {
     notes.push("Allowed beats could not be resolved; set AIBTC_ALLOWED_BEATS or keep docs/beat-strategy.md current.");
+  }
+  if (filteredAutomationBeats.length > 0) {
+    notes.push(`Automation focus beats from env/docs: ${filteredAutomationBeats.join(", ")}.`);
+  }
+  if (droppedStaleBeats.length > 0) {
+    notes.push(`Ignored stale or retired beats from config/docs: ${droppedStaleBeats.join(", ")}.`);
   }
 
   if (helperSession?.walletProviderReady) {

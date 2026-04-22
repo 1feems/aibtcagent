@@ -30,6 +30,9 @@ If something important is learned in a session, write it back into the repo.
 If you need to understand where the agent actually runs, start here:
 
 - [`AIBTC-AGENTS.md`](./AIBTC-AGENTS.md) — shortest code map for LLMs jumping into the repo
+- [`docs/document-map.md`](./docs/document-map.md) — doc roles: canonical, task-level, living implementation, reference
+- [`docs/architecture.md`](./docs/architecture.md) — canonical high-level system architecture
+- [`docs/workflow.md`](./docs/workflow.md) — canonical operator workflow
 - [`src/agent/run-daily.ts`](./src/agent/run-daily.ts) — top-level daily agent entrypoint
 - [`src/loop/fetch-and-run.ts`](./src/loop/fetch-and-run.ts) — fetch + dry-run candidate loop
 - [`src/outcomes/checker.ts`](./src/outcomes/checker.ts) — live outcome checker
@@ -53,12 +56,14 @@ If any of those are false, stop and reset context before running `agent-daily`, 
 ## Start Here Every Day
 The first thing to open is:
 
+- [`docs/document-map.md`](./docs/document-map.md)
+- [`docs/architecture.md`](./docs/architecture.md)
+- [`docs/workflow.md`](./docs/workflow.md)
+- [`docs/build-plan.md`](./docs/build-plan.md)
 - [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
 - [`docs/rejection-rules.md`](./docs/rejection-rules.md)
 - [`docs/brief-win-rules.md`](./docs/brief-win-rules.md)
-- [`docs/training-dataset.md`](./docs/training-dataset.md)
 - [`docs/brief-winner-tracking.md`](./docs/brief-winner-tracking.md)
-- [`docs/agent-training-system.md`](./docs/agent-training-system.md)
 
 Step 0 in the checklist is now the first thing that runs every day from tomorrow onwards. It has three sub-steps:
 
@@ -149,7 +154,7 @@ Use that artifact with [`tools/xverse-register/file-signal.html`](./tools/xverse
 
 The repo now schedules the autonomous loop through GitHub Actions:
 
-- [`.github/workflows/agent-daily.yml`](/Users/feems/Desktop/agentic%20workflows/aibtcagent/.github/workflows/agent-daily.yml)
+- [`.github/workflows/agent-daily.yml`](/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/.github/workflows/agent-daily.yml)
 
 Current schedule:
 
@@ -306,7 +311,6 @@ For the live rejection taxonomy and agent training rules, use:
 
 - [`docs/rejection-rules.md`](./docs/rejection-rules.md)
 - [`docs/brief-win-rules.md`](./docs/brief-win-rules.md)
-- [`docs/training-dataset.md`](./docs/training-dataset.md)
 
 **Approved = passed editorial review. Published = selected by the publisher for the daily compiled brief/news page. These are different outcomes.**
 
@@ -422,14 +426,13 @@ Use this doc map during operation:
 
 - Before any work session: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `0`, then Steps `1-2`)
 - Evaluating a candidate: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Steps `3-7`) + [`docs/first-live-signal.md`](./docs/first-live-signal.md)
-- Filing: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `8`) + [`docs/live-ops-loop.md`](./docs/live-ops-loop.md)
+- Filing: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) (Step `8`) + [`docs/first-live-signal.md`](./docs/first-live-signal.md)
 - Something is wrong or unclear: [`docs/prd.md`](./docs/prd.md)
-- Tracking outcomes: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) daily log + [`docs/outcome-schema.md`](./docs/outcome-schema.md)
-- Iterating strategy: [`docs/learning-loop.md`](./docs/learning-loop.md) + [`docs/beat-strategy.md`](./docs/beat-strategy.md)
+- Tracking outcomes: [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md) daily log + `data/state/filed-signals.json`
+- Iterating strategy: [`docs/build-plan.md`](./docs/build-plan.md) + [`docs/beat-strategy.md`](./docs/beat-strategy.md)
 
 ## Earning & Progression (All Free — You Earn, Not Pay)
 
-- [Viral Claims](https://aibtc.com/api/claims/viral): GET for instructions, POST to claim tweet reward (free)
 - [Claim Code](https://aibtc.com/api/claims/code): GET to validate code, POST to regenerate (free)
 - [Achievements](https://aibtc.com/api/achievements): GET achievement definitions or check earned achievements (free)
 - [Achievement Verify](https://aibtc.com/api/achievements/verify): GET for docs, POST to verify on-chain activity and unlock achievements (free)
@@ -445,19 +448,12 @@ MVP complete note:
 - the next step is controlled live iteration, not broad new feature work
 
 Core product docs are in place:
-- [`docs/concept-note.md`](./docs/concept-note.md)
 - [`docs/prd.md`](./docs/prd.md)
 - [`docs/json-schema.md`](./docs/json-schema.md)
 - [`docs/setup.md`](./docs/setup.md)
-- [`docs/architecture.md`](./docs/architecture.md)
 - [`docs/build-plan.md`](./docs/build-plan.md)
 - [`docs/build-checklist.md`](./docs/build-checklist.md)
-- [`docs/testing-plan.md`](./docs/testing-plan.md)
 - [`docs/beat-strategy.md`](./docs/beat-strategy.md)
-- [`docs/learning-loop.md`](./docs/learning-loop.md)
-- [`docs/live-ops-loop.md`](./docs/live-ops-loop.md)
-- [`docs/outcome-schema.md`](./docs/outcome-schema.md)
-- [`docs/post-mvp-roadmap.md`](./docs/post-mvp-roadmap.md)
 - [`docs/sources.md`](./docs/sources.md)
 - [`docs/signal-sourcing-checklist.md`](./docs/signal-sourcing-checklist.md)
 

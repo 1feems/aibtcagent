@@ -55,12 +55,19 @@ test("candidate queue ranks stronger submissions above weak ones", { concurrency
       JSON.stringify({
         candidate_signal: {
           candidate_id: "strong",
-          beat: "infrastructure",
+          beat: "aibtc-network",
           likely_duplicate: false,
           uses_dashboard_as_primary_source: false,
-          significance: "an early same day signal before broader visibility"
+          significance: "an early same day signal before broader visibility for sBTC relay operators",
+          causality: "operators should verify PR #431 before resuming automated settlement"
         },
-        headline: "Strong infrastructure story before competitors catch up",
+        headline: "PR #431 restores sBTC relay recovery after 42 failed settlements",
+        sources: [
+          {
+            source_type: "live-feed",
+            source_url: "https://github.com/aibtcdev/x402-sponsor-relay/pull/431"
+          }
+        ],
         submission_decision: { status: "submit", rejection_reasons: [] },
         editorial_review: {
           editorial_fit: "strong",
@@ -98,16 +105,87 @@ test("candidate queue ranks stronger submissions above weak ones", { concurrency
     assert.equal(ranked.length, 2);
     assert.equal(ranked[0].candidateId, "strong");
     assert.equal(ranked[0].decision, "file");
-    assert.equal(ranked[0].lifecycle.state, "scored_for_filing");
     assert.equal(ranked[1].candidateId, "weak");
     assert.equal(ranked[1].decision, "reject");
-    assert.equal(ranked[1].lifecycle.state, "rejected_after_scoring");
 
     const queuePath = await saveRankedCandidateQueue("2026-03-28", ranked);
     const queue = JSON.parse(await readFile(queuePath, "utf8"));
     assert.equal(queue.kind, "ranked_candidate_queue");
     assert.equal(queue.candidates[0].candidateId, "strong");
-    assert.equal(queue.candidates[0].lifecycle.state, "scored_for_filing");
+  } finally {
+    process.chdir(originalCwd);
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("weak-but-valid submissions are held when brief competition proof is missing or weak", { concurrency: false }, async () => {
+  const originalCwd = process.cwd();
+  const tempDir = await mkdtemp(resolve(tmpdir(), "aibtcagent-scoring-"));
+  process.chdir(tempDir);
+
+  try {
+    await mkdir("data/dry-runs/2026-04-21", { recursive: true });
+    await mkdir("data/experiments/optimization", { recursive: true });
+
+    await writeFile(
+      "data/experiments/optimization/2026-04-21.json",
+      JSON.stringify({
+        kind: "daily_optimization",
+        reportDate: "2026-04-21",
+        generatedAt: "2026-04-21T00:00:00Z",
+        beatPreferences: [],
+        rejectionThreshold: { mode: "standard", drivers: [] },
+        duplicateLossPatterns: [],
+        winningHeadlinePatterns: [],
+        trainingWinningTags: [],
+        trainingRejectionTags: [],
+        stylePerformance: [],
+        nextDayRecommendations: []
+      }),
+      "utf8"
+    );
+
+    await writeFile(
+      "data/dry-runs/2026-04-21/valid-but-weak-competition-submission.json",
+      JSON.stringify({
+        candidate_signal: {
+          candidate_id: "valid-but-weak-competition",
+          beat: "aibtc-network",
+          likely_duplicate: false,
+          uses_dashboard_as_primary_source: false,
+          significance: "same day filing window is open and operators need this update before next payout cycle",
+          causality: "operators should verify the anchor before filing follow-on updates"
+        },
+        headline: "PR #431 restores relay recovery after 42 failed settlements",
+        sources: [
+          {
+            source_type: "live-feed",
+            source_url: "https://github.com/aibtcdev/x402-sponsor-relay/pull/431"
+          }
+        ],
+        submission_decision: { status: "submit", rejection_reasons: [] },
+        editorial_review: {
+          editorial_fit: "strong",
+          publisher_confidence: "high",
+          ready_to_file: true,
+          hold_reasons: []
+        },
+        candidate_metadata: {
+          why_this_beat_is_open: "open.",
+          why_now: "now.",
+          why_this_beats_same_day_competition: "better.",
+          primary_source_proof: "see source.",
+          operator_action: "watch."
+        }
+      }),
+      "utf8"
+    );
+
+    const ranked = await rankDryRunCandidates("2026-04-21");
+    assert.equal(ranked.length, 1);
+    assert.equal(ranked[0].candidateId, "valid-but-weak-competition");
+    assert.equal(ranked[0].decision, "hold");
+    assert.ok(ranked[0].reasons.some((reason) => /brief competition proof/i.test(reason)));
   } finally {
     process.chdir(originalCwd);
     await rm(tempDir, { recursive: true, force: true });
@@ -146,7 +224,7 @@ test("manual-check-only release-note candidates are demoted below filing quality
       JSON.stringify({
         candidate_signal: {
           candidate_id: "release-note",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           likely_duplicate: false,
           uses_dashboard_as_primary_source: false,
           significance: "routine release update"
@@ -221,7 +299,7 @@ test("approval-ready raw release notes without operator consequence cannot rank 
       JSON.stringify({
         candidate_signal: {
           candidate_id: "raw-release",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           detected_at: "2026-03-30T04:00:00Z",
           likely_duplicate: false,
           uses_dashboard_as_primary_source: false,
@@ -295,7 +373,7 @@ test("rankDryRunCandidates prunes prior-day stale dry-run submissions before sco
       JSON.stringify({
         candidate_signal: {
           candidate_id: "stale-candidate",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           detected_at: "2026-03-29T04:52:17.896Z",
           likely_duplicate: false,
           uses_dashboard_as_primary_source: false,
@@ -318,7 +396,7 @@ test("rankDryRunCandidates prunes prior-day stale dry-run submissions before sco
       JSON.stringify({
         candidate_signal: {
           candidate_id: "fresh-candidate",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           detected_at: "2026-03-30T04:52:17.896Z",
           likely_duplicate: false,
           uses_dashboard_as_primary_source: false,
@@ -1040,7 +1118,7 @@ test("paired releases prefer the broader primary upgrade story over the companio
       JSON.stringify({
         candidate_signal: {
           candidate_id: "stacks-core-3-4-0-0-0",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           summary: "Required Stacks node upgrade before activation at Bitcoin block 943,333.",
           causality: "stacks-core published 3.4.0.0.0 and operators must upgrade before block 943,333 or require genesis sync",
           likely_duplicate: false,
@@ -1075,7 +1153,7 @@ test("paired releases prefer the broader primary upgrade story over the companio
       JSON.stringify({
         candidate_signal: {
           candidate_id: "stacks-core-signer-3-4-0-0-0-0",
-          beat: "protocol-updates",
+          beat: "infrastructure",
           summary: "Companion signer release for the same activation block 943,333.",
           causality: "stacks-core published signer-3.4.0.0.0.0 before block 943,333",
           likely_duplicate: false,

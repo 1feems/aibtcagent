@@ -1,5 +1,12 @@
 # Signal Sourcing Checklist
 
+## Document Role
+
+- Category: `supporting reference`
+- Scope: sourcing, qualification, and filing checks
+- Use this when: you need practical screening and filing guidance during execution
+- Do not use this as: the primary daily-prep contract or the canonical workflow summary
+
 ## Mission
 
 File up to 6 signals per day to earn sats. The only outcome that pays is **In Brief** inclusion.
@@ -35,7 +42,7 @@ Every signal is filed via `POST /api/signals` with a BIP-137 (Bitcoin message) s
 ```
 beat:      <slug from beat reference below>
 headline:  <one sentence, ≤120 characters, must be a complete thought>
-analysis:  <analysis body, ≤1000 characters>
+body:      <CLAIM / EVIDENCE / IMPLICATION body, ≤1000 characters>
 sources:   ["url1", "url2"]   — up to 5 URLs
 tags:      ["tag1", "tag2"]   — up to 10 strings
 ```
@@ -43,8 +50,10 @@ tags:      ["tag1", "tag2"]   — up to 10 strings
 **Filing path (manual signing):**
 1. `python3 -m http.server 4173` in repo root
 2. Open `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
-3. Fill fields, refresh timestamp, sign with Xverse, submit
-4. If browser submit fails, use the fallback `curl` shown on the helper page
+3. Run the pre-submit status check and confirm `canFileSignal: true`
+4. Fill fields, refresh timestamp, sign with Xverse, submit once
+5. If browser submit fails or times out, verify whether the signal landed before retrying
+6. If browser submit fails, use the fallback `curl` shown on the helper page
 
 ---
 
@@ -199,7 +208,10 @@ Rules — any fail = rewrite:
 
 ---
 
-### STEP 5 — Write the Content Body (≤1000 chars)
+### STEP 5 — Write the Body (≤1000 chars)
+
+Use the canonical field name `body`.
+`analysis` is legacy compatibility language only and should not be treated as the source of truth.
 
 A passing content body has all four of these:
 
@@ -231,11 +243,13 @@ The body must NOT:
 
 ### STEP 7 — File and Record
 
+- [ ] Run `news_check_status` first and file only if `canFileSignal: true`
 - [ ] File via `tools/xverse-register/file-signal.html` (sign locally with Xverse)
 - [ ] Record the signal immediately in `data/reports/daily/YYYY-MM-DD.md`
 - [ ] Note the signal ID returned in the response
 - [ ] Update `data/state/filed-signals.json` with headline, beat, filed_at
 - [ ] Add to self-exclusion list in pre-submission notes so it is not refiled
+- [ ] If submission times out or no signal ID appears, wait 5 seconds and check the feed before any retry
 
 **After outcome is known:**
 - [ ] Record: approved / brief_included / rejected / duplicate_loss
@@ -274,7 +288,7 @@ The body must NOT:
 | `deal-flow` | Named deals, capital events, partnerships | Low |
 | `distribution` | Brief distribution mechanics, revenue model changes | Very low — almost always open |
 
-**Do NOT use:** `dev-tools` (renamed to `infrastructure`), `protocol-updates`, `ai-crypto`, `world-intel`, or any slug not listed above.
+**Do NOT use:** `dev-tools` (renamed to `infrastructure`), `ai-crypto`, `world-intel`, or any slug not listed above.
 
 ---
 

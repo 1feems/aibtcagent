@@ -17,7 +17,7 @@
 import { access, mkdir, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { filingGateIssuesToBlockers, validateFilingGate } from "./filing-gate-validator.js";
+import { artifactIssuesToBlockers, validateArtifact } from "./validate-artifact.js";
 import type { CandidateLifecycle } from "./lifecycle.js";
 
 // ── public types ──────────────────────────────────────────────────────────────
@@ -115,12 +115,12 @@ export async function appendFilingReadyArtifact(
   options: FilingReadyAppendOptions,
   baseDir?: string
 ): Promise<string> {
-  // ── step 1: gate validation — hard block before any I/O ───────────────────
-  const gateResult = validateFilingGate(options.rawSubmission);
-  if (gateResult.issues.length > 0) {
+  // ── step 1: artifact validation — hard block before any I/O ───────────────
+  const artifactResult = validateArtifact(options.rawSubmission);
+  if (!artifactResult.ok) {
     throw new FilingReadyValidationError(
       options.candidateId,
-      filingGateIssuesToBlockers(gateResult.issues)
+      artifactIssuesToBlockers(artifactResult.issues)
     );
   }
 

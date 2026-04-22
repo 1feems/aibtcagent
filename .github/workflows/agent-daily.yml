@@ -56,7 +56,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
+          git add -f \
             data/briefs/ \
             data/dry-runs/ \
             data/reports/ \
@@ -67,10 +67,10 @@ jobs:
             data/state/ \
             dashboard/ \
             data/logs/ \
-            memory/ \
-            README.md
-          git add -f \
             data/queues/ \
             data/filing-queue/
+          git add \
+            memory/ \
+            README.md
           git diff --cached --quiet && echo "no changes" || git commit -m "chore: run autonomous daily agent loop [skip ci]"
           git push origin HEAD:${GITHUB_REF_NAME}

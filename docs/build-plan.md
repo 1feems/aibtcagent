@@ -1,10 +1,52 @@
 # Build Plan
 
+## Document Role
+
+- Category: `living implementation`
+- Scope: what has been done, what exists now, and what implementation constraints are active
+- Use this when: you need current implementation reality before changing behavior or code
+- Do not use this as: the shortest onboarding doc or the only architecture/workflow summary
+
 ## Goal
-Build the smallest strong version of the AIBTC Onchain Signal Agent that can evaluate one real signal lane end to end and decide correctly whether to submit or reject.
+Build the smallest strong version of the AIBTC signal filing agent that can run the live 12-step signal cycle, stop when any required proof is missing, and only hand off helper-ready filings that have a high chance of making `In Brief`.
 
 This build should prefer deterministic automation first.
 Do not assume LLM calls are required for the core runtime.
+
+## Current Operating Source Of Truth
+
+`AGENTS.md` is the current execution contract. The build plan must align to it and must not preserve stale workflow instructions as active guidance.
+
+Active signal workflow:
+
+1. Brief Reader
+2. Signal Status Checker
+3. Outcome Updater
+4. Outcome Analyst
+5. Beat Saturation Check
+6. Beat Analysis
+7. Source Discovery
+8. Create Signal
+9. Signal Filer (Helper-Executed)
+10. Helper Maintainer
+11. Record Signal Outcome
+12. Outcome Learner
+
+Active filing beats:
+
+- `aibtc-network`
+- `bitcoin-macro`
+- `quantum`
+
+Dead or historical correspondent beats such as `infrastructure`, `agent-skills`, `deal-flow`, `agent-trading`, `bitcoin-yield`, and `onboarding` are not active filing targets unless the live `AGENTS.md`, `data/config/signal-template.json`, and beat-editor docs are changed together.
+
+Canonical Step 8 payload behavior:
+
+- `body` is required and canonical.
+- `analysis` may mirror `body` only as a compatibility alias.
+- `body` must contain `CLAIM:`, `EVIDENCE:`, `IMPLICATION:`, and `Directive:`.
+- The helper/status gate must confirm `canFileSignal: true` before any filing attempt.
+- Wallet signing remains human-only.
 
 ## Score Priorities
 
@@ -49,14 +91,27 @@ When the operator says `do the daily prep`, the runtime must behave as the repo 
 
 Daily prep therefore means:
 
-1. follow repo workflow, not chat workflow
-2. refresh and read `data/state/editorial-memory.json` first
-3. apply Publisher skill gates before drafting any signal
-4. apply Fact-Checker skill gates before drafting any signal
+1. follow `AGENTS.md` Step 1 through Step 12 in order
+2. read or create the latest brief artifact before drafting
+3. update/read `data/state/brief-winners-YYYY-MM-DD.json`, `data/state/signal-history.json`, `data/state/helper-errors.jsonl`, and today's outcome board before drafting
+4. apply the selected beat editor from `docs/beat-editors/` before drafting
 5. run duplicate / already-in-brief / already-filed checks before scoring or rewriting
-6. keep leaderboard, streak, beat-cap, and payout pressure in view as operating constraints
-7. update the dated signal report and repo artifact path for any signal that survives
-8. only then hand the operator helper-ready JSON
+6. reject bodies that drift into the live truncation zone; treat 800-900 characters as the safe target even though the hard max remains 1000, and shorten `Directive:` first when trimming
+7. keep leaderboard, streak, beat-cap, and payout pressure in view as operating constraints
+8. return `hold`, `repair_and_resubmit`, or `filing_ready`; do not hand off anything unless Step 8 returns `filing_ready`
+9. validate helper-ready JSON before operator handoff
+10. confirm the latest `news_check_status` has `canFileSignal: true` before any filing attempt
+
+Explicit skill loop contract:
+
+1. `analyze-signal-outcomes`:
+   Read briefs, `signal-history.json`, `data/outcomes/approvals/*.json`, beat editor guidance, and recent `helper-errors.jsonl` before candidate drafting.
+2. `create-signal`:
+   Create or repair exactly one filing candidate only after the analysis inputs above and `data/state/outcome-boards/YYYY-MM-DD.json` have been loaded. The beat must be one of `aibtc-network`, `bitcoin-macro`, or `quantum`; for `quantum`, hard-block proposal-thread-only evidence, PR-page-only evidence, and known saturated migration/exposure clusters unless the angle is clearly AIBTC-native and operator-distinct.
+3. `record-signal-outcome`:
+   After a real filing result exists, update canonical outcome state and refresh learning before the next cycle.
+
+This loop should be treated as mandatory operating order, not as optional operator memory.
 
 This contract exists to prevent drift back into rule-only or chat-only behavior.
 The intended daily-prep mode is context first, rules second, output last.
@@ -66,6 +121,7 @@ The intended daily-prep mode is context first, rules second, output last.
 - finalize PRD
 - finalize JSON schema
 - finalize setup and architecture docs
+- finalize `docs/document-map.md`, `docs/company-operating-model.md`, and `docs/workflow.md` together so role definitions and operating flow do not drift
 
 ### Step 2: Create the repo structure
 - create source folders
@@ -90,19 +146,22 @@ The intended daily-prep mode is context first, rules second, output last.
 - duplicate rule
 - dashboard-source rejection rule
 
-### Step 5: Implement one real detection lane
-Recommended first lane:
-- protocol updates
+### Step 5: Implement the active beat discovery lanes
+Active lanes:
+- `aibtc-network`
+- `bitcoin-macro`
+- `quantum`
 
 Tasks:
-- connect one raw source
-- normalize detections
-- attach proof
-- attach causal explanation
+- connect raw sources from `data/config/monitored-sources.json`
+- connect repo sources from `data/config/monitored-repos.json`
+- normalize detections into one of the three active beat slugs
+- attach exact proof and source URLs
+- attach operator consequence and beat-editor fit
 
 ### Step 6: Implement formatting and submission packaging
 - generate one-line headline
-- create final payload
+- create final payload with canonical `body`
 - mark submit or reject
 
 ### Step 7: Add observability
@@ -180,15 +239,14 @@ Future runtime reminder:
 
 ## MVP Definition
 The MVP is done when:
-- one lane works end to end
+- the 12-step signal cycle works end to end
 - valid signals pass
 - weak signals are rejected
-- output matches schema
+- output matches the helper-ready schema
 - pre-submission checks are enforced
 - outcomes are logged
 
 ## Not in the First Build
-- multiple beats at once
 - complex UIs
 - broad automation across all earning paths
 - real-money trading logic
@@ -207,58 +265,261 @@ Implementation bias:
 Useful optional build aids:
 - semantic code search for faster repo navigation
 - impact analysis before refactors
-- dead code checks as the codebase grows
+- dead file and dead code checks as the codebase grows, with removal work added to the active priority list when drift is discovered
 
 ## Current Coded State
 This section is the current repo state for implemented agent work.
 Future chats should read this before changing runtime behavior so completed work is not overwritten.
 
-**Last updated: 2026-04-08**
+**Last updated: 2026-04-21**
 
 ## Current Priority Order
 This is the live implementation order for the next agent chats.
 Optimize for the highest-value work that also reduces future token use and duplicate work.
 
-### Priority 1: Make learned state runtime-native
-- build one canonical runtime brain file:
-  - `data/state/editorial-memory.json`
-- compile it automatically from:
-  - `data/state/learning-cache.json`
-  - `data/state/filed-signals.json`
-  - `data/outcomes/approvals/*.json`
-  - brief win/loss artifacts already stored in repo
-- make runtime code load the brain by default instead of rereading markdown notes
-- why this is first:
-  - prevents repeated context gathering
-  - turns lessons into active rules instead of passive docs
-  - is the shortest path to an actually effective agent
-- success condition:
-  - `daily-prep`, `signal-job`, scoring, and filing preflight all read one small machine state file
-  - `memory/learnings.md` is treated as the rendered explanation of memory, not the primary runtime memory store
+## 2026-04-21 Company Operating Model + Repo Cleanup
 
-### Priority 2: Turn learning into enforcement
-- use the runtime brain to enforce:
-  - no metric-based claim without dated/timestamped evidence
-  - no incomplete/truncated headline
-  - no payload with missing `body`
-  - beat-cap-aware routing and hold/resubmit behavior
-  - demotion of shapes that get approved but keep losing brief slots
-  - explicit promoted pass/fail checks when a rejection pattern repeats 2+ times
-- why this is second:
-  - this is where "learning" starts changing behavior
-- success condition:
-  - rejected patterns are blocked or penalized automatically before filing
+- [x] 1. Add `docs/company-operating-model.md` as the canonical company roles document.
+- [x] 2. Wire company roles into `docs/architecture.md`, `docs/workflow.md`, and `docs/document-map.md`.
+- [x] 3. Align the top-level read order so architecture -> company operating model -> workflow is the default startup path.
+- [x] 4. Audit `docs/build-plan.md`, `docs/build-checklist.md`, and adjacent canonical docs for stale assumptions whenever roles, beats, or filing behavior change.
+- [x] 5. Remove dead files, dead docs, dead helper assets/routes, and dead code paths once they are confirmed unused rather than leaving them as historical clutter.
+- [x] 6. Turn repeated helper `ENOENT`, stale-path, or legacy fixture failures into explicit cleanup tasks instead of treating them as harmless noise.
+- [x] 7. Keep the build plan current with the company model: if a role or contract changes, update the plan in the same change set.
+- [x] 8. Make the outcome board and hard do-not-draft rules part of current repo truth.
+  - The runtime now writes `data/state/outcome-boards/YYYY-MM-DD.json` before drafting.
+  - `create-signal` refuses to draft without today's board.
+  - Repeated rejection shapes now hard-block in the creation, guard, and filing-gate validation layers.
 
-### Priority 3: Deterministic candidate generation that can really file
-- implement real deterministic candidate generation in `src/prep/signal-job.ts`
-- keep the same-cycle brief exclusion behavior
-- keep the output as the actual sendable queue, not brainstorming
-- why this is third:
-  - real filing value starts here, but only after learning/rule enforcement exists
-- success condition:
-  - `npm run signal-job YYYY-MM-DD` produces 6 genuinely sendable candidates using repo truth and runtime brain rules
+Work completed in the legacy lane cleanup pass:
+- active runtime lane moved from the old protocol-update surface to `src/signals/infrastructure.ts`
+- exports now expose `runInfrastructureLane` and the old protocol-update lane file/test were removed
+- primary lane coverage moved to `tests/infrastructure.test.js`
+- dry-run, GitHub fetcher, raw-event types, filing-gate docs, and related tests now use the infrastructure lane
+- historical artifacts under `data/reports/failure-memos/` were left unchanged as archived data
 
-### Priority 3a: Submission scheduler and cadence guardrails
+Open cleanup that remains outside this completed item:
+- Queue/scoring compatibility is still follow-up work. Older tests and fixtures may still assume pre-contract candidate artifacts or older signability behavior.
+
+### Cleanup Rule
+
+When a file, route, fixture, helper asset, or compatibility layer is no longer part of the canonical workflow:
+
+- remove it if nothing reads it
+- migrate it if compatibility is still needed
+- document it if it remains temporary on purpose
+
+Do not keep dead code or dead docs just because they were once useful.
+
+### 2026-04-21 Audit Notes
+
+- `docs/build-checklist.md` was rewritten around the five-role company model and the explicit cleanup rule.
+- `docs/repo-cleanup-audit.md` now records the concrete `delete / migrate / keep temporarily` decisions for duplicate files, stale helper paths, compatibility layers, and legacy lane/test surfaces.
+- Repeated helper `ENOENT` noise was traced to:
+  - browser requests for `tools/xverse-register/favicon.ico`
+  - stale query-param lookups for `data/filing-ready/2026-04-16/manual.json`
+- The helper now suppresses favicon noise and returns a user-facing missing-artifact response for stale filing-ready paths instead of logging them as generic server failures.
+
+## 2026-04-21 Outcome Board + Hard Do-Not-Draft Rules
+
+- [x] Made the daily operating board a mandatory runtime artifact.
+  - New artifact: `data/state/outcome-boards/YYYY-MM-DD.json`
+  - Mirror log: `logs/outcome-board-YYYY-MM-DD.json`
+  - Writer: `src/ops/outcome-board.ts`
+  - Runtime hooks: `src/agent/run-daily.ts` and `src/agent/run-signal-loop.ts`
+- [x] Defined and stores the required board fields:
+  - open beats
+  - crowded beats
+  - duplicate clusters
+  - recent rejection reasons
+  - latest brief winner shape
+  - helper failures
+- [x] Made `create-signal` fail closed when today's board is missing, stale, or structurally incomplete.
+  - Drafting now requires both `data/state/signal-learning-briefs/YYYY-MM-DD.json` and `data/state/outcome-boards/YYYY-MM-DD.json`.
+  - `filing_gate.testedAgainst` and `contextAudit.outcomeReview` now name the outcome board as reviewed context.
+- [x] Promoted repeated rejection reasons into automatic blockers across the creation and guard path:
+  - homepage-level or bare repository-root sources on metric-heavy claims
+  - closed PR pages as proof of shipped changes
+  - proposal-thread-only quantum sources
+  - PR-page-only quantum sources without state artifacts
+  - saturated quantum clusters without an AIBTC-native operator angle
+  - duplicate same-day source clusters
+  - filing bodies above 900 characters
+- [x] Extended filing-gate validation with matching issue codes for final signable-queue defense:
+  - `gate_homepage_metric_source`
+  - `gate_closed_pr_as_proof`
+  - `gate_quantum_proposal_thread_only`
+  - `gate_quantum_pr_page_only`
+  - `gate_quantum_saturated_cluster`
+  - `gate_duplicate_same_day_source_cluster`
+  - `gate_body_above_900_chars`
+- [x] Added regression coverage:
+  - `tests/create-signal.test.js` proves drafting cannot proceed without today's outcome board and covers closed-PR/source-cluster blockers.
+  - `tests/signal-guard.test.js` covers closed PRs, same-day source clusters, quantum source blockers, saturated clusters, homepage metric sources, and 900-character body blocking.
+  - `tests/signal-loop-analysis.test.js` proves the outcome board artifact stores the mandatory fields.
+  - `tests/filing-gate-validator.test.js` covers the new final gate issue codes.
+
+### Verification
+
+- `npm run build` passes.
+- Focused suites passing:
+  - `node --test --test-concurrency=1 tests/create-signal.test.js`
+  - `node --test --test-concurrency=1 tests/signal-guard.test.js`
+  - `node --test --test-concurrency=1 tests/signal-loop-analysis.test.js`
+- `tests/filing-gate-validator.test.js` status:
+  - New hard-blocker tests pass.
+  - The full file still has legacy Q1-Q4 expectation failures because the current validator intentionally treats Q1-Q4 as deprecated compatibility fields.
+
+### Do Not Regress
+
+- Do not allow `create-signal` to draft without today's outcome board.
+- Do not move board construction into chat memory; it must remain a repo artifact.
+- Do not weaken the 900-character body blocker back to only a near-1000 truncation warning.
+- Do not allow closed PRs, proposal threads, or saturated quantum clusters to act as proof unless a durable state artifact or AIBTC-native operator angle clears the relevant gate.
+
+## 2026-04-12 Filing Helper Contract Hardening
+
+- [x] 1. Make `body` the canonical signal field in the helper.
+- [x] 2. Treat `analysis` only as a compatibility input alias and normalize it into `body`.
+- [x] 3. Add a mandatory pre-submit `news_check_status` step before any signal POST.
+- [x] 4. Block submit immediately when cooldown is active and show `waitMinutes`.
+- [x] 5. Surface the active filing address and verify it matches the approved BTC address before signing.
+- [x] 6. Keep beat-claim flow fully separate from signal-validation flow.
+- [x] 7. Keep the default beat-claim payload pinned to `quantum`.
+- [x] 8. Update helper labels/text so they no longer reference retired beats like `dev-tools`, `infrastructure`, or other legacy beat names outside the active three-beat scope.
+- [x] 9. Enforce the exact signal template in the UI before signing: `CLAIM:`, `EVIDENCE:`, `IMPLICATION:`, `Directive:`
+- [x] 10. Show template failures in plain language with the missing label called out directly.
+- [x] 11. Show the final normalized outgoing payload before submit so you can confirm what will actually be sent.
+- [x] 12. Make the helper display whether the outgoing content field is `body` and non-empty.
+- [x] 13. Ensure the headline validator checks for exact anchors when required by the local guard.
+- [x] 14. Add Quantum-specific mission-alignment hints so signals mention AI agents / Bitcoin / sBTC operator consequences when needed.
+- [x] 15. Add Quantum-specific value-creating hints so signals mention measurable security/settlement/routing consequences when needed.
+- [x] 16. Use the MCP/news contract as the source of truth for claim-beat and file-signal payloads.
+- [x] 17. Improve timeout handling so the helper doesn’t leave you guessing after 90 seconds.
+- [x] 18. Improve landed-signal recovery after timeout using headline + address + since timestamp.
+- [x] 19. Treat duplicate/already-exists outcomes as terminal, not retryable.
+- [x] 20. Reduce blind retry behavior so the helper never encourages repeated POSTs inside the cooldown window.
+- [x] 21. Make browser submit optional and prefer signed terminal/MCP submission after validation.
+- [x] 22. Expose a clean copyable terminal submit command after signing.
+- [x] 23. Refresh or sync editorial memory automatically when the cycle date is stale.
+- [x] 24. Refresh or sync signability state automatically when allowed beats change.
+- [x] 25. Add regression tests for body normalization, beat-claim bypass, template enforcement, cooldown pre-check, duplicate handling.
+- [x] 26. Add one end-to-end helper test for Quantum signal submission shape.
+- [x] 27. Add clearer logging so failures are grouped as beat issue, cooldown issue, template issue, payload issue, timeout issue.
+- [x] 28. Remove stale assumptions in helper code that drift from current MCP/news behavior.
+- [x] 29. Update docs so the helper workflow matches the actual live filing contract.
+- [x] 30. Add a short operator checklist in the helper itself: check status, confirm beat, confirm payload, sign, submit once, verify landed.
+
+### Implementation Notes
+
+- `src/filing/signal-contract.ts` now treats `body` as canonical output while still accepting `analysis` as an input alias.
+- `src/filing/helper-server.ts` now exposes local `news-check-status` and `helper-sync` endpoints, blocks signal POSTs during inferred cooldown windows, refreshes stale editorial/signability state, and classifies duplicate/timeout outcomes as terminal helper categories.
+- `tools/xverse-register/file-signal.html` now shows the active filing address, exact-template blockers, quantum mission/value hints, the normalized outgoing payload, filing status/signability state, a terminal-first submit command, and an operator checklist. Browser POST remains available but is explicitly optional.
+- Regression coverage was added in `tests/helper-server.test.js`, `tests/signal-contract.test.js`, and `tests/signal-guard.test.js`.
+
+## 2026-04-15 Audit + Loop Hardening
+
+- [x] 1. Add a reusable audit module for validator, evaluator, loop, logging, skill checks, src checks, and regression scoring.
+- [x] 2. Write `/logs/{run_id}.json` records with `{ input, output, score, failures, iteration }`.
+- [x] 3. Enforce a minimal audited output schema requiring `claims` and `evidence`.
+- [x] 4. Block invalid audited outputs before treating them as successful runtime results.
+- [x] 5. Add a 1-5 evaluator that scores task success, evidence quality, and constraint fit.
+- [x] 6. Add the required retry loop so `missing_evidence` can tighten the prompt and rerun once.
+- [x] 7. Keep controlled learning limited to pattern-count memory only, not free-form memory writes during execution.
+- [x] 8. Add a scoped skills audit for the three reference skills: `create-signal`, `record-signal-outcome`, `analyze-signal-outcomes`.
+- [x] 9. Add a src audit that verifies the loop exists, evaluation is called, and runtime memory writes are not happening in the audited loop.
+- [x] 10. Wire the audited loop into `src/prep/candidate-generator.ts` so generated candidates are validated and logged before materialization.
+- [x] 11. Wire the audited loop into `src/agent/run-signal-loop.ts` so the runtime can retry when the first pass produces no strong candidates.
+- [x] 12. Add a repo-specific `skill_usage_correct` contract tied to local counterparts of create-signal, record-signal-outcome, and analyze-signal-outcomes.
+- [x] 13. Fail the skill-usage audit if those local contract paths contain raw LLM API call patterns.
+- [x] 14. Add regression tests for the audit loop, scoped skill scan, candidate materialization audit path, signal-loop audit path, and repo-specific skill-usage contract.
+- [x] 15. Add `npm run audit-agent` to make the repository audit runnable as a first-class check.
+
+### Audit Notes
+
+- The audited creation path now lives in `src/audit/*` and is integrated into both `src/prep/candidate-generator.ts` and `src/agent/run-signal-loop.ts`.
+- Candidate materialization now emits canonical `CLAIM:`, `EVIDENCE:`, `IMPLICATION:`, and `Directive:` body text and saves an audit log for each candidate run.
+- The signal-loop runtime now saves `logs/signal-loop-<reportDate>.json` and retries once when the first audited pass produces no `awaiting_human_approval` candidates.
+- The skills audit is intentionally narrowed to the three signal skills instead of the entire `skills` tree.
+- The skill-usage audit is now repo-specific: it checks that local runtime code fulfills the responsibilities of `create-signal`, `record-signal-outcome`, and `analyze-signal-outcomes` without raw LLM API dependencies.
+- Current audit target state after this pass:
+  - `loop: true`
+  - `evaluation: true`
+  - `learning: true`
+  - `skills_valid: true`
+  - `skill_usage_correct: true`
+  - `memory_violation: false`
+
+## 2026-04-15 Signal Architecture Contract + Create-Signal Cut
+
+- [x] Add beat-editor source docs under `docs/beat-editors/` as the architecture source of truth for filing and review behavior.
+- [x] Add execution cut tasks directly into this build plan instead of a separate architecture-todo document.
+- [x] Apply progressive skill disclosure for the three signal skills:
+  - `create-signal`: draft, repair, review, validate, or prepare filing artifacts.
+  - `record-signal-outcome`: record one real filed signal result.
+  - `analyze-signal-outcomes`: analyze many outcomes and promote future rules.
+- [x] Document local overrides for external skill drift:
+  - canonical filed-outcome ledger: `data/state/signal-history.json`
+  - compatibility mirror only: `data/state/filed-signals.json`
+  - canonical artifact narrative field: `body`
+  - compatibility alias: `analysis = body`
+- [x] Add `src/prep/create-signal.ts` as the local canonical creation layer.
+- [x] Move Q1-Q4 filing-gate authority into the `create-signal` artifact path.
+- [x] Make `create-signal` generate explicit `filing_gate.q1` through `q4` rationales and ISO timestamps.
+- [x] Make `create-signal` generate `winnerCheck` from repo memory and filed history.
+- [x] Make headline anchor validation run before artifact creation can proceed.
+- [x] Enforce headline max length / not-truncated behavior in the creation path.
+- [x] Enforce source objects as `{url,title}[]`; plain string sources are rejected.
+- [x] Define one canonical fileable artifact shape:
+  - `headline`
+  - `body`
+  - `analysis` compatibility alias
+  - `beat_slug`
+  - `sources: {url,title}[]`
+  - `disclosure`
+  - full `filing_gate`
+- [x] Add `src/filing/validate-artifact.ts` and `npm run validate-artifact -- <file>`.
+- [x] Make artifact validation fail non-zero through the CLI on any gate issue.
+- [x] Require `create-signal` to run artifact validation before returning a fileable artifact.
+- [x] Update `src/prep/candidate-generator.ts` so materialized candidates are canonical `create-signal` artifacts, not loose prose candidates.
+- [x] Mark dry-run/generated submission packages as explicitly non-fileable intermediate artifacts:
+  - `kind: "intermediate_candidate_artifact"`
+  - `fileable: false`
+  - `non_fileable: true`
+  - `intended_use: "ranking_only"`
+  - `canonical_artifact_required: "create_signal_artifact"`
+- [x] Make `src/filing/validate-artifact.ts` reject explicit non-fileable intermediates before helper/filing promotion.
+- [x] Update `src/filing/filing-ready-append.ts` so filing-ready writes require full artifact validation, not only filing-gate validation.
+- [x] Demote `src/prep/signal-job.ts` toward adapter/reporting behavior around validated artifacts; it should not be a second drafting authority.
+- [x] Demote duplicate headline/anchor, brief-fit, and memory-derived pre-draft gates in `signal-job` for canonical `create_signal_artifact` inputs; keep them hard for raw non-canonical inputs.
+- [x] Add direct `create-signal` contract coverage plus artifact validation regression coverage.
+
+### Verification
+
+- `npm run build` passes.
+- Focused creation/filing suite passes:
+  - `tests/candidate-generator-audit.test.js`
+  - `tests/create-signal.test.js`
+  - `tests/validate-artifact.test.js`
+  - `tests/filing-ready-append.test.js`
+  - `tests/runtime-enforcement.test.js`
+  - `tests/filing-gate-validator.test.js`
+- Full `npm test` is not green yet; remaining failures are in older fixture paths, missing exports, queue/scoring assumptions, and legacy winner-gate expectations. Treat those as follow-up cleanup, not as blockers to the completed create-signal cut.
+
+### Priority 1: Queue/scoring artifact compatibility cleanup
+- update older queue and scoring paths/tests so they either consume canonical `create_signal_artifact` records or explicitly keep intermediate candidates non-fileable
+- keep `signal-job`, helper, guard, queue, and audit in adapter/blocker roles; none should redefine editorial truth after `create-signal` has created a validated artifact
+- success condition:
+  - queue/scoring no longer assumes pre-contract dry-run submissions are fileable
+  - repo-wide tests no longer fail because old paths expect raw dry-runs to promote directly
+
+### Priority 2: Brief artifact automation
+- automate creation or fetch/storage of `data/briefs/YYYY-MM-DD.md` when brief text is available
+- keep `signal-job` fail-closed when the same-cycle brief artifact is missing
+- success condition:
+  - same-cycle prep + signal flow can run without manual brief file placement when the brief source is available
+
+### Priority 3: Submission scheduler and cadence guardrails
 - implement an early-UTC submit gate for the actual filing path:
   - prefer best submissions between `04:00` and `10:00` UTC
   - do not block drafting, scoring, or queue-building outside that window
@@ -300,20 +561,17 @@ Optimize for the highest-value work that also reduces future token use and dupli
 - success condition:
   - the runtime can prove whether the day has a completed activity path, and transient API failures no longer silently burn the streak
 
-### Priority 3d: Source and evidence quality enforcement
-- require exact anchors in headline and body where the claim depends on them:
-  - PR numbers
-  - release tags
-  - block heights
-  - sats amounts
-  - exact percentages or counts
-- require structured source objects, not loose strings
-- block missing disclosure and missing sources before queueing for filing
-- add or expand pre-submit audits and tests for these contracts
-- why this is next:
-  - the fastest way to waste slots is to let weak evidence or malformed payloads survive too far into the pipeline
-- success condition:
-  - malformed or weakly evidenced candidates fail deterministically before they become operator work
+### Priority 3d: Source and evidence quality enforcement ✅ (2026-04-21)
+- `create-signal`, `signal-guard`, and `filing-gate-validator` now hard-block the repeated weak-evidence shapes that were still slipping toward drafting:
+  - homepage-level or repository-root sources on metric-heavy claims
+  - closed PR pages as proof of shipped changes
+  - proposal-thread-only quantum sources
+  - PR-page-only quantum sources without durable state artifacts
+  - saturated quantum clusters without an AIBTC-native operator angle
+  - duplicate same-day source clusters
+  - bodies above 900 characters
+- Structured source objects, concrete anchors, non-empty disclosure, and template bodies were already enforced in the create-signal artifact path and remain active.
+- Current follow-up is not to rebuild these gates. It is to keep new source-specific rules in the same creation/guard/filing-gate layers when fresh rejection data proves a new blocker.
 
 ### Priority 3e: Real-data enrichment in draft construction
 - wire GitHub PR, issue, and release extraction into candidate evidence
@@ -362,7 +620,7 @@ Status: done on 2026-04-04
   - leaderboard and streak operating context
   - helper and filing payload contract
 - source of truth:
-  - `docs/editorial-contract.md`
+  - `docs/beat-editors/`
 - why this is next:
   - April 2 behaved like a usable operator workflow while April 3 behaved like a fragmented validation system
   - the system drifted from context-first, outcome-oriented behavior into rule-led, fail-closed behavior
@@ -451,15 +709,16 @@ Status: done on 2026-04-04
 - explicitly document required fields and field names:
   - `beat_slug`
   - `headline`
-  - `analysis`
+  - `body`
   - `sources`
   - `tags`
   - `disclosure`
-- prevent drift between `analysis` and `body` handling
+- `analysis` is only a compatibility alias and must mirror `body` when present
+- prevent drift between helper validation, artifact validation, and API filing fields
 - why this is next:
   - signal format split into multiple truths and created repeated operator errors
 - success condition:
-  - there is one unambiguous signal JSON contract across the repo and helper
+  - there is one unambiguous signal JSON contract across the repo and helper, with `body` as the required content field
 
 ### Priority 11: Helper, Report, and Artifact Sync Contract
 - every signal handed to the operator must also exist in:
@@ -708,7 +967,8 @@ days_active × 2  ← passive
 
 ### Priority 26: Brief conversion tracking ✅
 
-- In `data/state/filed-signals.json`, track `brief_included: true | false` separately from `approved: true | false`
+- In canonical outcome state, track `brief_included` separately from generic `approved`
+- Current canonical target is `data/state/signal-history.json`; `data/state/filed-signals.json` may mirror this for legacy readers
 - Add `approved_not_in_brief` count to daily prep report and leaderboard context
 - Identify the shape of approved-but-not-brief signals: what score range, what beats, what time filed
 - Why: approved signals that miss brief slots are near-wins — understanding why they lost slots is the highest-leverage insight available
@@ -720,7 +980,7 @@ days_active × 2  ← passive
 - If beat saturation is high, require a displacement-level angle (unique data, stronger evidence, or direct contradiction of existing signal) to proceed
 - Surface saturation level as an explicit queueing constraint in the daily prep report
 - Why: filing a fifth infrastructure signal when four are already approved wastes a filing slot with near-zero brief-win probability
-- Success condition: signal-job surfaces beat saturation as a blocking or warning condition before a candidate enters the queue
+- Success condition: artifact creation / queueing surfaces beat saturation as a blocking or warning condition before a candidate reaches the operator
 
 ### Priority 28: Brief-win signal shape gate ✅
 
@@ -730,7 +990,7 @@ days_active × 2  ← passive
   3. Displacement framing — why this signal belongs in the brief over the others on the same beat today
 - Demote candidates that pass approval gates but fail these three attributes to a secondary queue
 - Why: current approved signals are "good" but brief slots go to signals that are operationally urgent and numerically specific
-- Success condition: `signal-job` gates on all three attributes; candidates missing any one are flagged before reaching operator
+- Success condition: `create-signal` / artifact validation gates on all three attributes; candidates missing any one are flagged before reaching operator
 
 ### Priority 29: Cap-blocked resubmission queue ✅
 
@@ -740,13 +1000,13 @@ days_active × 2  ← passive
 - Why: cap-blocked signals are often the strongest candidates for the next cycle; currently they are buried or forgotten
 - Success condition: daily prep shows cap-blocked candidates from prior cycles as the top resubmission candidates before new generation
 
-### Priority 30: Multi-beat expansion ✅
+### Priority 30: Three-beat operating coverage ✅
 
-- Audit which beats Valiant Gryphon has filed on and which are untouched
-- Identify 2–3 adjacent beats where infrastructure signals have crossover (agent-skills, governance, agent-economy)
-- File at least one signal per cycle across multiple beats to spread brief-win surface area
-- Why: top agents cover 10–12 beats; brief has 12 beat slots; single-beat concentration caps upside at one slot per brief
-- Success condition: daily prep identifies at least one non-primary beat candidate per cycle; agent files across a minimum of 3 beats per week
+- Audit which of the three active beats has the best open slot: `aibtc-network`, `bitcoin-macro`, or `quantum`
+- Keep all candidate sourcing, beat saturation checks, and editor guidance inside those active beats
+- File only when the selected beat has a concrete anchor, primary proof, and enough brief-win probability to justify the shared cooldown
+- Why: the live beat model consolidated older lanes; spreading into retired beats creates helper and publisher mismatch
+- Success condition: daily prep identifies the strongest active-beat candidate or returns `hold` with explicit blocker reasons
 
 ---
 
@@ -781,7 +1041,7 @@ days_active × 2  ← passive
 
 **Root cause (updated 2026-04-06):** Conversion is broken at two levels — signal quality (not winning the 30-best selection) and payload bugs (same errors hit in both April 4 and April 5, wasting filing slots).
 
-**Beat specialization gap:** NotebookLLM analysis shows 10-beat sprawlers average 26K sats, 1-2 beat specialists average 135K sats (5x gap). Valiant covering 8+ beats is the wrong strategy. Initial narrowing was `infrastructure` + `agent-skills`; current specialist runtime focus is `infrastructure` + `quantum`.
+**Beat specialization gap:** NotebookLLM analysis showed that broad beat sprawl underperformed specialist behavior. The current live model is the three-beat set in `AGENTS.md` and `data/config/signal-template.json`: `aibtc-network`, `bitcoin-macro`, and `quantum`. Older `infrastructure` / `agent-skills` strategy language is historical only.
 
 **Scoring formula:**
 ```
@@ -795,7 +1055,8 @@ days_active × 2  ← passive
 
 ### Priority 26: Brief conversion tracking ✅
 
-- In `data/state/filed-signals.json`, track `brief_included: true | false` separately from `approved: true | false`
+- In canonical outcome state, track `brief_included` separately from generic `approved`
+- Current canonical target is `data/state/signal-history.json`; `data/state/filed-signals.json` may mirror this for legacy readers
 - Add `approved_not_in_brief` count to daily prep report and leaderboard context
 - Identify the shape of approved-but-not-brief signals: what score range, what beats, what time filed
 - Why: approved signals that miss brief slots are near-wins — understanding why they lost slots is the highest-leverage insight available
@@ -807,7 +1068,7 @@ days_active × 2  ← passive
 - If beat saturation is high, require a displacement-level angle (unique data, stronger evidence, or direct contradiction of existing signal) to proceed
 - Surface saturation level as an explicit queueing constraint in the daily prep report
 - Why: filing a fifth infrastructure signal when four are already approved wastes a filing slot with near-zero brief-win probability
-- Success condition: signal-job surfaces beat saturation as a blocking or warning condition before a candidate enters the queue
+- Success condition: artifact creation / queueing surfaces beat saturation as a blocking or warning condition before a candidate reaches the operator
 
 ### Priority 28: Brief-win signal shape gate ✅
 
@@ -817,7 +1078,7 @@ days_active × 2  ← passive
   3. Displacement framing — why this signal belongs in the brief over the others on the same beat today
 - Demote candidates that pass approval gates but fail these three attributes to a secondary queue
 - Why: current approved signals are "good" but brief slots go to signals that are operationally urgent and numerically specific
-- Success condition: `signal-job` gates on all three attributes; candidates missing any one are flagged before reaching operator
+- Success condition: `create-signal` / artifact validation gates on all three attributes; candidates missing any one are flagged before reaching operator
 
 ### Priority 29: Cap-blocked resubmission queue ✅
 
@@ -827,13 +1088,13 @@ days_active × 2  ← passive
 - Why: cap-blocked signals are often the strongest candidates for the next cycle; currently they are buried or forgotten
 - Success condition: daily prep shows cap-blocked candidates from prior cycles as the top resubmission candidates before new generation
 
-### Priority 30: Multi-beat expansion ✅
+### Priority 30: Three-beat operating coverage ✅
 
-- Audit which beats Valiant Gryphon has filed on and which are untouched
-- Identify 2–3 adjacent beats where infrastructure signals have crossover (agent-skills, governance, agent-economy)
-- File at least one signal per cycle across multiple beats to spread brief-win surface area
-- Why: top agents cover 10–12 beats; brief has 12 beat slots; single-beat concentration caps upside at one slot per brief
-- Success condition: daily prep identifies at least one non-primary beat candidate per cycle; agent files across a minimum of 3 beats per week
+- Audit which active beats have current proof-backed opportunities: `aibtc-network`, `bitcoin-macro`, and `quantum`
+- Keep sourcing and filing inside the active beat set unless `AGENTS.md`, the signal template, and beat-editor docs are updated together
+- File only when the candidate can beat same-day competition; otherwise return `hold`
+- Why: the live publisher/helper contract now rejects old beat sprawl as operational drift
+- Success condition: daily prep identifies the strongest active-beat candidate or explains why all active beats are blocked
 
 ---
 
@@ -870,10 +1131,11 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
 ### Priority 33: Beat specialization pivot ✅ (strategy + scoring enforcement)
 
 - NotebookLLM data: 10-beat sprawlers average 26K sats, 1-2 beat specialists average 135K sats — 5x gap driven by domain expertise and lower rejection rates
-- Strategy baseline was `infrastructure` + `agent-skills`; runtime focus was updated on 2026-04-07 to `infrastructure` + `quantum`
-  - `infrastructure`: x402 relay bugs, Hiro API changes, Stacks node upgrades, nonce/settlement failures, release/PR/operator alerts
+- Strategy baseline moved from retired narrow beats to the current active beat model:
+  - `aibtc-network`: AIBTC protocol, agent infrastructure, leaderboard, payment, relay, governance, and ecosystem operating changes
+  - `bitcoin-macro`: Bitcoin market, fee, mining, ETF, regulatory, custody, and macro conditions with agent-relevant implications
   - `quantum`: Bitcoin-specific post-quantum threat intelligence, BIP-360 / P2MR migration milestones, exact readiness deltas tied to Bitcoin keys, wallets, or agent ops
-  - Avoid: Agent Economy, Agent Social, Onboarding — owned by Dual Cougar / Opal Gorilla / Encrypted Zara with 3-4 wins each
+  - Avoid retired filing beats unless the live contract is updated: Infrastructure, Agent Skills, Agent Economy, Agent Social, Onboarding, Deal Flow, Agent Trading, Bitcoin Yield
 - `src/learning/editorial-memory.ts`: add `Beat specialization` and `Early UTC filing window` to `focusAreas` compiled from competition memory
 - Why: spreading across 8 beats produces low-quality signals per beat with no specialization advantage — this is the root cause of the 26K avg sats
 - Success condition: every signal report targets at most 2 beats; editorial memory surfaces open specialist lanes; beat sprawl is flagged in focusAreas
@@ -882,7 +1144,7 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
   - `src/scoring/beat-coverage.ts` now includes `quantum` in `KNOWN_BEATS` and adjacency maps (`quantum` ↔ `infrastructure`, `security`)
   - **2026-04-07 patch:** `infrastructure` adjacency array was missing `quantum` — the `quantum` ↔ `infrastructure` link was one-directional. Added `"quantum"` to `ADJACENT_BEATS["infrastructure"]`; all three edges (`quantum`→`infrastructure`, `quantum`→`security`, `infrastructure`→`quantum`, `security`→`quantum`) are now bidirectional.
   - `src/scoring/beat-coverage.ts` now reads `data/state/objective-memory.json` for `specialistMode`, `targetBeats`, and `targetBeatsPerWeek` so a 2-beat strategy is not treated as under-coverage against the old 11-beat expansion target
-  - `data/state/objective-memory.json` now records specialist mode with target beats `["infrastructure", "quantum"]`
+  - `data/state/objective-memory.json` should be treated as stale if it records target beats outside `["aibtc-network", "bitcoin-macro", "quantum"]`
   - `data/state/competition-memory.json` now treats Infrastructure as crowded and adds explicit crowding notes for both Infrastructure and Quantum
   - `data/config/monitored-repos.json` now points release monitoring at infrastructure-heavy repos plus `bitcoin/bips` for quantum-adjacent standards tracking
   - `data/config/monitored-sources.json` now adds `arXiv` and `NIST` quantum watch feeds plus an extra Stacks core info snapshot for infrastructure
@@ -959,7 +1221,7 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
 
 **Problem:** Two real bugs in `src/filing/pre-submit-audit.ts` left `score_update_signal` fail-open and caused misclassification of non-quantum signals.
 
-**Bug 1 — fail-open (fixed):** `scope_check`, `bitcoin_relevance_check`, `exact_claim_check`, and `reviewer_verifiability_check` were only enforced when `signalType === "quantum_signal"`. A `score_update_signal` bypassed all four checks even though `quantum-signal-schema.json` and `docs/quantum-signal-contract.md` require them for every quantum `pre_signal_validation`. Fixed by broadening the condition at line 667 to `signalType === "quantum_signal" || signalType === "score_update_signal"`.
+**Bug 1 — fail-open (fixed):** `scope_check`, `bitcoin_relevance_check`, `exact_claim_check`, and `reviewer_verifiability_check` were only enforced when `signalType === "quantum_signal"`. A `score_update_signal` bypassed all four checks even though the quantum beat contract required them for every quantum `pre_signal_validation`. Fixed by broadening the condition at line 667 to `signalType === "quantum_signal" || signalType === "score_update_signal"`.
 
 **Bug 2 — misclassification (fixed):** `looksLikeQuantumSignal` used `if (extractSignalType(sourceArtifact)) return true` — truthy for any non-empty `signal_type` string. A non-quantum beat signal with any `signal_type` field set was routed into the quantum audit and hard-blocked with a misleading "must use beat_slug quantum" error. Fixed by narrowing the match to `"quantum_signal"` and `"score_update_signal"` only.
 
@@ -1035,8 +1297,13 @@ Source: NotebookLLM analysis of brief-winning signals, April 4–5 workflow bug 
   - concrete source enforcement from canonical payload sources (`gate_sources_missing`, `gate_sources_not_concrete`)
   - concrete disclosure enforcement with vague-phrase rejection and named model/tool/endpoint/URL/PR requirement (`gate_disclosure_missing`, `gate_disclosure_vague`, `gate_disclosure_not_concrete`)
   - disallowed draft-state language enforcement across headline, structured template fields, and canonical analysis/body (`gate_draft_language`) for terms like `backup`, `placeholder`, `rough`, `idea`, `working set`, `probably`, `maybe`, and `should review`
-- `tests/filing-gate-validator.test.js` now locks the filing standard with 38 green tests across baseline validity, Q1-Q4 enforcement, headline anchors, directives, tested-against fields, winner checks, template structure, drift language, missing gate blocks, sources/disclosure, and blocker formatting.
-  - Test outcome: no regressions; pre-existing failing tests remained flat while the new filing-gate suite passed clean.
+- Current note: Q1-Q4 are now deprecated compatibility fields, so older `tests/filing-gate-validator.test.js` cases that expect Q1-Q4 failures to hard-block are stale. Do not use those failures as evidence that Q1-Q4 should regain authority.
+- 2026-04-21 hard-block additions in the same validator:
+  - metric-heavy claims cannot use homepage-level or repository-root sources (`gate_homepage_metric_source`)
+  - closed PR pages cannot prove shipped changes (`gate_closed_pr_as_proof`)
+  - quantum proposal-thread-only and PR-page-only source sets are blocked unless durable state artifacts are present (`gate_quantum_proposal_thread_only`, `gate_quantum_pr_page_only`)
+  - saturated quantum clusters need an AIBTC-native operator angle (`gate_quantum_saturated_cluster`)
+  - duplicate same-day source clusters and bodies above 900 characters are blocked (`gate_duplicate_same_day_source_cluster`, `gate_body_above_900_chars`)
 - `src/filing/filing-ready-append.ts` is now the single trusted append-only write path for filing-ready artifacts.
   - Runs `validateFilingGate(rawSubmission)` before any I/O and throws `FilingReadyValidationError` with hard blockers on failure.
   - Rejects overwrite attempts with `FilingReadyConflictError` if `data/filing-ready/{reportDate}/{candidateId}.json` already exists.
@@ -1056,7 +1323,8 @@ Future implementation chats should not spend time rebuilding or "re-deciding" th
 - do not replace `memory/learnings.md` as the human log
 - do not treat approval alone as success; `brief_included` is the real win signal
 - do not keep weak filler candidates just to reach six
-- do not re-add skill enforcement functions already present in `signal-job.ts`: `hasMissionAlignment`, `hasVagueDisclosure`, `isInscribable`, `isValueCreating`, `hasHardNumberInBody`, `isBeatRecentlyCovered` — all exist and are wired in
+- do not re-add drafting authority to `signal-job`; fileable candidates must come through `create-signal` and `validate-artifact`
+- do not re-add Q1-Q4 authority as a parallel engine in `signal-job`, helper UI, or audit code
 - do not re-add `fetchLiveBtcPrice`, `extractBtcSpotClaim`, `isPriceClaimStale` to `news-source-fetcher.ts` — already implemented
 - do not re-add `hasVagueDisclosure` or `isCircularSourcing` to `helper-server.ts` — already in the signal-guard endpoint
 - do not add x402 paid endpoints to `apiSnapshots` without wallet authorization being enabled first
@@ -1086,7 +1354,8 @@ Build the smallest deterministic agent that learns from real publishing outcomes
 - manual outcome intake file: `data/reports/daily-input/YYYY-MM-DD.md`
 - brief artifact file: `data/briefs/YYYY-MM-DD.md`
 - signal output file: `data/reports/signals/YYYY-MM-DD.md`
-- the same active local cycle date must be used across all three
+- mandatory outcome board file: `data/state/outcome-boards/YYYY-MM-DD.json`
+- the same active local cycle date must be used across all dated artifacts
 
 ### Memory Model
 
@@ -1095,11 +1364,13 @@ Four layers in order of authority. Read this before touching any state file.
 | Layer | File(s) | Role |
 |---|---|---|
 | Primary runtime memory | `data/state/editorial-memory.json` | The brain. Read by every runtime step — daily-prep, signal-job, scoring, filing preflight. Do not bypass. |
+| Daily outcome board | `data/state/outcome-boards/YYYY-MM-DD.json` | Mandatory pre-draft board for open beats, crowded beats, duplicate clusters, recent rejection reasons, latest winner shape, and helper failures. `create-signal` must fail closed when today's board is missing. |
 | Normalized outcome memory | `data/state/outcome-feedback-memory.json` | Machine labels from real publisher responses (e.g. `body_missing`, `beat_cap`). Feeds into editorial-memory on refresh. Managed by `src/learning/outcome-feedback.ts`. |
-| Filing/history memory | `data/state/filed-signals.json`, `data/outcomes/`, `data/training/` | Source of truth for what actually happened. Used to compile the two state files above. `signal-job.ts` reads `filed-signals.json` for beat coverage memory. |
+| Filing/history memory | `data/state/signal-history.json` | Canonical filed-signal ledger. One real filed signal per entry. Used for duplicate checks, outcome lookup, and learning. |
+| Compatibility outcome mirrors | `data/state/filed-signals.json`, `data/outcomes/approvals/*.json`, `data/training/` | Legacy/backward-compatible inputs while migration finishes. Do not treat these as the canonical ledger when `signal-history.json` exists. |
 | Readable archive | `memory/learnings.md` | Human-readable audit log. Written by daily-prep when lessons are confirmed. Not a runtime dependency. Do not read this instead of `editorial-memory.json` at runtime. |
 
-**Rule:** new runtime behavior reads `editorial-memory.json` first. Fall back to `filed-signals.json` only for filing-history lookups. Never make runtime decisions by reading `memory/learnings.md` directly.
+**Rule:** new runtime behavior reads `editorial-memory.json` first and `signal-history.json` for filed-signal history. Use `filed-signals.json` only as a compatibility mirror. Never make runtime decisions by reading `memory/learnings.md` directly.
 
 ### Implemented runtime/documentation behavior
 - daily prep and signal work are documented as separate tasks
@@ -1109,7 +1380,9 @@ Four layers in order of authority. Read this before touching any state file.
 - `data/state/memory-index.json` records the authority order of repo memory so future chats do not confuse docs with runtime memory
 - `data/state/outcome-feedback-memory.json` stores normalized outcome-feedback labels and repeated label patterns
 - `data/state/repairable-candidates.json` stores publisher-feedback repair contracts for fix-and-resubmit signals
-- `src/prep/signal-job.ts` loads structured editorial memory before drafting/reporting
+- `src/prep/create-signal.ts` owns canonical filing artifact creation, Q1-Q4 rationales, winner checks, headline anchor checks, and source-object enforcement
+- `src/filing/validate-artifact.ts` validates canonical artifacts and powers `npm run validate-artifact -- <file>`
+- `src/prep/signal-job.ts` loads structured editorial memory before reporting and acts as an adapter around validated artifacts
 - `src/prep/signal-job.ts` blocks `resubmission_for_signal_id` candidates unless a recorded repair contract exists and the revised draft satisfies its required fixes
 - `src/agent/run-daily.ts` refreshes editorial memory during `agent-daily`
 - `src/learning/runtime-memory.ts` is the shared sync path that refreshes runtime memory after source-of-truth writes
@@ -1119,7 +1392,8 @@ Four layers in order of authority. Read this before touching any state file.
 - `src/prep/daily-prep.ts` now supports optional manual outcome intake from `data/reports/daily-input/YYYY-MM-DD.md`
 - when a manual outcome file exists, daily prep parses: brief winners, in-brief, rejected, top 6, and Valiant rank
 - manual outcome intake writes compact durable lessons to `memory/learnings.md`, updates the dated signal report with a `Daily outcome intake` section plus detected winning categories, and refreshes `data/state/editorial-memory.json`
-- confirmed statuses belong in `data/state/filed-signals.json`
+- confirmed filed-signal statuses belong in `data/state/signal-history.json`
+- `data/state/filed-signals.json` remains a compatibility mirror while older paths are migrated
 - inferred statuses belong in the daily report only until confirmed
 - durable lessons belong in `memory/learnings.md`
 - `memory/learnings.md` is the human-readable archive/explanation layer, not the source-of-truth runtime memory store
@@ -1127,7 +1401,7 @@ Four layers in order of authority. Read this before touching any state file.
 **Skill/runtime enforcement — partial implementation exists, but parity work is still active:**
 - Publisher, Fact-Checker, Correspondent, and helper rules are partially wired into runtime code.
 - Do not re-add the already-implemented checks listed below.
-- Do not assume enforcement parity is finished; see Priorities 9 through 15 for the remaining alignment, audit, and validation work.
+- Do not assume enforcement parity is finished; follow the current priority order above for remaining alignment, audit, and validation work.
 - Current tested state:
   - duplicate-first gating is implemented
   - same-day memory refresh is implemented
@@ -1136,11 +1410,12 @@ Four layers in order of authority. Read this before touching any state file.
   - replay validation exists for April 2 vs April 3
 - Still not safe to describe as universally “complete”:
   - helper/editorial parity is still an explicit priority item
-  - canonical payload/report/helper sync is still tracked separately
-  - deterministic candidate generation remains unfinished
+  - older queue/scoring paths still need canonical artifact compatibility cleanup
+  - full `npm test` is not yet green
 
 ### Implemented code paths
 - `src/prep/daily-prep.ts` exists
+- `src/prep/create-signal.ts` exists and is the canonical creation layer for fileable artifacts
 - `src/prep/signal-job.ts` exists
 - `src/agent/run-daily.ts` wires both steps into the agent-daily runtime path
 - `src/learning/editorial-memory.ts` compiles structured editorial memory from durable lessons
@@ -1152,22 +1427,11 @@ Four layers in order of authority. Read this before touching any state file.
 - `src/filing/helper-server.ts` serves the Xverse helper app and the `/api/local/signal-guard` submission gate
 - daily prep and signal job now use `data/reports/daily/YYYY-MM-DD.md`, not the old `-prep.md` suffix
 
-**Functions added to `src/prep/signal-job.ts` (2026-04-03) — do not re-add:**
-- `hasMissionAlignment(headline, analysis)` — Q1: requires AI/agent term + Bitcoin/Stacks term
-- `hasVagueDisclosure(analysis)` — Q2: rejects trivially vague disclosure phrases; auto-reject, no exceptions
-- `isInscribable(headline, analysis)` — Q3: rejects unverified speculative language (reportedly, sources say, rumored, could soon, etc.)
-- `isValueCreating(analysis)` — Q4: requires a stated consequence or implication for the AI-native economy
-- `hasHardNumberInBody(analysis)` — correspondent pre-flight: requires a verifiable number in the body
-- `isBeatRecentlyCovered(beat, recentFilings)` — correspondent coverage memory: rejects same-beat candidates filed within 3 days
-- `reviewCandidate()` now labels each publisher gate failure with its Q-number (Q1/Q2/Q3/Q4) in the rejection reason
-- `reviewCandidate()` signature now includes `recentFilings: RecentFiledSignal[]`
-- `runSignalJob()` loads `data/state/filed-signals.json` and passes it to `reviewCandidate()`
-- `buildPreDraftPublisherFit(headline, analysis, disclosure)` — pre-draft kill screen for publisher Q1/Q2/Q3/Q4 before deeper review
-- `buildStructuralScreen(headline, analysis)` — raw candidate screen for exact anchor, operator consequence, claim/evidence/implication viability, action line viability, and displacement potential
-- `computePreDraftScore(publisherFit, structural, beat, beatFocus)` — deterministic pre-draft selection score used to rank surviving candidates before deeper review
-- `runSignalJob()` now loads outcome-backed beat focus from `editorialLearnings.primaryBeat` / `secondaryBeat` / `deprioritizedBeats`
-- `reviewCandidate()` now fail-closes on pre-draft publisher-fit or structural-score failure before shared editorial guard review
-- `runSignalJob()` now sorts surviving candidates by pre-draft score so strongest raw fits move forward first
+**Canonical creation functions (2026-04-15) — do not duplicate elsewhere:**
+- `createSignalArtifact()` in `src/prep/create-signal.ts` — creates the validated filing artifact and owns Q1-Q4, headline anchor, source-object, winnerCheck, and body/analysis compatibility behavior
+- `validateArtifact()` in `src/filing/validate-artifact.ts` — validates canonical artifact shape, filing gate, headline anchor, source objects, body/template structure, and gate/payload consistency
+- `artifactIssuesToBlockers()` in `src/filing/validate-artifact.ts` — converts artifact validation issues into hard-block strings for filing-ready writes and repair loops
+- `appendFilingReadyArtifact()` in `src/filing/filing-ready-append.ts` — single trusted append-only write path for `data/filing-ready/`; now requires full artifact validation before I/O
 
 **Functions added to `src/sources/news-source-fetcher.ts` (2026-04-03) — do not re-add:**
 - `fetchLiveBtcPrice()` — fetches BTC/USD from mempool.space once per run
@@ -1182,8 +1446,8 @@ Four layers in order of authority. Read this before touching any state file.
 - `/api/local/signal-guard` response now includes `vagueDisclosure` and `circularSourcing` in the `checks` object
 
 ### Important current limitation
-- `signal-job` gates correctly and runs without an API key but produces no real signals — it writes an explicit blocked report
-- actual deterministic signal generation is the next required step before any real filing can happen from CI
+- `signal-job` now acts as an adapter/reporting layer around validated artifacts; do not move drafting truth back into it
+- candidate generation now marks intermediates non-fileable and creates artifacts through `create-signal`, but older queue/scoring paths still need canonical artifact compatibility cleanup before the full suite is green
 - keep the core scheduled workflow non-LLM by default
 
 ### Current prompts/workflow status
@@ -1375,11 +1639,10 @@ Four layers in order of authority. Read this before touching any state file.
 - Added `extractBtcSpotClaim()` and `isPriceClaimStale()` — when a candidate's hard number is a BTC spot price claim ($20k–$200k range), checks it against the live price. If >2% off (fact-checker tolerance threshold), sets `usesDashboardAsPrimarySource: true`, which fails the existing dashboard-source gate and removes the candidate from the queue.
 - Price verification is logged per candidate so the stale-data pattern is visible in run output.
 
-**`src/prep/signal-job.ts`**
-- Added `isBeatRecentlyCovered()` — loads `data/state/filed-signals.json` and checks whether the candidate's beat has a filing within the last 3 days. Implements correspondent skill coverage memory check: "What changed since the last signal?" Same-beat recency is now a rejection reason, not just same-headline brief deduplication.
-- Added `hasHardNumberInBody()` — requires a specific verifiable number (price, volume, block height, percentage, count) in the analysis body. Implements correspondent pre-flight check #1: "Is there a specific number in the first sentence?"
-- `reviewCandidate()` now accepts `recentFilings: RecentFiledSignal[]` and applies both new checks alongside the existing gates.
-- `runSignalJob()` loads `data/state/filed-signals.json` before the candidate loop and passes filings through.
+**Superseded creation-path note**
+- These correspondent checks were originally wired through `src/prep/signal-job.ts`.
+- As of 2026-04-15, fileable creation authority belongs in `src/prep/create-signal.ts` plus `src/filing/validate-artifact.ts`.
+- Do not add new correspondent/fact-checker creation gates as independent `signal-job` drafting authority.
 
 **Why:** The `aibtc-news-fact-checker` and `aibtc-news-correspondent` skills were installed but not influencing candidate discovery or validation. The fact-checker's 2% price tolerance and the correspondent's coverage memory check and pre-flight number requirement were being skipped entirely. These changes make the installed skill criteria runtime-enforced rather than advisory.
 
@@ -1387,10 +1650,10 @@ Four layers in order of authority. Read this before touching any state file.
 
 #### 2026-04-03 — Publisher skill pre-screen wired into signal-job and signal-guard
 
-**`src/prep/signal-job.ts`**
-- Added `hasMissionAlignment(headline, analysis)` — checks that headline + analysis contain at least one AI/agent term AND one Bitcoin/Stacks term before a candidate is accepted. Implements publisher 4-question test question 1: "Does it serve 'Bitcoin is the currency of AIs'?"
-- Added `hasVagueDisclosure(analysis)` — rejects candidates whose analysis body contains trivially vague disclosure phrases (`"used AI"`, `"my own analysis"`, `"various sources"`, `"internal data"`, etc.). Implements publisher auto-reject for question 2 (replicable).
-- Both checks are enforced inside `reviewCandidate()` and surface as explicit rejection reasons in the signal report.
+**Superseded creation-path note**
+- Publisher checks were originally pre-screened in `src/prep/signal-job.ts`.
+- As of 2026-04-15, Q1-Q4 authority is canonical in `src/prep/create-signal.ts`.
+- `signal-job` may report, rank, or block invalid artifacts, but it should not own a second Q1-Q4 drafting engine.
 
 **`src/filing/helper-server.ts`**
 - Added `hasVagueDisclosure(body)` — same vague disclosure detection applied at submission time in the `/api/local/signal-guard` endpoint. Blocker message tells the submitter exactly what to fix.
@@ -1405,37 +1668,40 @@ Four layers in order of authority. Read this before touching any state file.
 - docs and templates for daily prep and signal work are in place
 - dated file contracts are standardized
 - filename mismatch from `-prep.md` to `.md` was corrected
-- `src/prep/daily-prep.ts` rewritten as deterministic non-LLM: builds `data/reports/daily/YYYY-MM-DD.md` from `data/state/filed-signals.json` without any API call
+- `src/prep/daily-prep.ts` rewritten as deterministic non-LLM: builds `data/reports/daily/YYYY-MM-DD.md` without any API call and now treats `signal-history.json` as canonical filed history when available
 - `src/prep/daily-prep.ts` extended with a first-pass manual outcome-intake loop: reads `data/reports/daily-input/YYYY-MM-DD.md`, appends compact lessons to `memory/learnings.md`, updates `data/reports/signals/YYYY-MM-DD.md`, and refreshes `data/state/editorial-memory.json`
 - `src/prep/signal-job.ts` rewritten as non-LLM: gates on prep report + brief, validates queued candidates, writes signal report to `data/reports/signals/YYYY-MM-DD.md`
 - neither script requires `ANTHROPIC_API_KEY` to run
 - `memory/learnings.md` read first in daily prep — warns loudly if missing
 - `data/reports/daily/TEMPLATE.md` now required — exits early if missing
 - `data/reports/daily-input/TEMPLATE.md` added so the manual outcome loop has a stable dated input contract
-- write-back: confirmed statuses parsed from report and written to `data/state/filed-signals.json`
+- write-back: confirmed statuses should land in `data/state/signal-history.json`; `data/state/filed-signals.json` remains compatibility state for older paths
 - write-back: durable lessons appended to `memory/learnings.md`
 - `memory/` added to `git add` block in `agent-daily.yml` so learnings persist in CI
 - CLI entrypoints added: `npm run daily-prep YYYY-MM-DD` and `npm run signal-job YYYY-MM-DD` both execute
 - `npm run check` — clean, no TypeScript errors
 - regression coverage added in `tests/daily-prep.test.js` for manual outcome intake → learnings write-back → signal report update → editorial-memory refresh
 - reusable daily prep and signal prompts defined
-- **publisher/fact-checker/correspondent enforcement foundations** — key gates exist in `signal-job.ts`, `signal-guard.ts`, `news-source-fetcher.ts`, queue gating, and pre-submit audit, but full parity is governed by Priorities 9 through 15 rather than assumed complete
+- **publisher/fact-checker/correspondent enforcement foundations** — key gates exist in `create-signal.ts`, `validate-artifact.ts`, `signal-guard.ts`, `news-source-fetcher.ts`, queue gating, and pre-submit audit, but full parity is governed by the current priority order rather than assumed complete
 - **x402 filter fix** — x402/payment-rail terms added to `highSignalTerms` so RSS items are no longer silently dropped after passing `includeKeywords` (2026-04-03)
-- **signal-template runtime layer** — shared template rules now load from `data/config/signal-template.json` via `src/filing/template-rules.ts`, and are used by both `src/prep/signal-job.ts` and `src/filing/signal-guard.ts`
+- **signal-template runtime layer** — shared template rules now load from `data/config/signal-template.json` via `src/filing/template-rules.ts`, and are used by `src/prep/create-signal.ts`, `src/filing/validate-artifact.ts`, `src/prep/signal-job.ts`, and `src/filing/signal-guard.ts`
 - **operator handoff fix** — `signal-job` now shows only accepted candidates in numbered slots, renders missing slots as `slot_empty`, and moves rejected candidates into a non-actionable appendix
 - **direct brief-context integration** — `src/prep/daily-prep.ts` now reads `data/briefs/shared-context.json` directly and writes a machine handoff JSON at `data/reports/daily/YYYY-MM-DD.json`
 - **canonical outcome-memory integration** — `src/prep/daily-prep.ts` and `src/prep/signal-job.ts` now read `data/state/signal-history.json` directly as part of same-cycle decision support
 - **context persistence (first pass)** — `src/prep/signal-job.ts` now writes `data/context-runs/YYYY-MM-DD/signal-job.json`
 - **build-plan runtime memory (first pass)** — `src/learning/build-plan-memory.ts` compiles `docs/build-plan.md` into `data/state/build-plan-memory.json` for architecture-memory use
-- **candidate auto-materialization (first pass)** — `src/prep/candidate-generator.ts` can create candidate artifacts from `data/dry-runs/YYYY-MM-DD/*-submission.json` when `data/manual-submissions/YYYY-MM-DD/` is empty
+- **candidate auto-materialization (artifact path)** — `src/prep/candidate-generator.ts` can create validated `create-signal` artifacts from `data/dry-runs/YYYY-MM-DD/*-submission.json` when `data/manual-submissions/YYYY-MM-DD/` is empty
+- **non-fileable intermediate markers** — serialized dry-run submission packages and backfilled generated submissions now carry `non_fileable: true`, `fileable: false`, `intended_use: "ranking_only"`, and `canonical_artifact_required: "create_signal_artifact"`
+- **artifact validation layer** — `src/filing/validate-artifact.ts` and `npm run validate-artifact -- <file>` enforce the canonical artifact shape before anything is considered filing-ready
 - **build-plan role clarified** — `docs/build-plan.md` is architecture/operating guidance for the runtime; it is not a source of candidate facts or story generation
 
 ### Not done yet
-- **fully handoff-native signal generation** — candidate artifacts can now be auto-materialized from dry-run submissions, but the final intended path is not done yet: `daily-prep` handoff + signal-template rules + brief context + canonical history should drive generation directly without relying on dry-run submission artifacts as the upstream source
+- **queue/scoring compatibility with artifact-first creation** — generated intermediates are now explicitly non-fileable and candidate-generator creates validated artifacts, but older queue/scoring tests and code paths still need to consume canonical artifacts instead of assuming raw dry-runs can promote directly
 - **brief artifact automation** — `data/briefs/YYYY-MM-DD.md` still requires manual placement before signal-job can run
 - **x402 paid data sources** — `x402.biwas.xyz` pool/market endpoints not yet in `apiSnapshots`; deferred until wallet automation is enabled (see x402 architectural gap note in Recent Changes)
 - **full build-plan semantic enforcement** — `data/state/build-plan-memory.json` exists, but not every build-plan rule is yet mapped to an explicit runtime enforcement point
 - **full context persistence across all stages** — first-pass context snapshots exist for `signal-job`, but end-to-end persistence across every stage is not finished
+- **full test-suite cleanup** — focused creation/filing tests pass, but full `npm test` still has older fixture/export/queue/scoring failures
 
 ### Where an agent should look before continuing the build
 Read these in order so future work starts from repo truth, not chat memory:
@@ -1466,7 +1732,7 @@ Current runtime entrypoints and code paths:
 - `src/prep/daily-prep.ts`
   - deterministic daily prep implementation; creates the dated daily report and brief placeholder behavior
 - `src/prep/signal-job.ts`
-  - current signal step; gates correctly and writes a blocked placeholder report until deterministic candidate generation is implemented
+  - adapter/reporting step around validated artifacts; it should not own fileable drafting truth
 - `.github/workflows/agent-daily.yml`
   - scheduled CI path for the daily autonomous loop
 - `package.json`
@@ -1475,7 +1741,9 @@ Current runtime entrypoints and code paths:
 Current state and artifacts to inspect before changing runtime logic:
 
 - `data/state/filed-signals.json`
-  - confirmed filing/outcome state used by daily prep
+  - compatibility mirror for older filing/outcome state paths
+- `data/state/signal-history.json`
+  - canonical filed-signal ledger and duplicate/outcome history
 - `memory/learnings.md`
   - durable lessons that daily prep reads first
 - `data/reports/daily/YYYY-MM-DD.md`
@@ -1493,7 +1761,7 @@ Current state and artifacts to inspect before changing runtime logic:
 
 Useful examples for implementing the remaining deterministic lane:
 
-- `src/signals/protocol-updates.ts`
+- `src/signals/infrastructure.ts`
   - existing signal-lane logic worth reusing before inventing new structures
 - `src/types/candidate-signal.ts`
   - candidate signal contract
@@ -1514,10 +1782,11 @@ Useful examples for implementing the remaining deterministic lane:
 
 Current repo truth about what remains:
 
-- **skill enforcement is partially wired, not universally complete** — foundational Publisher, Fact-Checker, Correspondent, helper, and x402-related rules exist; do not re-implement the existing checks, but continue using the recovery priorities for parity, payload, and validation work
-- **the next real implementation step is deterministic candidate generation** — `signal-job` validates candidates but cannot generate them; a human must still place artifacts in `data/manual-submissions/YYYY-MM-DD/`
-- the safest first lane remains protocol updates plus snapshot-based contradiction checks
-- brief handling is partially automated, but the same-cycle brief artifact contract must stay stable
+- **the daily outcome board is now mandatory** — `data/state/outcome-boards/YYYY-MM-DD.json` must exist before `create-signal` can draft. It carries open beats, crowded beats, duplicate clusters, rejection reasons, winner shape, and helper failures.
+- **hard do-not-draft rules are now runtime blockers** — homepage metric sources, closed PR proof, proposal-thread-only quantum sources, PR-page-only quantum sources, saturated non-AIBTC quantum clusters, duplicate same-day source clusters, and bodies above 900 characters are blocked in `create-signal`, `signal-guard`, and final filing-gate validation.
+- **Q1-Q4 are deprecated compatibility fields** — do not restore Q1-Q4 as an authority path. The current authority path is `create-signal` + beat editors + winner/context checks + hard blockers.
+- **legacy lane cleanup was completed for the active runtime surface** — the deterministic release/operator lane now runs through `src/signals/infrastructure.ts`, exports `runInfrastructureLane`, and is covered by `tests/infrastructure.test.js`; historical failure-memo data was intentionally left archived as-is.
+- **brief handling is partially automated, but the same-cycle brief artifact contract must stay stable** — the board can be generated from available local inputs, but it does not replace `data/briefs/YYYY-MM-DD.md` when the brief itself is required.
 - future agents should update this section whenever the source-of-truth files or runtime entrypoints change
 
 ### Next implementation tasks
@@ -1533,27 +1802,14 @@ If it conflicts with `Current Priority Order`, follow `Current Priority Order`.
   - why: future chats and runtime steps need one stable path pattern
   - objective output: all prep and signal code should read and write the same date-based files consistently
 
-- make the non-LLM path explicit everywhere
-  - why: future chats should not reintroduce Anthropic/Claude API dependence into the scheduled workflow
-  - objective output: the repo state should clearly separate:
-    - what is implemented now
-    - what still needs manual input
-    - what the intended final non-LLM architecture is
+- update queue/scoring compatibility for canonical artifacts
+  - why: the creation path is now canonical and intermediates are explicitly non-fileable, but some queue/scoring paths still expect raw dry-run submissions to be promotable
+  - objective output: queue/scoring consumes validated `create_signal_artifact` records or keeps raw candidates ranked-only
+  - unlocks: full-suite cleanup and simpler filing promotion logic
 
-- automate brief artifact creation from provided input
-  - why: `signal-job` hard-gates on `data/briefs/YYYY-MM-DD.md`
-  - objective output: daily prep should be able to create or update `data/briefs/YYYY-MM-DD.md` automatically when brief text is available
-  - unlocks: same-cycle prep + signal flow without manual file placement
-
-- improve the blocked `signal-job` output
-  - why: when deterministic signal generation is not ready, the output should explain exactly what is missing instead of looking like a silent no-op
-  - objective output: `data/reports/signals/YYYY-MM-DD.md` should clearly say why no real signals were produced and what prerequisite is missing
-  - unlocks: clearer operator handoff and less confusion during testing
-
-- implement deterministic signal generation in `signal-job`
-  - why: signal-job currently produces no real signals — `signal_count × 5` and `brief_inclusions × 20` are both at zero until this exists
-  - objective output: `npm run signal-job YYYY-MM-DD` produces 6 publish-ready signals from repo state using GitHub release/commit detection and snapshot diffs — no LLM
-  - unlocks: actual signal filing, streak protection, brief inclusion wins
+- clean up stale Q1-Q4 filing-gate tests
+  - why: Q1-Q4 are now deprecated compatibility fields, but older tests still expect them to hard-block
+  - objective output: `tests/filing-gate-validator.test.js` should assert current authority instead: template, winner/context audit, sources, disclosure, outcome board, and hard do-not-draft blockers
 
 - automate brief artifact fetch
   - why: the pipeline still depends on the current brief existing before signal generation can run unattended
@@ -1561,9 +1817,13 @@ If it conflicts with `Current Priority Order`, follow `Current Priority Order`.
   - unlocks: more unattended CI behavior and less daily operator input
 
 ### Blocked by
-- `signal-job` has no deterministic candidate-generation engine yet
-  - why this blocks progress: the script can gate and write a report, but it cannot yet produce real competitive signals
-  - blocked output: a real `data/reports/signals/YYYY-MM-DD.md` with 6 publish-ready signals
+- older queue/scoring paths still assume pre-contract candidates
+  - why this blocks progress: full `npm test` cannot go green until those paths either consume validated artifacts or explicitly handle non-fileable intermediates
+  - blocked output: fully green repo-wide test suite
+
+- `tests/filing-gate-validator.test.js` still contains legacy Q1-Q4 authority expectations
+  - why this blocks progress: the validator intentionally ignores Q1-Q4 as hard blockers, so those tests fail until they are rewritten around the current gate contract
+  - blocked output: fully green focused filing-gate suite
 
 - `data/briefs/YYYY-MM-DD.md` still depends on manual brief placement unless the brief text is provided
   - why this blocks progress: same-cycle signal generation requires the same-cycle brief artifact
@@ -1576,30 +1836,28 @@ If it conflicts with `Current Priority Order`, follow `Current Priority Order`.
     - reliable daily prep completeness
     - reliable signal-job completeness
 
-## P31 — Infrastructure + Quantum Specialist Focus Audit (2026-04-07)
+## P31 — Active Beat Focus Audit (2026-04-07, superseded by 2026-04-22 contract)
 
 ### What was done
 
 **Config audit (read-only verification)**
-- Confirmed `data/state/objective-memory.json`: `specialistMode: true`, `targetBeats: ["infrastructure","quantum"]`, `targetBeatsPerWeek: 2` — all correct.
-- Confirmed `data/state/competition-memory.json`: Infrastructure pressure:5 present, Quantum specialist-lane note present, Trustless Indra as the only Quantum beat owner (low crowding — advantage confirmed).
-- Confirmed `data/config/monitored-repos.json`: 8 infrastructure repos + `bitcoin/bips` (beat: quantum) — correct.
-- Confirmed `data/config/monitored-sources.json`: arXiv quantum feed, NIST PQC feed, Stacks core API — all present.
-- Confirmed `src/scoring/beat-coverage.ts`: specialist-mode logic reads `objective-memory.json`, applies `targetBeatsPerWeek: 2`, and produces focused recommendation text.
+- Historical note: this audit was written when the strategy still used `infrastructure` + `quantum`.
+- Current contract: active filing beats are `aibtc-network`, `bitcoin-macro`, and `quantum`.
+- Current config check: `data/config/monitored-repos.json`, `data/config/monitored-sources.json`, `src/filing/signal-contract.ts`, `src/scoring/beat-coverage.ts`, and `docs/beat-editors/` now reflect the active three-beat model.
 
-**Gaps found and documented**
+**Superseded gaps**
 
-1. `data/config/monitored-repos.json` line 12 — `aibtcdev/ai-agent-crew` labeled `beat: "agent-skills"`. Only non-focus repo. Should be removed.
-2. `data/config/monitored-sources.json` — 6 API snapshots with off-focus beats still present (`coingecko-trending`, `dexscreener-boosts`, `lunarcrush-rankings` → agent-trading; `farside-bitcoin-etf` → deal-flow; `defillama-stacks` → bitcoin-yield; `aibtc-heartbeat/leaderboard/achievements` → onboarding). These generate noise. Should be removed.
-3. `src/editor/beat-health-report.ts` line 115 — title hardcoded as `Infrastructure Beat Health Report`. No quantum section.
-4. `data/state/editor-memory.json` — no `beatLessons` field for structured per-beat lesson storage.
-5. `src/filing/quantum-map.ts` — no pre-filing candidate intake schema. `trackQuantumFiledSignal` handles post-filing only.
+1. Old `agent-skills`, `deal-flow`, `agent-trading`, `bitcoin-yield`, and `onboarding` beat labels have been removed from active monitored configs.
+2. `src/editor/beat-health-report.ts` remains an editor-side artifact, not the correspondent filing source of truth.
+3. `src/prep/daily-prep.ts` should be updated separately if it still emits old `infrastructure` / `agent-skills` focus text; do not use that stale wording as filing guidance.
+4. `src/filing/quantum-map.ts` and `src/filing/quantum-intake.ts` remain quantum-specific support code inside the active `quantum` beat.
 
 **Memory write-back spec**
 - Proposed smallest `beatLessons` write-back shape for `editor-memory.json`:
   ```json
   "beatLessons": {
-    "infrastructure": [{ "date": "YYYY-MM-DD", "lesson": "string", "source": "daily-prep" }],
+    "aibtc-network": [{ "date": "YYYY-MM-DD", "lesson": "string", "source": "daily-prep" }],
+    "bitcoin-macro": [],
     "quantum": []
   }
   ```
@@ -1633,3 +1891,73 @@ Examples:
 - `evals-skills` for evaluation audits, fixture generation, and testing quality checks
 
 Keep both as external development tools unless there is a later reason to integrate them more closely.
+
+## 2026-04-21 Brief Competition + Learning + Filing Safety Loop
+
+- Implemented brief-competition contract in `create-signal`:
+  - Added required `brief_competition` fields:
+    - `why_this_beat_is_open`
+    - `why_now`
+    - `why_this_beats_same_day_competition`
+    - `primary_source_proof`
+    - `operator_action`
+  - Added hard blockers when these are missing or weak.
+  - Added strength checks for timing urgency, same-day displacement framing, anchored source proof, and explicit operator action.
+
+- Tightened body safety and filing payload structure:
+  - Kept soft body max hard-block at `900` chars.
+  - Added terminal punctuation enforcement for `CLAIM`, `EVIDENCE`, and `IMPLICATION` in:
+    - `src/prep/create-signal.ts`
+    - `src/filing/signal-contract.ts`
+    - `src/filing/helper-server.ts` normalization path.
+  - Preserved mandatory `news_check_status` pre-submit enforcement in helper backend and UI flow.
+
+- Strengthened approved-not-in-brief learning path:
+  - Added `approvedNotInBriefCount` to optimization success metrics.
+  - Increased demotion pressure for narrow same-beat fragments in packaging adjustments.
+  - Added stronger promotion signal for broader same-beat packages with exact anchors.
+  - Updated recommendations to explicitly push anchored broad packages in crowded lanes.
+
+- Queue behavior for weak-but-valid candidates:
+  - Added brief-competition proof evaluation in scoring.
+  - Explicit weak/missing competition proof now blocks `file` and forces `hold` when these fields are provided but weak.
+  - Legacy dry-run fixtures remain compatible unless explicit weak proof fields are present.
+
+- Candidate generation and helper packaging updates:
+  - `candidate-generator` now materializes `brief_competition` fields by default for canonical artifacts.
+  - Updated helper/chat fixture inputs and seeds to satisfy current loop contracts (learning brief, outcome board, workflow context audit).
+
+- Regression tests added/updated:
+  - `tests/create-signal.test.js`
+    - near-1000-char body rejection
+    - terminal punctuation enforcement
+    - missing brief-competition field rejection
+    - weak brief-competition rejection
+  - `tests/helper-server.test.js`
+    - normalization rejection for missing terminal punctuation
+  - `tests/scoring.test.js`
+    - weak-but-valid submission held by competition-proof gate
+
+- Verification run (targeted tests):
+  - `tests/create-signal.test.js`
+  - `tests/helper-server.test.js`
+  - `tests/optimization.test.js`
+  - `tests/chat-signal.test.js`
+  - `tests/three-beat-helper-jsons.test.js`
+  - `tests/scoring.test.js` (targeted to strongest-vs-weak + weak-but-valid-held cases)
+  - Result: passing targeted suite for this change set.
+
+- End-to-end loop verification run:
+  - Ran `npm run daily-prep -- 2026-04-20`
+  - Ran `npm run signal-loop -- --date 2026-04-20`
+  - Outcome:
+    - weak candidates were blocked before filing-ready promotion (`0` awaiting_human_approval survivors)
+    - queue and trusted slate stayed fail-closed with explicit repair guidance
+    - no filing attempt occurred (safety preserved)
+
+- Updated operating sequence (now enforced in code/tests):
+  1. Daily prep + learning refresh.
+  2. Candidate creation must include strong brief-competition proof fields.
+  3. Body must pass CLAIM/EVIDENCE/IMPLICATION + punctuation + length safety.
+  4. Queue scorer holds weak-but-valid candidates early (before filing path).
+  5. Helper normalization rejects malformed payloads and still requires pre-submit cooldown/status checks.

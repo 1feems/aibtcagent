@@ -1,5 +1,12 @@
 # Signal Sourcing Instructions
 
+## Document Role
+
+- Category: `task contract`
+- Scope: daily prep
+- Use this when: the active step is daily prep and daily file generation
+- Do not use this as: the only source for architecture or signal packaging behavior
+
 ## Purpose
 Use this doc for the daily signal-sourcing loop.
 

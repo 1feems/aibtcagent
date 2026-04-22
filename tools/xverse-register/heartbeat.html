@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
     <title>Xverse AIBTC Heartbeat Helper</title>
     <style>
       :root {
@@ -169,6 +170,7 @@
 
       let connected = null;
       let heartbeatSignature = null;
+      const XVERSE_CONNECT_TIMEOUT_MS = 60_000;
 
       function setStatus(message, isError = false) {
         status.textContent = message;
@@ -248,7 +250,7 @@
               message: "Connect this local helper to request an AIBTC heartbeat signature.",
               network: "Mainnet"
             }),
-            20000,
+            XVERSE_CONNECT_TIMEOUT_MS,
             "Xverse connection"
           );
           if (response.status !== "success") {

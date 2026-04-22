@@ -6,3 +6,4 @@ export * from "./failure-memos.js";
 export * from "./heartbeat-reminder.js";
 export * from "./day-validation.js";
 export * from "./refresh-memory.js";
+export * from "./outcome-board.js";

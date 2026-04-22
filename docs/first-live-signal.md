@@ -10,14 +10,14 @@ This runbook defines the shortest safe path from "we have a real candidate" to "
 - GitHub Actions is the recurring non-signing runtime
 - actual wallet signing remains local and manual
 - the repo packages valid candidate signals, but live filing still depends on the current AIBTC submission path available to the operator
-- use `docs/posting-guide.md` alongside this runbook so candidate selection matches what is actually being selected
+- use `docs/brief-win-rules.md` alongside this runbook so candidate selection matches what is actually being selected
 - use `docs/signal-sourcing-checklist.md` before sourcing and before filing so we stay aligned on qualification, publisher fit, and reward-adjusted selection
 - in `docs/signal-sourcing-checklist.md`, treat `Content Guide — What Gets Selected` and `Signal Template — Copy and Fill` as the canonical drafting guide for headline/body structure
 
 ## Before A Live Run
 - collect one real raw event JSON in `data/live-inputs/`
 - collect one real pre-submission intelligence JSON in `data/live-inputs/`
-- keep the beat focused on `protocol-updates`
+- keep the beat focused on `infrastructure`
 - do not use fixture inputs for a real submission decision
 
 ## Suggested File Names
@@ -46,7 +46,7 @@ Before treating any candidate as a real filing candidate, confirm:
 - the signal is directly supported by exact onchain proof
 - the causal trigger is explicit and defensible
 - the event feels significant enough that a publisher might actually select it
-- the event fits the `protocol-updates` beat more strongly than a broader or noisier beat
+- the event fits the `infrastructure` beat more strongly than a broader or noisier beat
 - the candidate is strong enough to improve expected payout odds, not just pass validation
 - the candidate feels worth paying for in the next 30 days, not merely worth logging
 
@@ -61,7 +61,7 @@ Reject or hold the candidate if it is:
 Before any filing handoff, confirm the package can survive these role-based checks:
 
 - `aibtc-news-protocol`:
-  - the signal clearly belongs to the protocol-updates beat
+  - the signal clearly belongs to the infrastructure beat
   - the event is a real protocol change, launch, upgrade, or activation
 - `aibtc-news-fact-checker`:
   - exact tx hashes, contract address, and source URLs are attached

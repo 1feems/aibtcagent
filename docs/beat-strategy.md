@@ -4,48 +4,47 @@
 This document defines the initial beat strategy for the AIBTC Onchain Signal Agent.
 
 ## Primary Beat
-Registered beat slug: `dev-tools`
+Registered beat slug: `quantum`
 
 Why:
-- aibtc.news does not have a `protocol-updates` beat — `dev-tools` is the correct slug for versioned releases, relay infrastructure, MCP servers, APIs, and contract deployments
-- signal-sourcing-checklist confirms: "protocol-updates maps to Dev Tools in practice"
-- easier to verify directly from onchain activity and GitHub releases
-- stronger causal explanations from versioned releases and contract events
-- aligns well with proof-first newsroom requirements
+- this bounty only counts signals filed under `quantum`
+- the strongest live edge is Bitcoin-specific post-quantum readiness: BIP-360, P2MR migration issues, developer stance changes, and exact readiness deltas tied to Bitcoin keys, wallets, or agent ops
+- the publisher already confirmed the Apr. 8/9 BIP-360 P2MR vector bug angle is a strong Quantum-beat resubmission if filed with a proper body
+- quantum signals can be anchored to primary sources like the BIP repo, Delving Bitcoin, mailing-list posts, and the live dataset at `quantum-power-map.p-d07.workers.dev`
+- aligns with the current proof-first newsroom requirement for exact dates, exact claims, and direct source URLs
 
-## Secondary Experimental Lane
-After the first lane is stable, test one secondary lane:
-- `agent-economy` or `deal-flow`
+## Submission-Ready Beat Set
+The helper smoke gate must stay aligned to these three filing lanes:
 
-## Live Beat Slugs (from aibtc.news/api/beats)
+- `quantum` — primary lane for Bitcoin post-quantum readiness, BIP-360/P2MR, developer stance, and migration-risk signals
+- `aibtc-network` — network-level AIBTC signals about correspondent capacity, beat changes, leaderboard/registry shifts, and newsroom mechanics
+- `bitcoin-macro` — Bitcoin market, fee, miner, mempool, policy, and macro conditions that change agent treasury or settlement decisions
+
+Do not treat older infrastructure fixtures as submit-ready beat authority. Infrastructure examples may remain useful training data, but they are not part of the current three-beat helper smoke contract.
+
+## Accepted Beat Slugs
+Only these beat slugs may enter create-signal, helper-ready JSON, or filing workflows:
+
+- `quantum`
 - `aibtc-network`
-- `agent-economy`
-- `agent-skills`
-- `agent-social`
-- `agent-trading`
-- `art`
-- `bitcoin-culture`
 - `bitcoin-macro`
-- `bitcoin-yield`
-- `dao-watch`
-- `deal-flow`
-- `dev-tools` ← primary
-- `ordinals`
-- `runes`
-- `security`
+
+All other beat slugs are rejected for this agent, even if they exist on the public aibtc.news beat list.
 
 ## What Signals to Prefer
-- newly deployed or upgraded contracts with clear first-use activity
-- liquidity or capital movement with a provable causal trigger
-- incentives with exact onchain provenance
-- emerging events that are still ahead of broad public visibility
+- BIP, PR, or test-vector changes that alter Bitcoin post-quantum implementation readiness
+- named developer stance changes backed by a primary source and a verifiable score update
+- exact Bitcoin exposure data, qubit/timeline updates, and migration-readiness deltas tied to Bitcoin
+- single-topic quantum signals with a direct Bitcoin link and operator consequence
+- AIBTC network-capacity changes with exact API counts, release anchors, and implications for correspondents or operators
+- Bitcoin macro changes with exact BTC price, mempool fee, miner, policy, ETF, treasury, or settlement-window evidence tied to agent action
 
 ## What Signals to Avoid
 - dashboard-first observations
-- obvious volume recaps
+- general quantum computing news with no explicit Bitcoin link
 - signals without clear causality
 - signals without exact tx or contract proof
-- multi-sentence or analysis-heavy outputs
+- bundled multi-topic quantum roundups
 - beats that appear temporarily oversaturated unless the signal is clearly stronger
 
 ## Strategy Rules

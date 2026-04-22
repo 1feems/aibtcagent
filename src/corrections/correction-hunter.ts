@@ -26,7 +26,7 @@ const MEMPOOL_PRICE_URL = "https://mempool.space/api/v1/prices";
 const STACKS_INFO_URL = "https://api.mainnet.hiro.so/v2/info";
 const QUOTA_PATH = "data/state/correction-quota.json";
 const PENDING_DIR = "data/corrections/pending";
-const CLASSIFIEDS_SCRIPT = ".agents/skills/aibtc-news-classifieds/aibtc-news-classifieds.ts";
+const CLASSIFIEDS_SCRIPT = "skills/aibtc-news-classifieds/aibtc-news-classifieds.ts";
 
 const MAX_DAILY = 3;
 const BTC_PRICE_TOLERANCE = 0.02; // 2% — matches SKILL.md threshold

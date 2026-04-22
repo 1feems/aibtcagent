@@ -1,0 +1,37 @@
+{
+  "kind": "daily_outcome_board",
+  "reportDate": "2026-04-20",
+  "generatedAt": "2026-04-21T07:44:11.821Z",
+  "openBeats": [
+    "aibtc-network",
+    "bitcoin-macro"
+  ],
+  "crowdedBeats": [
+    "quantum"
+  ],
+  "duplicateClusters": [],
+  "recentRejectionReasons": [
+    "missing_concrete_specificity",
+    "not_article_shaped",
+    "raw_data_no_thesis",
+    "rejected_editorial",
+    "publisher_feedback_required",
+    "repair_and_resubmit",
+    "duplicate_story_shape",
+    "missing_timestamped_evidence"
+  ],
+  "latestBriefWinnerShape": "full-length",
+  "helperFailures": [
+    "ENOENT: no such file or directory, open '/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/tools/xverse-register/favicon.ico'",
+    "Template issue: Submission blocked: Fact-check source verification failed: metric-heavy claim uses only one organization as evidence",
+    "Template issue: Headline must include an exact anchor such as a PR, issue, version, endpoint, error code, block height, or hard metric.",
+    "ENOENT: no such file or directory, open '/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/filing-ready/2026-04-16/manual.json'",
+    "Submission blocked: Template check failed: sources must be primary and computationally verifiable — use live APIs, exact GitHub PR/issue/release URLs, explorer tx links, or spec docs"
+  ],
+  "sourcePaths": [
+    "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/signal-learning-briefs/2026-04-20.json",
+    "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/helper-errors.jsonl",
+    "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/state/signal-history.json",
+    "/Users/feems/Desktop/aibtcagent-workspace/duplicateaibtcagent2/data/briefs/2026-04-20.md"
+  ]
+}

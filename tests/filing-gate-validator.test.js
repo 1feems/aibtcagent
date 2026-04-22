@@ -89,6 +89,38 @@ function makeValidArtifact(overrides = {}) {
           result:    "pass",
           rationale: "Comparable to winning headline 'PR #98 fixes relay timeout that stalled 40% of agent payouts' from same beat."
         }
+      },
+      contextAudit: {
+        briefReview: {
+          result: "pass",
+          rationale: "Reviewed data/briefs/2026-04-07.md before drafting and checked the latest brief title for infrastructure fit.",
+          contextLoaded: true,
+          complianceVerified: true
+        },
+        beatEditorReview: {
+          result: "pass",
+          rationale: "Reviewed docs/beat-editors/aibtc-network-skill.md beat editor guidance before drafting.",
+          contextLoaded: true,
+          complianceVerified: true
+        },
+        helperErrorsReview: {
+          result: "pass",
+          rationale: "Reviewed data/state/helper-errors.jsonl and checked the latest template issue before emitting helper-ready JSON.",
+          contextLoaded: true,
+          complianceVerified: true
+        },
+        outcomeReview: {
+          result: "pass",
+          rationale: "Reviewed data/state/signal-history.json and approvals outcome records before drafting this filing candidate.",
+          contextLoaded: true,
+          complianceVerified: true
+        },
+        publisherNotesReview: {
+          result: "pass",
+          rationale: "Reviewed same-beat publisher feedback and rejection notes in signal-history.json before drafting.",
+          contextLoaded: true,
+          complianceVerified: true
+        }
       }
     },
     ...overrides
@@ -256,6 +288,19 @@ test("filing gate validator — missing template.directive is a hard block", () 
   assert.ok(
     issueCode(result, "gate_template_missing_directive"),
     `Expected gate_template_missing_directive, got: ${result.issues.map(i=>i.code)}`
+  );
+});
+
+test("filing gate validator — missing contextAudit is a hard block", () => {
+  const artifact = clone(makeValidArtifact());
+  delete artifact.filing_gate.contextAudit;
+
+  const result = validateFilingGate(artifact);
+
+  assert.ok(result.gate === null);
+  assert.ok(
+    issueCode(result, "gate_context_audit_missing"),
+    `Expected gate_context_audit_missing, got: ${result.issues.map(i=>i.code)}`
   );
 });
 
@@ -595,4 +640,50 @@ test("filingGateIssuesToBlockers — each issue becomes a hard-block string with
   for (const blocker of blockers) {
     assert.match(blocker, /hard-blocked from signable queue because filing gate check failed/);
   }
+});
+
+test("filing gate validator — metric claims cannot use homepage-level sources", () => {
+  const artifact = clone(makeValidArtifact());
+  artifact.headline = "Leaderboard shows 882 agents and 545,326 check-ins";
+  artifact.analysis = "CLAIM: Leaderboard shows 882 agents and 545,326 check-ins. EVIDENCE: The project homepage reports the values. IMPLICATION: Operators should compare network density before routing.";
+  artifact.sources = [{ url: "https://github.com/aibtcdev/aibtc", title: "repository root" }];
+
+  const result = validateFilingGate(artifact);
+  assert.ok(issueCode(result, "gate_homepage_metric_source"), `Expected gate_homepage_metric_source, got: ${result.issues.map(i=>i.code)}`);
+});
+
+test("filing gate validator — closed PRs cannot prove shipped changes", () => {
+  const artifact = clone(makeValidArtifact());
+  artifact.headline = "PR #755 closes relay payout fix after 42 failed sBTC settlements";
+  artifact.analysis = "CLAIM: PR #755 closes a relay payout fix after 42 failed sBTC settlements. EVIDENCE: GitHub says PR #755 is closed. IMPLICATION: Operators should wait for merged state.";
+  artifact.sources = [{ url: "https://github.com/aibtcdev/sponsor-relay/pull/755", title: "closed PR #755" }];
+
+  const result = validateFilingGate(artifact);
+  assert.ok(issueCode(result, "gate_closed_pr_as_proof"), `Expected gate_closed_pr_as_proof, got: ${result.issues.map(i=>i.code)}`);
+});
+
+test("filing gate validator — quantum proposal-thread-only and saturated clusters are hard blocks", () => {
+  const artifact = clone(makeValidArtifact());
+  artifact.beat_slug = "quantum";
+  artifact.filing_gate.beat = "quantum";
+  artifact.headline = "BIP-361 sets 160k-block Bitcoin migration window for legacy ECDSA exposure";
+  artifact.analysis = "CLAIM: BIP-361 sets a 160k-block Bitcoin migration window for legacy ECDSA exposure. EVIDENCE: The proposal thread describes the migration window. IMPLICATION: Wallet teams should monitor migration timing.";
+  artifact.sources = [{ url: "https://delvingbitcoin.org/t/commit-reveal-for-pq-migration/2419", title: "proposal thread" }];
+
+  const result = validateFilingGate(artifact);
+  assert.ok(issueCode(result, "gate_quantum_proposal_thread_only"), `Expected gate_quantum_proposal_thread_only, got: ${result.issues.map(i=>i.code)}`);
+  assert.ok(issueCode(result, "gate_quantum_saturated_cluster"), `Expected gate_quantum_saturated_cluster, got: ${result.issues.map(i=>i.code)}`);
+});
+
+test("filing gate validator — duplicate source clusters and bodies above 900 chars are hard blocks", () => {
+  const artifact = clone(makeValidArtifact());
+  artifact.analysis = `${artifact.analysis} ${"extra operator detail".repeat(80)}`;
+  artifact.sources = [
+    { url: "https://mempool.space/api/v1/fees/recommended", title: "fees" },
+    { url: "https://mempool.space/api/v1/fees/recommended#latest", title: "fees duplicate" }
+  ];
+
+  const result = validateFilingGate(artifact);
+  assert.ok(issueCode(result, "gate_duplicate_same_day_source_cluster"), `Expected gate_duplicate_same_day_source_cluster, got: ${result.issues.map(i=>i.code)}`);
+  assert.ok(issueCode(result, "gate_body_above_900_chars"), `Expected gate_body_above_900_chars, got: ${result.issues.map(i=>i.code)}`);
 });

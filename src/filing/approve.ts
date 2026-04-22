@@ -112,7 +112,7 @@ export async function applyHumanDecision(
     const rawSubmission = await readJsonFile<unknown>(resolveSourcePath(root, item.sourcePath)).catch(() => null);
 
     // Gate check — must pass before canonical parsing or guard evaluation.
-    // A signal without explicit Q1–Q4 gate evidence is a draft, never ready.
+    // A signal without filing-gate evidence is a draft, never ready.
     const gateValidation = validateFilingGate(rawSubmission);
     if (gateValidation.issues.length > 0) {
       const blockers = filingGateIssuesToBlockers(gateValidation.issues);
@@ -167,7 +167,10 @@ export async function applyHumanDecision(
         sourcePath: item.sourcePath,
         rawSubmission,
         canonicalSignal: payload,
-        sendPackage: buildHelperReadySignalPackage(payload)
+        sendPackage: buildHelperReadySignalPackage(payload, undefined, {
+          reportDate: config.reportDate,
+          baseDir
+        })
       },
       baseDir
     );

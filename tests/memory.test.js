@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
 import { buildSubmissionPayload } from "../dist/newsroom/index.js";
-import { runProtocolUpdateLane } from "../dist/signals/index.js";
+import { runInfrastructureLane } from "../dist/signals/index.js";
 import {
   logAcceptedSubmission,
   logApprovalOutcome,
@@ -17,7 +17,7 @@ import {
 import { validateSubject } from "../dist/validation/index.js";
 
 function createSubject() {
-  return runProtocolUpdateLane({
+  return runInfrastructureLane({
     id: "protocol-update-001",
     detectedAt: "2026-03-25T06:30:00Z",
     chain: "stacks",
@@ -139,7 +139,7 @@ test("memory layer writes records without touching repo state", { concurrency: f
     assert.equal(rewardParsed.btcRewardEarned, "$20 BTC");
 
     await logLeaderboardObservation(
-      "protocol-updates",
+      "infrastructure",
       "up_2",
       ["Beat remained less crowded than deal-flow."],
       "2026-03-25T08:05:00Z"
@@ -148,14 +148,14 @@ test("memory layer writes records without touching repo state", { concurrency: f
     const leaderboardSaved = await readFile(
       resolve(
         process.cwd(),
-        "data/logs/leaderboard/protocol-updates-2026-03-25T08-05-00Z.json"
+        "data/logs/leaderboard/infrastructure-2026-03-25T08-05-00Z.json"
       ),
       "utf8"
     );
     const leaderboardParsed = JSON.parse(leaderboardSaved);
 
     assert.equal(leaderboardParsed.kind, "leaderboard_observation");
-    assert.equal(leaderboardParsed.beat, "protocol-updates");
+    assert.equal(leaderboardParsed.beat, "infrastructure");
   } finally {
     process.chdir(originalCwd);
     await rm(tempDir, { recursive: true, force: true });

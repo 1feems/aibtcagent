@@ -64,6 +64,15 @@ export interface DailyOperatorSummary {
   kind: "daily_operator_summary";
   reportDate: string;
   generatedAt: string;
+  staggeredDispatch: {
+    queueStatus: "active" | "paused" | "completed" | "cancelled" | "unavailable";
+    nextCandidateId: string | null;
+    nextHeadline: string | null;
+    nextDueAt: string | null;
+    nextStatus: string | null;
+    pendingCount: number;
+    notes: string[];
+  };
   topCandidate: {
     candidateId: string | null;
     score: number | null;
@@ -88,7 +97,11 @@ export interface DailyOperatorSummary {
   urgencyNotes: string[];
   briefIngestStatus: {
     ingested: boolean;
+    learned: boolean;
     inputPath: string;
+    verifiedFiles: string[];
+    missingFiles: string[];
+    staleFiles: string[];
     note: string;
   };
 }

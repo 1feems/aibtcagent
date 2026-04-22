@@ -1,16 +1,23 @@
 # Daily Signal Job
 
+## Document Role
+
+- Category: `task contract`
+- Scope: signal review and packaging after daily prep
+- Use this when: the active step is turning prepared context into publishable signal packages
+- Do not use this as: the filing contract or the only source of current implementation state
+
 ## Purpose
 Use this doc after the daily prep loop is complete.
 
-This doc is for the signal chat.
+This doc is for the signal review and packaging step after daily prep.
 
 This is a separate task from the daily prep task.
 It is expected to run at a different time.
 It depends on the outputs created by the daily prep task for the same active local cycle date.
 It cannot run correctly until the daily prep task has already been completed.
 
-The signal chat should spend less time finding context and more time finding competitive signals that can earn sats, improve leaderboard position, and help Feems reach weekly top 3.
+This step should spend less time rebuilding context and more time selecting, validating, and packaging competitive signals that can earn sats, improve leaderboard position, and help Feems reach weekly top 3.
 
 ## Goal
 Primary goal:
@@ -40,7 +47,7 @@ Brief economics:
 This signal job has a simple contract.
 
 ### Reads
-The signal chat must read:
+The signal packaging step must read:
 
 - `data/reports/daily/YYYY-MM-DD.md`
 - `data/briefs/YYYY-MM-DD.md`
@@ -51,7 +58,7 @@ The signal chat must read:
 - the deeper signal docs named later in this file
 
 ### Writes
-The signal chat must write:
+The signal packaging step must write:
 
 - `data/reports/signals/YYYY-MM-DD.md`
 
@@ -62,7 +69,7 @@ If that file does not exist yet, create it from:
 ### Final Output
 The final output must be:
 
-- exactly `6` signals
+- up to `6` signals
 - human-readable first
 - publish-ready
 - saved to `data/reports/signals/YYYY-MM-DD.md`
@@ -70,14 +77,15 @@ The final output must be:
 Each signal includes:
 
 - `Headline`
-- `Analysis`
+- `Body`
 - `Sources`
 - `Tags`
 
 Do not return rough ideas.
 Do not return alternates.
 Do not return more than `6`.
-Do not return fewer than `6` unless the evidence clearly does not support `6` publish-ready signals.
+Do not pad to `6`.
+If the evidence only supports `1`, `2`, or `3` strong signals, return only those.
 
 ## Dependency Rule
 This signal task depends on the daily prep task.
@@ -151,19 +159,9 @@ Only after reading those daily output docs, read the deeper signal docs below.
 13. `data/state/top_5_competitor_styles.json`
     Use for compact top-5 style memory.
 
-14. `docs/quantum-signal-drafting.md` — **read this before drafting any quantum beat signal**
-    Source-discovery heuristics per source type, signal-type decision rules, score-update pre-draft checklist, analysis and headline rules, edge-case decisions, and complete draft templates.
-    Read this first. It tells you what to look for and how to write it.
-
-15. `docs/quantum-signal-contract.md` — enforcement rules and hard-block conditions
-    Read after drafting to verify the artifact will pass the pre-submit audit.
-    Defines every required field, score-range rules, readiness math, and dataset baseline requirements.
-
-16. `docs/signal-template.md` — **canonical signal format, Q1–Q4 gate, and pre-filing checklist**
-    Read before drafting any signal regardless of beat. Defines the two approved analysis frameworks
-    (CLAIM/EVIDENCE/IMPLICATION and What changed→What it means→What to do), headline anchor rules,
-    source requirements, tag discipline, and the forbidden-patterns table.
-    Machine-readable template: `data/config/signal-template.json`
+14. `docs/beat-editors/quantum-zen-rocket.md` — **active beat editor guidance for quantum**
+    This is the only editorial authority for quantum beat drafting and review.
+    Do not apply legacy publisher Q1–Q4 guardrails.
 
 ## What To Use From The Daily Prep Report
 Extract these sections from `data/reports/daily/YYYY-MM-DD.md` before sourcing:
@@ -185,7 +183,7 @@ Use the daily prep output as the main operating handoff.
 Do not redo the prep loop unless a required input is still missing.
 Treat `Signal-generation handoff` as the strategy source of truth for the signal job, not as a suggestion.
 
-## What The Signal Chat Must Do
+## What The Signal Packaging Step Must Do
 
 1. Read the daily prep report and brief artifacts first.
 2. Treat today's brief as the editorial template for headline shape, body shape, and consequence framing before drafting anything new.
@@ -205,6 +203,7 @@ Treat `Signal-generation handoff` as the strategy source of truth for the signal
 16. Rewrite only the parts the publisher flagged: beat, evidence, headline packaging, or angle.
 
 Do not waste time rebuilding context that already exists in the daily prep outputs.
+Do not hand-draft helper payloads when the repo already has a runtime path that can validate and package them.
 
 ## Output File
 Write the signal output to:
@@ -224,17 +223,17 @@ Also save the completed signal output into:
 Signals must be human-readable first.
 
 The human-readable version is the working output for Feems to review.
-JSON conversion happens later when sending.
+Helper-ready payload generation happens later through the repo runtime, not by hand in chat.
 
 Each signal includes:
 
 - `Headline`
-- `Analysis`
+- `Body`
 - `Sources`
 - `Tags`
 
-### Analysis body rule — CLAIM / EVIDENCE / IMPLICATION (mandatory)
-Every `Analysis` field must follow this exact three-move structure with labeled sections:
+### Body rule — CLAIM / EVIDENCE / IMPLICATION (mandatory)
+Every `Body` field must follow this exact three-move structure with labeled sections:
 
 ```
 Claim: [one precise sentence — what happened or changed, with exact anchor]
@@ -252,8 +251,8 @@ A body that states a fact without evidence, or evidence without an implication, 
 
 Default target:
 
-- produce exactly `6` signals
-- show only the `6` strongest publish-ready signals
+- produce up to `6` signals
+- show only the strongest publish-ready signals that survive the gates
 - do not show rough ideas, backups, alternates, or half-ready candidates unless Feems explicitly asks
 
 Publish-ready means:
@@ -264,6 +263,7 @@ Publish-ready means:
 - grounded in the daily prep report and signal docs
 - not already present in today's brief artifact
 - better than merely approval-worthy; winner-tier is the default bar
+- able to be converted into a helper-ready payload without rewriting the core claim
 
 ## Competitive Rules
 

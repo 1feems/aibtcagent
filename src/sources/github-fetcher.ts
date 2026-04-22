@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import type { ProtocolUpdateRawEvent } from "../signals/index.js";
+import type { InfrastructureRawEvent } from "../signals/raw-events.js";
 
 // ── config types ──────────────────────────────────────────────────────────────
 
@@ -226,7 +226,7 @@ function buildRawEvent(
   release: GithubRelease,
   config: RepoConfig,
   now: string
-): ProtocolUpdateRawEvent {
+): InfrastructureRawEvent {
   const { repo } = config;
   const version = release.tag_name;
   const releaseDate = release.published_at ?? now;
@@ -292,7 +292,7 @@ async function writeState(state: FetchedReleasesState): Promise<void> {
   await writeFile(path, JSON.stringify(state, null, 2) + "\n", "utf8");
 }
 
-async function saveRawEvent(event: ProtocolUpdateRawEvent): Promise<string> {
+async function saveRawEvent(event: InfrastructureRawEvent): Promise<string> {
   const filePath = resolve(
     process.cwd(),
     `data/live-inputs/${event.id}.json`

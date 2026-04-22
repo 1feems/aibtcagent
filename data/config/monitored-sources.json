@@ -7,7 +7,7 @@
       "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
       "format": "rss",
       "publication": "CoinDesk",
-      "defaultBeat": "dev-tools",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["stacks", "security", "wallet", "x402", "agent", "mcp", "custody", "yield", "exploit", "relay", "bitcoin exploit", "bitcoin hack", "bitcoin security"],
       "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf exodus", "etf fee", "investors yank", "macro", "price target", "market cap"]
     },
@@ -17,7 +17,7 @@
       "url": "https://cointelegraph.com/rss",
       "format": "rss",
       "publication": "Cointelegraph",
-      "defaultBeat": "security",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["stacks", "security", "wallet", "custody", "agent", "mcp", "exploit", "regulation", "stablecoin", "compliance", "derivatives", "x402"],
       "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf break", "etf fee", "spot bitcoin etf", "investors yank", "price target"]
     },
@@ -27,7 +27,7 @@
       "url": "https://decrypt.co/feed",
       "format": "rss",
       "publication": "Decrypt",
-      "defaultBeat": "security",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["stacks", "security", "wallet", "agent", "x402", "yield", "exploit", "mcp", "bitcoin hack", "bitcoin exploit"],
       "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf exodus", "etf fee", "investors yank", "macro", "gamestop", "price target"]
     },
@@ -37,7 +37,7 @@
       "url": "https://bitcoinmagazine.com/.rss/full/",
       "format": "rss",
       "publication": "Bitcoin Magazine",
-      "defaultBeat": "dev-tools",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["stacks", "security", "wallet", "agent", "yield", "mempool", "hashrate", "custody", "exploit", "x402", "mcp"],
       "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "etf fee", "etf outflow", "etf inflow", "morgan stanley", "treasury yield", "geopolitical", "price target"]
     },
@@ -66,7 +66,7 @@
       "url": "https://www.theblock.co/rss.xml",
       "format": "rss",
       "publication": "The Block",
-      "defaultBeat": "deal-flow",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["stacks", "security", "funding", "custody", "agent", "x402", "wallet", "yield", "exploit", "bitcoin hack", "bitcoin security"],
       "excludeKeywords": ["bitcoin falls", "bitcoin dips", "bitcoin drops", "bitcoin rises", "treasury yield", "geopolitical", "etf outflow", "etf inflow", "etf fee", "morgan stanley", "investors yank", "price pressure", "macro"]
     },
@@ -76,7 +76,7 @@
       "url": "https://www.prnewswire.com/news-releases/news-releases-list/",
       "format": "html",
       "publication": "PR Newswire",
-      "defaultBeat": "deal-flow",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["bitcoin", "crypto", "agent", "wallet", "payment", "custody", "funding", "infrastructure", "security"]
     },
     {
@@ -85,7 +85,7 @@
       "url": "https://www.chainalysis.com/blog/",
       "format": "html",
       "publication": "Chainalysis",
-      "defaultBeat": "security",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["crime", "hack", "exploit", "wallet", "security", "ransomware", "attack", "fraud", "bitcoin", "crypto"]
     },
     {
@@ -94,7 +94,7 @@
       "url": "https://www.bleepingcomputer.com/feed/",
       "format": "rss",
       "publication": "BleepingComputer",
-      "defaultBeat": "security",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["bitcoin", "crypto", "wallet", "security", "malware", "ransomware", "exploit", "linux", "ubuntu", "debian", "agent", "npm", "credential"]
     },
     {
@@ -103,7 +103,7 @@
       "url": "https://www.infosecurity-magazine.com/rss/news/",
       "format": "rss",
       "publication": "Infosecurity Magazine",
-      "defaultBeat": "security",
+      "defaultBeat": "bitcoin-macro",
       "includeKeywords": ["bitcoin", "crypto", "wallet", "security", "exploit", "ransomware", "malware", "linux", "credential", "custody", "regulation", "compliance"]
     }
   ],
@@ -112,84 +112,84 @@
       "id": "mempool-fees",
       "name": "mempool.space Fees",
       "url": "https://mempool.space/api/v1/fees/recommended",
-      "beat": "infrastructure",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "mempool-difficulty",
       "name": "mempool.space Difficulty",
       "url": "https://mempool.space/api/v1/difficulty-adjustment",
-      "beat": "infrastructure",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "coingecko-trending",
       "name": "CoinGecko Trending",
       "url": "https://api.coingecko.com/api/v3/search/trending",
-      "beat": "agent-trading",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "dexscreener-boosts",
       "name": "DexScreener Token Boosts",
       "url": "https://api.dexscreener.com/token-boosts/top/v1",
-      "beat": "agent-trading",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "farside-bitcoin-etf",
       "name": "Farside Bitcoin ETF",
       "url": "https://farside.co.uk/btc/",
-      "beat": "deal-flow",
+      "beat": "bitcoin-macro",
       "format": "html"
     },
     {
       "id": "lunarcrush-rankings",
       "name": "LunarCrush Rankings",
       "url": "https://lunarcrush.com/markets",
-      "beat": "agent-trading",
+      "beat": "aibtc-network",
       "format": "html"
     },
     {
       "id": "hiro-smart-contracts",
       "name": "Hiro Smart Contracts",
       "url": "https://api.hiro.so/extended/v1/tx?type=smart_contract&limit=20&order=desc",
-      "beat": "infrastructure",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "stacks-core-info",
       "name": "Stacks Core Info",
       "url": "https://api.mainnet.hiro.so/v2/info",
-      "beat": "infrastructure",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "defillama-stacks",
       "name": "DefiLlama Stacks",
       "url": "https://api.llama.fi/chains",
-      "beat": "bitcoin-yield",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "aibtc-heartbeat",
       "name": "AIBTC Heartbeat",
       "url": "https://aibtc.com/api/heartbeat?address=bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
-      "beat": "onboarding",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "aibtc-leaderboard",
       "name": "AIBTC Leaderboard",
       "url": "https://aibtc.com/api/leaderboard",
-      "beat": "onboarding",
+      "beat": "aibtc-network",
       "format": "json"
     },
     {
       "id": "aibtc-achievements",
       "name": "AIBTC Achievements",
       "url": "https://aibtc.com/api/achievements?btcAddress=bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
-      "beat": "onboarding",
+      "beat": "aibtc-network",
       "format": "json"
     }
   ]

@@ -1,316 +1,78 @@
 import { createServer, type IncomingMessage } from "node:http";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { makeUnsignedContractCall, noneCV, Pc, principalCV, uintCV } from "@stacks/transactions";
-import { generateOperatorSignabilityPreflight, recordHelperWalletSession, saveOperatorSignabilityPreflight } from "./preflight.js";
 import { recordFiledSignal } from "./state.js";
+import { advanceDispatchQueue, markCandidateSigned } from "./staggered-dispatch.js";
+import { resolveLiveReadyArtifactPath } from "./artifacts.js";
+import { detectRepoModeIntent, resolveRepoModeSubmission } from "./repo-mode.js";
 import { evaluateSignalGuard } from "./signal-guard.js";
-import { getPacificReportDate } from "../utils/report-date.js";
+import { parseCanonicalSignalPayload } from "./signal-contract.js";
+import {
+  generateOperatorSignabilityPreflight,
+  saveOperatorSignabilityPreflight
+} from "./preflight.js";
+import { refreshEditorialMemory } from "../learning/editorial-memory.js";
+import { validateSignalLoopWorkflowContext } from "./workflow-context.js";
+function getUtcReportDate(input: string | Date = new Date()): string {
+  const value = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(value.getTime())) {
+    throw new Error(`Invalid date input: ${String(input)}`);
+  }
+  return value.toISOString().slice(0, 10);
+}
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".css": "text/css; charset=utf-8",
+  ".ico": "image/x-icon",
   ".svg": "image/svg+xml",
   ".png": "image/png"
 };
 
-interface FiledSignalRecord {
-  signalId?: string | null;
+const UPSTREAM_SUBMIT_TIMEOUT_MS = 90_000;
+const AIBTC_API_BASE = "https://aibtc.news/api";
+
+type LiveSignal = {
+  id: string;
+  headline: string;
+  created_at: string;
+  beat: string;
+  status: string;
+};
+
+type FilingStatusResult = {
+  ok: boolean;
+  source: "live-signal-feed";
+  checkedAt: string;
+  btcAddress: string;
+  canFileSignal: boolean;
+  waitMinutes: number;
+  cooldownEndsAt: string | null;
+  latestSignal: LiveSignal | null;
+};
+
+type HelperErrorRecord = {
+  recordedAt: string;
+  stage:
+    | "request_validation"
+    | "cooldown_precheck"
+    | "payload_normalization"
+    | "signal_guard"
+    | "upstream_response"
+    | "upstream_fetch"
+    | "handler_exception";
+  helperCategory: "payload_issue" | "cooldown_issue" | "beat_issue" | "timeout_issue" | "server_issue";
+  message: string;
+  details?: unknown;
+  apiUrl?: string | null;
+  btcAddress?: string | null;
+  beatSlug?: string | null;
   headline?: string | null;
-  beat?: string | null;
-  resolved?: boolean;
-  outcome?: string;
-}
-
-interface SourceRef {
-  url?: string;
-  title?: string;
-}
-
-interface ModelDisclosurePayload {
-  tools_used?: string[];
-  derivation_steps?: string[];
-}
-
-function normalizeGuardReportDate(input?: string | null): string {
-  const pacificToday = getPacificReportDate();
-  const requested = input?.trim();
-  if (!requested) return pacificToday;
-  return requested > pacificToday ? pacificToday : requested;
-}
-
-function normalizeText(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[`'".,/:;!?()[\]{}]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function tokenize(value: string): string[] {
-  const stopwords = new Set([
-    "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "in", "into", "is", "it",
-    "its", "of", "on", "or", "so", "than", "that", "the", "their", "this", "to", "up", "with"
-  ]);
-
-  return normalizeText(value)
-    .split(" ")
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3 && !stopwords.has(token));
-}
-
-function computeTokenOverlap(a: string, b: string): {
-  overlapCount: number;
-  overlapRatio: number;
-} {
-  const tokensA = new Set(tokenize(a));
-  const tokensB = new Set(tokenize(b));
-  const sharedTokens = [...tokensA].filter((token) => tokensB.has(token));
-  const denominator = Math.max(tokensA.size, tokensB.size, 1);
-  return {
-    overlapCount: sharedTokens.length,
-    overlapRatio: sharedTokens.length / denominator
-  };
-}
-
-function isLikelySameStory(a: string, b: string): boolean {
-  const normalizedA = normalizeText(a);
-  const normalizedB = normalizeText(b);
-  if (!normalizedA || !normalizedB) return false;
-  if (normalizedA === normalizedB) return true;
-  if (normalizedA.includes(normalizedB) || normalizedB.includes(normalizedA)) return true;
-
-  const overlap = computeTokenOverlap(normalizedA, normalizedB);
-  const hasNumberAnchor = /\d/.test(normalizedA) && /\d/.test(normalizedB);
-  return overlap.overlapCount >= 5 && (overlap.overlapRatio >= 0.5 || hasNumberAnchor);
-}
-
-function hasDirectOperatorConsequence(text: string): boolean {
-  const normalized = normalizeText(text);
-  if (!normalized) return false;
-  return [
-    "agent",
-    "agents",
-    "operator",
-    "operators",
-    "publisher",
-    "publishers",
-    "correspondent",
-    "correspondents",
-    "relay",
-    "relays",
-    "node",
-    "nodes",
-    "filing",
-    "brief",
-    "payout",
-    "settlement",
-    "homepage",
-    "ranking",
-    "priority",
-    "payment",
-    "payments",
-    "inbox"
-  ].some((term) => normalized.includes(term));
-}
-
-function extractDomain(url: string): string | null {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
-  } catch {
-    return null;
-  }
-}
-
-function isMetricHeavyClaim(text: string): boolean {
-  const normalized = text.toLowerCase();
-  return /\b\d+(?:\.\d+)?%|\b\d[\d,]*(?:\+|x)?\b/.test(normalized);
-}
-
-function hasVagueDisclosure(body: string): boolean {
-  const lower = body.toLowerCase();
-  return [
-    "used ai", "my own analysis", "various sources", "internal data",
-    "used llm", "ai generated", "model output", "my analysis"
-  ].some((pattern) => lower.includes(pattern));
-}
-
-function hasConcreteDisclosureAnchors(disclosure: string): boolean {
-  if (disclosure.trim().length < 24) return false;
-  return (
-    /\b(?:claude|gpt|grok|gemini|opus|sonnet|haiku)\b/i.test(disclosure) ||
-    /\b(?:curl|rg|npm|node|bun|gh|api|endpoint|query|search)\b/i.test(disclosure) ||
-    /\/api\/|https?:\/\/|github\.com|issue\s+#\d+|pr\s+#\d+|release/i.test(disclosure)
-  );
-}
-
-function hasMissionAlignment(text: string): boolean {
-  const normalized = normalizeText(text);
-  const bitcoinRail =
-    /\bbitcoin\b|\bbtc\b|\bsbtc\b|\bstacks\b|\bstx\b|\bx402\b|\binscription\b|\bordinal\b/i.test(normalized);
-  const aiOrNetworkActor =
-    /\bai\b|\bagent\b|\bagents\b|\boperator\b|\boperators\b|\bapp\b|\bapps\b|\bcorrespondent\b|\bcorrespondents\b|\baibtc\b/i.test(normalized);
-  const economicOrOperationalUse =
-    /\buse\b|\bearn\b|\btransact\b|\bpayment\b|\bpayments\b|\bpayout\b|\bpayouts\b|\bsettlement\b|\bbrief\b|\branking\b|\binbox\b|\btransaction\b|\btransactions\b|\bindexable\b|\bblock production\b/i.test(normalized);
-
-  return bitcoinRail && aiOrNetworkActor && economicOrOperationalUse;
-}
-
-function isInscribableNews(text: string): boolean {
-  const normalized = normalizeText(text);
-  const speculative =
-    /\bsources say\b|\breportedly\b|\ballegedly\b|\brumored\b|\bcould soon\b|\bmay be planning\b|\bexpected to\b|\bunconfirmed\b/.test(normalized);
-  const hasDevelopment =
-    /\bissue\s+#\d+\b|\bpr\s+#\d+\b|\brelease\b|\bships\b|\bshipped\b|\bfix(?:es|ed)?\b|\bpatch(?:es|ed)?\b|\badds?\b|\brestores?\b|\breplaces?\b|\bactivates?\b|\bratifies?\b|\bshows\b|\blive\b|\blaunch(?:es|ed)?\b|\bopens?\b|\bcut(?:s)?\b/i.test(text);
-
-  return !speculative && hasDevelopment;
-}
-
-function isValueCreating(text: string): boolean {
-  const normalized = normalizeText(text);
-  return /\bthis means\b|\bimplication\b|\bmatters because\b|\boperators need\b|\bagents should\b|\boperators should\b|\bwhich means\b|\bas a result\b|\bso that\b|\bchanges\b|\blowers\b|\bdelays\b|\benables\b|\bturns\b/i.test(normalized);
-}
-
-function isCircularSourcing(sources: SourceRef[]): boolean {
-  if (sources.length === 0) return false;
-  const urls = sources.map((s) => s.url?.trim()).filter(Boolean) as string[];
-  if (urls.length === 0) return true;
-  const internalPatterns = ["aibtc.com", "aibtc.news", "localhost", "127.0.0.1"];
-  return urls.every((url) => internalPatterns.some((pattern) => url.includes(pattern)));
-}
-
-function allSourcesFromSameOrg(sources: SourceRef[]): boolean {
-  const domains = [...new Set(
-    sources
-      .map((source) => extractDomain(source.url ?? ""))
-      .filter((domain): domain is string => Boolean(domain))
-      .map((domain) => domain.split(".").slice(-2).join("."))
-  )];
-
-  return domains.length === 1 && domains[0].length > 0;
-}
-
-function extractStoryAnchors(text: string): string[] {
-  const matches = [
-    ...text.matchAll(/\bissue\s+#\d+\b/gi),
-    ...text.matchAll(/\bpr\s+#\d+\b/gi),
-    ...text.matchAll(/\bcve-\d{4}-\d+\b/gi),
-    ...text.matchAll(/\bv\d+\.\d+(?:\.\d+)*(?:\.\d+)?\b/gi)
-  ].map((match) => normalizeText(match[0]));
-
-  return [...new Set(matches)];
-}
-
-function extractMetricAnchors(text: string): string[] {
-  const matches = [
-    ...text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g),
-    ...text.matchAll(/\b\d+(?:\.\d+)?%/g),
-    ...text.matchAll(/\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?)\b/gi),
-    ...text.matchAll(/\b\d{2,}\s*sats?\b/gi)
-  ].map((match) => normalizeText(match[0]));
-
-  return [...new Set(matches)];
-}
-
-function hasAnchorCollision(candidateText: string, contextText: string): boolean {
-  const candidateAnchors = extractStoryAnchors(candidateText);
-  if (candidateAnchors.length === 0) return false;
-
-  const contextAnchors = extractStoryAnchors(contextText);
-  const sharedAnchors = candidateAnchors.filter((anchor) => contextAnchors.includes(anchor));
-  if (sharedAnchors.length === 0) return false;
-
-  const candidateMetrics = extractMetricAnchors(candidateText);
-  const contextMetrics = extractMetricAnchors(contextText);
-  const sharedMetrics = candidateMetrics.filter((metric) => contextMetrics.includes(metric));
-
-  return sharedMetrics.length > 0 || isLikelySameStory(candidateText, contextText);
-}
-
-async function listMarkdownDates(dirPath: string): Promise<string[]> {
-  try {
-    const names = await readdir(dirPath);
-    return names
-      .filter((name) => /^\d{4}-\d{2}-\d{2}\.md$/.test(name))
-      .map((name) => name.replace(/\.md$/, ""))
-      .sort();
-  } catch {
-    return [];
-  }
-}
-
-async function loadRecentBriefMatches(reportDate: string, headline: string, limit = 2): Promise<Array<{ date: string; line: string }>> {
-  const briefDir = resolve(process.cwd(), "data/briefs");
-  const dates = await listMarkdownDates(briefDir);
-  const priorDates = dates.filter((date) => date < reportDate).slice(-limit).reverse();
-  const matches: Array<{ date: string; line: string }> = [];
-
-  for (const date of priorDates) {
-    const briefText = await readFile(resolve(briefDir, `${date}.md`), "utf8").catch(() => "");
-    const lines = briefText
-      .split("\n")
-      .map((line) => line.replace(/^[-*]\s*/, "").trim())
-      .filter((line) => line.length >= 20);
-    const match = lines.find((line) => isLikelySameStory(headline, line));
-    if (match) {
-      matches.push({ date, line: match });
-    }
-  }
-
-  return matches;
-}
-
-async function loadRecentApprovedNotInBriefMatches(reportDate: string, headline: string, limit = 2): Promise<Array<{ date: string; headline: string }>> {
-  const reportDir = resolve(process.cwd(), "data/reports/daily");
-  const dates = await listMarkdownDates(reportDir);
-  const priorDates = dates.filter((date) => date < reportDate).slice(-limit).reverse();
-  const matches: Array<{ date: string; headline: string }> = [];
-
-  for (const date of priorDates) {
-    const reportText = await readFile(resolve(reportDir, `${date}.md`), "utf8").catch(() => "");
-    let currentHeadline: string | null = null;
-    let currentStatus: string | null = null;
-
-    for (const rawLine of reportText.split("\n")) {
-      const line = rawLine.trim();
-      if (line.startsWith("headline: ")) {
-        currentHeadline = line.slice("headline: ".length).trim();
-      } else if (line.startsWith("status: ")) {
-        currentStatus = line.slice("status: ".length).trim();
-        if (currentStatus === "approved_not_in_brief" && currentHeadline && isLikelySameStory(headline, currentHeadline)) {
-          matches.push({ date, headline: currentHeadline });
-        }
-      } else if (line.startsWith("- signal_id: ")) {
-        currentHeadline = null;
-        currentStatus = null;
-      }
-    }
-  }
-
-  return matches;
-}
-
-function matchedFailureReason(entry: FiledSignalRecord | null, headline: string): string | null {
-  if (!entry?.headline || !isLikelySameStory(headline, entry.headline)) return null;
-  if (entry.outcome === "denied" || entry.outcome === "rejected") {
-    return `Same story shape already failed as ${entry.outcome}; review publisher feedback and repair before resubmitting`;
-  }
-  return null;
-}
-
-async function readJsonIfExists<T>(filePath: string): Promise<T | null> {
-  try {
-    return JSON.parse(await readFile(filePath, "utf8")) as T;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return null;
-    }
-    throw error;
-  }
-}
+  status?: number | null;
+};
 
 function parseArgs(argv: string[]): { port: number } {
   const parsed = new Map<string, string>();
@@ -345,57 +107,15 @@ async function readRequestBody(req: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-async function proxyJsonRequest(
-  targetUrl: string,
-  options: {
-    method?: string;
-    headers?: Record<string, string>;
-    body?: string;
-    timeoutMs?: number;
-  } = {}
-): Promise<{
-  status: number;
-  headers: Record<string, string>;
-  body: string;
-}> {
-  const controller = new AbortController();
-  const timeoutMs = options.timeoutMs ?? 120_000;
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(targetUrl, {
-      method: options.method ?? "GET",
-      headers: options.headers,
-      body: options.body,
-      signal: controller.signal
-    });
-
-    const body = await response.text();
-    const headers: Record<string, string> = {};
-    for (const [key, value] of response.headers.entries()) {
-      headers[key] = value;
-    }
-
-    return {
-      status: response.status,
-      headers,
-      body
-    };
-  } catch (error) {
-    if ((error as Error).name === "AbortError") {
-      const timeoutSeconds = Math.round(timeoutMs / 1000);
-      throw new Error(
-        `Upstream request to ${targetUrl} timed out after ${timeoutSeconds}s. ` +
-        "The helper aborted the slow request before AIBTC returned a response."
-      );
-    }
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function serveStatic(pathname: string): Promise<{ status: number; body: Buffer; contentType: string }> {
+  if (pathname === "/favicon.ico" || pathname === "/tools/xverse-register/favicon.ico") {
+    return {
+      status: 204,
+      body: Buffer.alloc(0),
+      contentType: "image/x-icon"
+    };
+  }
+
   const root = resolve(process.cwd(), "tools/xverse-register");
   const relativePath = pathname === "/" ? "/index.html" : pathname.replace(/^\/tools\/xverse-register/, "") || "/index.html";
   const safePath = normalize(relativePath).replace(/^(\.\.[/\\])+/, "");
@@ -405,29 +125,263 @@ async function serveStatic(pathname: string): Promise<{ status: number; body: Bu
   return { status: 200, body, contentType };
 }
 
-async function syncEditorialMemoryCycleDate(): Promise<void> {
-  const memPath = resolve(process.cwd(), "data/state/editorial-memory.json");
-  try {
-    const raw = await readFile(memPath, "utf8");
-    const mem = JSON.parse(raw) as { currentCycle?: { reportDate?: string } };
-    const today = getPacificReportDate();
-    const current = mem?.currentCycle?.reportDate;
-    if (current && current < today) {
-      mem.currentCycle!.reportDate = today;
-      await writeFile(memPath, JSON.stringify(mem, null, 2), "utf8");
-      process.stdout.write(
-        `[filing-helper] WARN: editorial-memory currentCycle.reportDate was ${current}, auto-corrected to ${today}\n`
-      );
+function parseSignalArray(data: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(data)) return data as Array<Record<string, unknown>>;
+  const obj = data as Record<string, unknown>;
+  if (Array.isArray(obj?.signals)) return obj.signals as Array<Record<string, unknown>>;
+  return [];
+}
+
+function normalizeHeadline(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function toLiveSignal(raw: Record<string, unknown>): LiveSignal {
+  return {
+    id: String(raw.id ?? raw.signal_id ?? raw.signalId ?? ""),
+    headline: String(raw.headline ?? ""),
+    created_at: String(raw.created_at ?? raw.submitted_at ?? raw.submittedAt ?? raw.timestamp ?? ""),
+    beat: String(raw.beat ?? raw.beat_slug ?? ""),
+    status: String(raw.status ?? "")
+  };
+}
+
+async function fetchRecentSignalsForAgent(agent: string): Promise<LiveSignal[]> {
+  const url = `${AIBTC_API_BASE}/signals?agent=${encodeURIComponent(agent)}&limit=20`;
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(15_000)
+  });
+  if (!response.ok) {
+    throw new Error(`AIBTC recent-signal lookup failed with HTTP ${response.status}`);
+  }
+  const body = await response.json() as unknown;
+  return parseSignalArray(body).map((item) => toLiveSignal(item));
+}
+
+function inferFilingStatus(agent: string, signals: LiveSignal[], now = new Date()): FilingStatusResult {
+  const latestSignal = [...signals]
+    .filter((signal) => signal.id && signal.created_at)
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0] ?? null;
+
+  if (!latestSignal) {
+    return {
+      ok: true,
+      source: "live-signal-feed",
+      checkedAt: now.toISOString(),
+      btcAddress: agent,
+      canFileSignal: true,
+      waitMinutes: 0,
+      cooldownEndsAt: null,
+      latestSignal: null
+    };
+  }
+
+  const latestCreatedAt = Date.parse(latestSignal.created_at);
+  const cooldownMs = 60 * 60 * 1000;
+  const remainingMs = Math.max(0, latestCreatedAt + cooldownMs - now.getTime());
+  const waitMinutes = Math.ceil(remainingMs / 60_000);
+
+  return {
+    ok: true,
+    source: "live-signal-feed",
+    checkedAt: now.toISOString(),
+    btcAddress: agent,
+    canFileSignal: waitMinutes === 0,
+    waitMinutes,
+    cooldownEndsAt: waitMinutes > 0 ? new Date(latestCreatedAt + cooldownMs).toISOString() : null,
+    latestSignal
+  };
+}
+
+async function checkNewsStatus(agent: string): Promise<FilingStatusResult> {
+  const signals = await fetchRecentSignalsForAgent(agent);
+  return inferFilingStatus(agent, signals);
+}
+
+function getHelperErrorLogPath(root = process.cwd()): string {
+  return resolve(root, "data/state/helper-errors.jsonl");
+}
+
+async function recordHelperError(entry: Omit<HelperErrorRecord, "recordedAt">, root = process.cwd()): Promise<string> {
+  const logPath = getHelperErrorLogPath(root);
+  await mkdir(resolve(root, "data/state"), { recursive: true });
+  await appendFile(logPath, JSON.stringify({
+    recordedAt: new Date().toISOString(),
+    ...entry
+  }) + "\n", "utf8");
+  return logPath;
+}
+
+function buildNormalizedSignalPayload(rawPayload: unknown, btcAddress: string, baseDir = process.cwd()) {
+  const { payload, issues } = parseCanonicalSignalPayload(rawPayload);
+  const root = rawPayload && typeof rawPayload === "object" && !Array.isArray(rawPayload)
+    ? rawPayload as Record<string, unknown>
+    : null;
+  const workflowContext = root && root.workflow_context && typeof root.workflow_context === "object" && !Array.isArray(root.workflow_context)
+    ? root.workflow_context as Record<string, unknown>
+    : null;
+  const workflowReportDate = workflowContext && typeof workflowContext.reportDate === "string"
+    ? workflowContext.reportDate.trim()
+    : "";
+
+  if (!workflowReportDate) {
+    issues.push({
+      code: "format_missing_workflow_context",
+      reason: "helper-ready payload is missing workflow_context.reportDate — run signal-loop and regenerate the JSON through the repo helper path"
+    });
+  } else {
+    const workflowValidation = validateSignalLoopWorkflowContext(workflowReportDate, baseDir);
+    if (!workflowValidation.ok) {
+      issues.push(...workflowValidation.issues.map((issue) => ({
+        code: issue.code,
+        reason: issue.reason
+      })));
     }
+  }
+
+  if (!payload) {
+    return { ok: false as const, issues };
+  }
+  if (issues.length > 0) {
+    return { ok: false as const, issues };
+  }
+
+  const extractSection = (label: "CLAIM" | "EVIDENCE" | "IMPLICATION") => {
+    const pattern = new RegExp(`(?:^|\\s)${label}:\\s*([\\s\\S]*?)(?=\\s(?:CLAIM|EVIDENCE|IMPLICATION|Directive|What to do):|$)`, "i");
+    return pattern.exec(payload.body)?.[1]?.trim() ?? "";
+  };
+  const hasTerminalPunctuation = (text: string): boolean => /[.!?]$/.test(text.trim());
+  const emptySections = (["CLAIM", "EVIDENCE", "IMPLICATION"] as const).filter((label) => extractSection(label) === "");
+  if (emptySections.length > 0) {
+    return {
+      ok: false as const,
+      issues: [{
+        code: "format_incomplete_template_sections",
+        reason: `Signal body must include non-empty sections for: ${emptySections.join(", ")}`
+      }]
+    };
+  }
+  const punctuationFailures = (["CLAIM", "EVIDENCE", "IMPLICATION"] as const).filter((label) => {
+    const section = extractSection(label);
+    return section.length > 0 && !hasTerminalPunctuation(section);
+  });
+  if (punctuationFailures.length > 0) {
+    return {
+      ok: false as const,
+      issues: [{
+        code: "format_missing_terminal_punctuation",
+        reason: `Signal body sections must end with terminal punctuation: ${punctuationFailures.join(", ")}`
+      }]
+    };
+  }
+
+  const body = payload.body.trim();
+  return {
+    ok: true as const,
+    canonical: payload,
+    upstreamPayload: {
+      btc_address: btcAddress.trim(),
+      beat_slug: payload.beat_slug,
+      headline: payload.headline,
+      body,
+      analysis: body,
+      sources: payload.sources,
+      tags: payload.tags,
+      disclosure: payload.disclosure
+    }
+  };
+}
+
+function isBeatClaimUrl(apiUrl: string): boolean {
+  try {
+    const parsed = new URL(apiUrl);
+    return parsed.pathname === "/api/beats";
   } catch {
-    // Non-fatal — missing or malformed editorial-memory.json; skip silently
+    return /\/api\/beats\/?$/.test(apiUrl.trim());
   }
 }
 
+function isTerminalDuplicateOutcome(value: unknown): boolean {
+  return /already exists|duplicate|already filed/i.test(JSON.stringify(value));
+}
+
+function findRecoveredSignal(signals: LiveSignal[], input: { headline: string; since: string; beat?: string | null }): LiveSignal | null {
+  const targetHeadline = normalizeHeadline(input.headline);
+  const sinceMillis = Date.parse(input.since);
+  const targetBeat = (input.beat ?? "").trim().toLowerCase();
+
+  return signals.find((signal) => {
+    const createdMillis = Date.parse(signal.created_at);
+    if (!Number.isFinite(createdMillis) || !Number.isFinite(sinceMillis) || createdMillis < sinceMillis) {
+      return false;
+    }
+    if (targetBeat && signal.beat.trim().toLowerCase() !== targetBeat) {
+      return false;
+    }
+    return normalizeHeadline(signal.headline) === targetHeadline;
+  }) ?? null;
+}
+
+type HelperSyncState = {
+  editorialMemory: {
+    refreshed: boolean;
+    reportDate: string | null;
+  };
+  signability: {
+    refreshed: boolean;
+    path: string | null;
+    allowedBeats: string[];
+    activeWalletAddress: string | null;
+    requiredWalletAddress: string | null;
+  } | null;
+};
+
+async function syncHelperState(input: {
+  reportDate?: string | null;
+  candidateId?: string | null;
+}): Promise<HelperSyncState> {
+  const today = getUtcReportDate();
+  const editorialMemoryPath = resolve(process.cwd(), "data/state/editorial-memory.json");
+  let editorialRefreshed = false;
+
+  try {
+    const existing = JSON.parse(await readFile(editorialMemoryPath, "utf8")) as {
+      currentCycle?: { reportDate?: string | null };
+    };
+    const cycleDate = existing?.currentCycle?.reportDate?.trim() ?? null;
+    if (!cycleDate || cycleDate < today) {
+      await refreshEditorialMemory(process.cwd());
+      editorialRefreshed = true;
+    }
+  } catch {
+    await refreshEditorialMemory(process.cwd());
+    editorialRefreshed = true;
+  }
+
+  const preflight = await generateOperatorSignabilityPreflight({
+    reportDate: input.reportDate ?? null,
+    candidateId: input.candidateId ?? null
+  }, process.cwd());
+  const signabilityPath = await saveOperatorSignabilityPreflight(preflight, process.cwd());
+
+  return {
+    editorialMemory: {
+      refreshed: editorialRefreshed,
+      reportDate: today
+    },
+    signability: {
+      refreshed: true,
+      path: signabilityPath,
+      allowedBeats: preflight.allowedBeats ?? [],
+      activeWalletAddress: preflight.activeWalletAddress ?? null,
+      requiredWalletAddress: preflight.requiredWalletAddress ?? null
+    }
+  };
+}
+
 export async function startFilingHelperServer(port: number): Promise<void> {
-  const serverStartedAt = new Date().toISOString();
   await mkdir(resolve(process.cwd(), "data/filing-results"), { recursive: true });
-  await syncEditorialMemoryCycleDate();
 
   const server = createServer(async (req, res) => {
     try {
@@ -452,13 +406,463 @@ export async function startFilingHelperServer(port: number): Promise<void> {
         }
 
         const artifactPath = resolve(
-          process.cwd(),
-          `data/filing-ready/${reportDate}/${candidateId}.json`
+          resolveLiveReadyArtifactPath(reportDate, candidateId, process.cwd())
         );
-        const artifact = JSON.parse(await readFile(artifactPath, "utf8")) as unknown;
+
+        let artifact: unknown;
+        try {
+          artifact = JSON.parse(await readFile(artifactPath, "utf8")) as unknown;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+            res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(
+              JSON.stringify(
+                {
+                  error:
+                    `No repo filing-ready artifact exists at data/filing-ready/${reportDate}/${candidateId}.json. ` +
+                    "If this was a manual draft, clear the stale date/candidate query params and paste or load a current payload instead."
+                },
+                null,
+                2
+              )
+            );
+            return;
+          }
+          throw error;
+        }
 
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ artifactPath, artifact }, null, 2));
+        return;
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/local/health") {
+        const now = new Date();
+        const utcNow = now.toISOString().replace("T", " ").replace("Z", " UTC");
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          ok: true,
+          reportDateUtc: getUtcReportDate(now),
+          utcNow,
+          serverNowUtc: now.toISOString(),
+          helperUrl: `http://127.0.0.1:${port}/tools/xverse-register/file-signal.html`
+        }, null, 2));
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/helper-sync") {
+        const raw = await readRequestBody(req);
+        const payload = raw
+          ? JSON.parse(raw) as { reportDate?: string | null; candidateId?: string | null }
+          : {};
+        const state = await syncHelperState(payload);
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: true, state }, null, 2));
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/signing-preflight/session") {
+        const raw = await readRequestBody(req);
+        const payload = JSON.parse(raw) as {
+          activeWalletAddress?: string | null;
+          walletProviderReady?: boolean;
+          helperPath?: string | null;
+        };
+
+        const sessionPath = resolve(process.cwd(), "data/state/xverse-helper-session.json");
+        await mkdir(resolve(process.cwd(), "data/state"), { recursive: true });
+        const session = {
+          kind: "xverse_helper_session",
+          updatedAt: new Date().toISOString(),
+          walletProviderReady: Boolean(payload.walletProviderReady),
+          activeWalletAddress: payload.activeWalletAddress ?? null,
+          lastHelperPath: payload.helperPath ?? null
+        };
+        await writeFile(sessionPath, JSON.stringify(session, null, 2) + "\n", "utf8");
+
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: true, sessionPath, session }, null, 2));
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/signal-guard") {
+        const raw = await readRequestBody(req);
+        const payload = JSON.parse(raw) as {
+          reportDate?: string;
+          headline?: string;
+          beat_slug?: string;
+          body?: string;
+          sources?: Array<{ url?: string; title?: string }>;
+          model_disclosure?: {
+            tools_used?: string[];
+            derivation_steps?: string[];
+          };
+        };
+
+        const guard = await evaluateSignalGuard({
+          reportDate: payload.reportDate,
+          headline: payload.headline,
+          beat_slug: payload.beat_slug,
+          body: payload.body,
+          sources: payload.sources,
+          model_disclosure: payload.model_disclosure
+        }, process.cwd());
+
+        res.writeHead(guard.ok ? 200 : 409, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(guard, null, 2));
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/signal-submit") {
+        const raw = await readRequestBody(req);
+        const payload = JSON.parse(raw) as {
+          apiUrl?: string;
+          headers?: Record<string, string>;
+          payload?: unknown;
+        };
+
+        if (!payload.apiUrl || !payload.headers || payload.payload === undefined) {
+          await recordHelperError({
+            stage: "request_validation",
+            helperCategory: "payload_issue",
+            message: "Missing required apiUrl, headers, or payload.",
+            details: { hasApiUrl: Boolean(payload.apiUrl), hasHeaders: Boolean(payload.headers), hasPayload: payload.payload !== undefined },
+            apiUrl: payload.apiUrl ?? null
+          });
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required apiUrl, headers, or payload." }, null, 2));
+          return;
+        }
+
+      const btcAddress = String(
+        payload.headers["X-BTC-Address"] ??
+        payload.headers["x-btc-address"] ??
+        ""
+      ).trim();
+        const isBeatClaim = isBeatClaimUrl(payload.apiUrl);
+        let upstreamPayload = payload.payload;
+
+        if (!isBeatClaim) {
+          if (!btcAddress) {
+            await recordHelperError({
+              stage: "request_validation",
+              helperCategory: "payload_issue",
+              message: "Signal submission requires X-BTC-Address before payload normalization.",
+              apiUrl: payload.apiUrl,
+              beatSlug: typeof payload.payload === "object" && payload.payload
+                ? String((payload.payload as Record<string, unknown>).beat_slug ?? "")
+                : null,
+              headline: typeof payload.payload === "object" && payload.payload
+                ? String((payload.payload as Record<string, unknown>).headline ?? "")
+                : null
+            });
+            res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({
+              error: "Signal submission requires X-BTC-Address before payload normalization."
+            }, null, 2));
+            return;
+          }
+
+          const filingStatus = await checkNewsStatus(btcAddress);
+          if (!filingStatus.canFileSignal) {
+            await recordHelperError({
+              stage: "cooldown_precheck",
+              helperCategory: "cooldown_issue",
+              message: `Cooldown active — wait ${filingStatus.waitMinutes} minute${filingStatus.waitMinutes === 1 ? "" : "s"} before filing another signal`,
+              details: filingStatus,
+              apiUrl: payload.apiUrl,
+              btcAddress,
+              status: 409
+            });
+            res.writeHead(409, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({
+              status: 409,
+              ok: false,
+              body: {
+                error: `Cooldown active — wait ${filingStatus.waitMinutes} minute${filingStatus.waitMinutes === 1 ? "" : "s"} before filing another signal`,
+                code: "COOLDOWN_ACTIVE",
+                waitMinutes: filingStatus.waitMinutes,
+                cooldown: {
+                  waitMinutes: filingStatus.waitMinutes,
+                  cooldownEndsAt: filingStatus.cooldownEndsAt
+                },
+                statusCheck: filingStatus
+              }
+            }, null, 2));
+            return;
+          }
+
+          const normalized = buildNormalizedSignalPayload(payload.payload, btcAddress, process.cwd());
+          if (!normalized.ok) {
+            const payloadRecord = payload.payload as Record<string, unknown> | null;
+            await recordHelperError({
+              stage: "payload_normalization",
+              helperCategory: "payload_issue",
+              message: "Signal payload does not match the canonical contract.",
+              details: normalized.issues,
+              apiUrl: payload.apiUrl,
+              btcAddress,
+              beatSlug: payloadRecord ? String(payloadRecord.beat_slug ?? "") : null,
+              headline: payloadRecord ? String(payloadRecord.headline ?? "") : null,
+              status: 400
+            });
+            res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({
+              error: "Signal payload does not match the canonical contract.",
+              issues: normalized.issues
+            }, null, 2));
+            return;
+          }
+
+          const guard = await evaluateSignalGuard({
+            headline: normalized.canonical.headline,
+            beat_slug: normalized.canonical.beat_slug,
+            body: normalized.canonical.body,
+            sources: normalized.canonical.sources,
+            model_disclosure: {
+              tools_used: [],
+              derivation_steps: normalized.canonical.disclosure ? [normalized.canonical.disclosure] : []
+            }
+          }, process.cwd());
+
+          if (!guard.ok) {
+            await recordHelperError({
+              stage: "signal_guard",
+              helperCategory: "payload_issue",
+              message: "Local signal guard blocked submission.",
+              details: {
+                blockers: guard.blockers,
+                diagnostics: guard.diagnostics
+              },
+              apiUrl: payload.apiUrl,
+              btcAddress,
+              beatSlug: normalized.canonical.beat_slug,
+              headline: normalized.canonical.headline,
+              status: 409
+            });
+            res.writeHead(409, { "Content-Type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify({
+              status: 409,
+              ok: false,
+              body: {
+                error: "Local signal guard blocked submission.",
+                blockers: guard.blockers,
+                guard
+              }
+            }, null, 2));
+            return;
+          }
+
+          upstreamPayload = normalized.upstreamPayload;
+        }
+
+        try {
+          const upstream = await fetch(payload.apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...payload.headers
+            },
+            body: JSON.stringify(upstreamPayload),
+            signal: AbortSignal.timeout(UPSTREAM_SUBMIT_TIMEOUT_MS)
+          });
+
+          const text = await upstream.text();
+          let parsedBody: unknown = text;
+          try {
+            parsedBody = JSON.parse(text);
+          } catch {
+            // Keep raw text when upstream does not return JSON.
+          }
+
+          const duplicateDetected = isTerminalDuplicateOutcome(parsedBody);
+          const helperCategory =
+            upstream.status === 429
+              ? "cooldown_issue"
+              : duplicateDetected
+                ? "payload_issue"
+                : isBeatClaim
+                  ? "beat_issue"
+                  : "payload_issue";
+
+          if (!upstream.ok) {
+            const signalPayload = upstreamPayload as Record<string, unknown> | null;
+            await recordHelperError({
+              stage: "upstream_response",
+              helperCategory,
+              message: typeof parsedBody === "string"
+                ? parsedBody
+                : String((parsedBody as Record<string, unknown>)?.error ?? `Upstream returned HTTP ${upstream.status}`),
+              details: parsedBody,
+              apiUrl: payload.apiUrl,
+              btcAddress: btcAddress || null,
+              beatSlug: signalPayload ? String(signalPayload.beat_slug ?? "") : null,
+              headline: signalPayload ? String(signalPayload.headline ?? "") : null,
+              status: upstream.status
+            });
+          }
+
+          res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            status: upstream.status,
+            ok: upstream.ok,
+            body: parsedBody,
+            helperCategory,
+            terminal: duplicateDetected
+              ? {
+                  terminal: true,
+                  reason: "duplicate_or_already_exists"
+                }
+              : null
+          }, null, 2));
+          return;
+        } catch (error) {
+          const err = error as Error & { name?: string; cause?: unknown };
+          const isTimeout = err.name === "TimeoutError" || err.name === "AbortError";
+          const status = isTimeout ? 504 : 502;
+          const signalPayload = upstreamPayload as Record<string, unknown> | null;
+          await recordHelperError({
+            stage: "upstream_fetch",
+            helperCategory: isTimeout ? "timeout_issue" : "payload_issue",
+            message: isTimeout
+              ? `AIBTC submit timed out after ${Math.round(UPSTREAM_SUBMIT_TIMEOUT_MS / 1000)}s`
+              : "AIBTC submit failed before a response was returned",
+            details: {
+              code: isTimeout ? "UPSTREAM_TIMEOUT" : "UPSTREAM_FETCH_FAILED",
+              errorName: err.name ?? null,
+              errorMessage: err.message
+            },
+            apiUrl: payload.apiUrl,
+            btcAddress: btcAddress || null,
+            beatSlug: signalPayload ? String(signalPayload.beat_slug ?? "") : null,
+            headline: signalPayload ? String(signalPayload.headline ?? "") : null,
+            status
+          });
+          res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            status,
+            ok: false,
+            body: {
+              error: isTimeout
+                ? `AIBTC submit timed out after ${Math.round(UPSTREAM_SUBMIT_TIMEOUT_MS / 1000)}s`
+                : "AIBTC submit failed before a response was returned",
+              code: isTimeout ? "UPSTREAM_TIMEOUT" : "UPSTREAM_FETCH_FAILED",
+              details: err.message,
+              helperNote: isTimeout
+                ? "The request may still have reached AIBTC. Wait 5 seconds, recover by headline + address + since timestamp, and do not retry inside cooldown."
+                : "The request failed before a response was returned. Verify on the signals feed before retrying to avoid duplicates."
+            },
+            helperCategory: isTimeout ? "timeout_issue" : "payload_issue"
+          }, null, 2));
+          return;
+        }
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/local/news-check-status") {
+        const btcAddress = url.searchParams.get("btcAddress")?.trim();
+        if (!btcAddress) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required btcAddress query param." }, null, 2));
+          return;
+        }
+
+        try {
+          const statusResult = await checkNewsStatus(btcAddress);
+          res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify(statusResult, null, 2));
+          return;
+        } catch (error) {
+          res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            ok: false,
+            source: "live-signal-feed",
+            btcAddress,
+            error: (error as Error).message
+          }, null, 2));
+          return;
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/repo-mode/check") {
+        const raw = await readRequestBody(req);
+        const payload = JSON.parse(raw) as {
+          requestText?: string;
+          reportDate?: string;
+          candidateId?: string;
+        };
+
+        const intent = detectRepoModeIntent(payload.requestText ?? "");
+        if (!intent.repoModeRequired) {
+          res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            repoModeRequired: false,
+            matchedPattern: null,
+            resolution: null
+          }, null, 2));
+          return;
+        }
+
+        if (!payload.reportDate || !payload.candidateId) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            error: "repo mode requires reportDate and candidateId for submission-intent requests",
+            repoModeRequired: true,
+            matchedPattern: intent.matchedPattern
+          }, null, 2));
+          return;
+        }
+
+        const resolution = await resolveRepoModeSubmission(
+          payload.reportDate,
+          payload.candidateId,
+          process.cwd()
+        );
+
+        res.writeHead(resolution.ok ? 200 : 409, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          repoModeRequired: true,
+          matchedPattern: intent.matchedPattern,
+          resolution
+        }, null, 2));
+        return;
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/local/staggered-dispatch") {
+        const reportDate = url.searchParams.get("date");
+        if (!reportDate) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required date query param." }, null, 2));
+          return;
+        }
+
+        const queue = await advanceDispatchQueue(reportDate);
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(queue, null, 2));
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/local/staggered-dispatch/signed") {
+        const raw = await readRequestBody(req);
+        const payload = JSON.parse(raw) as {
+          reportDate?: string;
+          candidateId?: string;
+          signedAt?: string;
+        };
+
+        if (!payload.reportDate || !payload.candidateId) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required reportDate and candidateId." }, null, 2));
+          return;
+        }
+
+        const queue = await markCandidateSigned(
+          payload.reportDate,
+          payload.candidateId,
+          { now: payload.signedAt },
+          process.cwd()
+        );
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(queue, null, 2));
         return;
       }
 
@@ -489,324 +893,66 @@ export async function startFilingHelperServer(port: number): Promise<void> {
         return;
       }
 
-      if (req.method === "POST" && url.pathname === "/api/local/signal-guard") {
-        const raw = await readRequestBody(req);
-        const payload = JSON.parse(raw) as {
-          reportDate?: string | null;
-          headline?: string | null;
-          beat_slug?: string | null;
-          body?: string | null;
-          sources?: SourceRef[] | null;
-          model_disclosure?: ModelDisclosurePayload | null;
-          enforceWinnerBar?: boolean | null;
-        };
+      if (req.method === "GET" && url.pathname === "/api/local/verify-signal") {
+        const signalId = url.searchParams.get("id");
+        if (!signalId) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required id query param." }, null, 2));
+          return;
+        }
 
-        const guard = await evaluateSignalGuard({
-          ...payload,
-          reportDate: normalizeGuardReportDate(payload.reportDate),
-          enforceWinnerBar: payload.enforceWinnerBar ?? true
+        const upstream = await fetch(`https://aibtc.news/api/signals/${encodeURIComponent(signalId)}`, {
+          signal: AbortSignal.timeout(15_000)
         });
+        const text = await upstream.text();
+        let parsedBody: unknown = text;
+        try { parsedBody = JSON.parse(text); } catch { /* keep raw text */ }
 
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify(guard, null, 2));
+        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          status: upstream.status,
+          ok: upstream.ok,
+          body: parsedBody
+        }, null, 2));
         return;
       }
 
-      if (req.method === "POST" && url.pathname === "/api/local/signal-submit") {
-        const raw = await readRequestBody(req);
-        const payload = JSON.parse(raw) as {
-          apiUrl?: string | null;
-          headers?: Record<string, string> | null;
-          payload?: unknown;
-        };
+      if (req.method === "GET" && url.pathname === "/api/local/recover-signal") {
+        const agent = url.searchParams.get("agent");
+        const headline = url.searchParams.get("headline");
+        const since = url.searchParams.get("since");
+        const beat = url.searchParams.get("beat");
 
-        const apiUrl = payload.apiUrl?.trim() || "https://aibtc.news/api/signals";
-        const upstream = await proxyJsonRequest(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(payload.headers ?? {})
-          },
-          body: JSON.stringify(payload.payload ?? {}),
-          timeoutMs: 40_000
-        });
+        if (!agent || !headline || !since) {
+          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({ error: "Missing required agent, headline, or since query param." }, null, 2));
+          return;
+        }
 
-        let parsedBody: unknown = null;
         try {
-          parsedBody = upstream.body ? JSON.parse(upstream.body) : null;
-        } catch {
-          parsedBody = upstream.body;
-        }
-
-        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(
-          JSON.stringify(
-            {
-              status: upstream.status,
-              ok: upstream.status >= 200 && upstream.status < 300,
-              headers: upstream.headers,
-              body: parsedBody
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
-
-      if (req.method === "POST" && url.pathname === "/api/local/signing-preflight/session") {
-        const raw = await readRequestBody(req);
-        const payload = JSON.parse(raw) as {
-          activeWalletAddress?: string | null;
-          walletProviderReady?: boolean;
-          helperPath?: string | null;
-        };
-
-        const sessionPath = await recordHelperWalletSession({
-          activeWalletAddress: payload.activeWalletAddress ?? null,
-          walletProviderReady: payload.walletProviderReady ?? false,
-          helperPath: payload.helperPath ?? null
-        });
-
-        const state = await generateOperatorSignabilityPreflight({
-          reportDate: null,
-          candidateId: null
-        });
-        const preflightPath = await saveOperatorSignabilityPreflight(state);
-
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ sessionPath, preflightPath, state }, null, 2));
-        return;
-      }
-
-      if (req.method === "GET" && url.pathname === "/api/local/signing-preflight") {
-        const reportDate = url.searchParams.get("date");
-        const candidateId = url.searchParams.get("candidate");
-        const state = await generateOperatorSignabilityPreflight({
-          reportDate,
-          candidateId
-        });
-        const preflightPath = await saveOperatorSignabilityPreflight(state);
-
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ preflightPath, state }, null, 2));
-        return;
-      }
-
-      if (req.method === "POST" && url.pathname === "/api/local/inbox/probe") {
-        const raw = await readRequestBody(req);
-        const upstream = await proxyJsonRequest(
-          "https://aibtc.com/api/inbox/bc1qyu22hyqr406pus0g9jmfytk4ss5z8qsje74l76",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: raw
-          }
-        );
-
-        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(
-          JSON.stringify(
-            {
-              status: upstream.status,
-              headers: upstream.headers,
-              body: upstream.body ? JSON.parse(upstream.body) : null
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
-
-      if (req.method === "POST" && url.pathname === "/api/local/inbox/send") {
-        const raw = await readRequestBody(req);
-        const paymentSignature = req.headers["payment-signature"];
-        const upstream = await proxyJsonRequest(
-          "https://aibtc.com/api/inbox/bc1qyu22hyqr406pus0g9jmfytk4ss5z8qsje74l76",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(typeof paymentSignature === "string"
-                ? { "payment-signature": paymentSignature }
-                : {})
-            },
-            body: raw
-          }
-        );
-
-        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(
-          JSON.stringify(
-            {
-              status: upstream.status,
-              headers: upstream.headers,
-              body: upstream.body ? JSON.parse(upstream.body) : null
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
-
-      // ── Editor review queue ───────────────────────────────────────────────
-      // P22: Human-assisted BIP-137 POST flow for editor annotations.
-      // The operator loads /api/local/editor-review/queue in the browser (Xverse
-      // available), signs the payload with their BTC address, and the result is
-      // forwarded to POST /api/signals/{id}/corrections on aibtc.news.
-
-      if (req.method === "GET" && url.pathname === "/api/local/editor-review/queue") {
-        const date = url.searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
-        const { readFile: fsReadFile } = await import("node:fs/promises");
-        const { resolve: fsResolve } = await import("node:path");
-        let annotations: unknown[] = [];
-        try {
-          const queuePath = fsResolve(process.cwd(), `data/editor/submitted/${date}.json`);
-          annotations = JSON.parse(await fsReadFile(queuePath, "utf8")) as unknown[];
-        } catch { /* no pending annotations */ }
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ date, count: annotations.length, annotations }, null, 2));
-        return;
-      }
-
-      if (req.method === "POST" && url.pathname === "/api/local/editor-review/submit") {
-        // Payload: { signalId, annotationPayload, btcAddress, signature? }
-        // The browser extension provides the BTC address; signature is optional until
-        // BIP-137 auth lands on the aibtc.news corrections endpoint.
-        const raw = await readRequestBody(req);
-        const payload = JSON.parse(raw) as {
-          signalId: string;
-          btcAddress: string;
-          annotationPayload: Record<string, unknown>;
-          signature?: string;
-        };
-
-        if (!payload.signalId || !payload.btcAddress || !payload.annotationPayload) {
-          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify({ error: "Missing signalId, btcAddress, or annotationPayload." }, null, 2));
+          const signals = await fetchRecentSignalsForAgent(agent);
+          const match = findRecoveredSignal(signals, { headline, since, beat });
+          res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            ok: true,
+            found: Boolean(match),
+            signal: match,
+            checked: {
+              agent,
+              headline,
+              since,
+              beat: beat ?? null
+            }
+          }, null, 2));
+          return;
+        } catch (error) {
+          res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify({
+            ok: false,
+            error: (error as Error).message
+          }, null, 2));
           return;
         }
-
-        const NEWS_API_BASE = "https://aibtc.news/api";
-        const upstream = await fetch(`${NEWS_API_BASE}/signals/${payload.signalId}/corrections`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...(payload.signature ? { "X-BTC-Signature": payload.signature } : {}),
-            "X-BTC-Address": payload.btcAddress
-          },
-          body: JSON.stringify({
-            ...payload.annotationPayload,
-            type: "editorial_review"
-          })
-        });
-
-        const upstreamBody = await upstream.text().catch(() => "");
-        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(upstreamBody || JSON.stringify({ status: upstream.status }));
-        return;
-      }
-
-      if (req.method === "GET" && url.pathname === "/api/local/hiro/account") {
-        const address = url.searchParams.get("address");
-        if (!address) {
-          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify({ error: "Missing address query param." }, null, 2));
-          return;
-        }
-
-        const upstream = await proxyJsonRequest(`https://api.hiro.so/v2/accounts/${address}?proof=0`);
-        res.writeHead(upstream.status, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(upstream.body);
-        return;
-      }
-
-      if (req.method === "POST" && url.pathname === "/api/local/inbox/build-payment") {
-        const raw = await readRequestBody(req);
-        const payload = JSON.parse(raw) as {
-          publicKey?: string;
-          stxAddress?: string;
-          paymentChallenge?: {
-            accepts?: Array<{
-              amount: string;
-              asset: string;
-              payTo: string;
-            }>;
-          };
-        };
-
-        const publicKey = payload.publicKey?.trim();
-        const stxAddress = payload.stxAddress?.trim();
-        const accept = payload.paymentChallenge?.accepts?.[0];
-
-        if (!publicKey || !stxAddress || !accept) {
-          res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
-          res.end(
-            JSON.stringify(
-              {
-                error: "Missing publicKey, stxAddress, or paymentChallenge.accepts[0]."
-              },
-              null,
-              2
-            )
-          );
-          return;
-        }
-
-        const account = await proxyJsonRequest(`https://api.hiro.so/v2/accounts/${stxAddress}?proof=0`);
-        const accountPayload = account.body ? JSON.parse(account.body) as { nonce?: number | string } : {};
-        const nonce = BigInt(accountPayload.nonce ?? 0);
-        const amount = BigInt(accept.amount);
-        const [contractAddress, contractName = "sbtc-token"] = accept.asset.split(".");
-
-        const transaction = await makeUnsignedContractCall({
-          publicKey,
-          contractAddress,
-          contractName,
-          functionName: "transfer",
-          functionArgs: [
-            uintCV(amount),
-            principalCV(stxAddress),
-            principalCV(accept.payTo),
-            noneCV()
-          ],
-          fee: 0n,
-          nonce,
-          sponsored: true,
-          postConditions: [
-            Pc.principal(stxAddress)
-              .willSendEq(amount)
-              .ft(accept.asset as `${string}.${string}`, contractName)
-          ],
-          postConditionMode: "deny"
-        });
-
-        const txHex = Buffer.from(transaction.serialize()).toString("hex");
-
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(
-          JSON.stringify(
-            {
-              txHex,
-              nonce: nonce.toString(),
-              amount: amount.toString(),
-              contractAddress,
-              contractName
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
-
-      if (req.method === "GET" && url.pathname === "/api/local/health") {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ ok: true, startedAt: serverStartedAt, pacificDate: getPacificReportDate(), pid: process.pid, port }, null, 2));
-        return;
       }
 
       const { status, body, contentType } = await serveStatic(url.pathname);
@@ -814,6 +960,15 @@ export async function startFilingHelperServer(port: number): Promise<void> {
       res.end(body);
     } catch (error) {
       const status = (error as NodeJS.ErrnoException).code === "ENOENT" ? 404 : 500;
+      await recordHelperError({
+        stage: "handler_exception",
+        helperCategory: "server_issue",
+        message: (error as Error).message,
+        details: {
+          code: (error as NodeJS.ErrnoException).code ?? null
+        },
+        status
+      });
       res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
       res.end(
         JSON.stringify(
@@ -827,20 +982,7 @@ export async function startFilingHelperServer(port: number): Promise<void> {
     }
   });
 
-  await new Promise<void>((resolvePromise, rejectPromise) => {
-    server.on("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        rejectPromise(
-          new Error(
-            `[filing-helper] Port ${port} is already in use — a stale helper process is still running.\n` +
-            `Kill it first: lsof -ti tcp:${port} | xargs kill -9\n` +
-            `Then restart: npm run filing-helper`
-          )
-        );
-      } else {
-        rejectPromise(err);
-      }
-    });
+  await new Promise<void>((resolvePromise) => {
     server.listen(port, "127.0.0.1", () => resolvePromise());
   });
 
@@ -848,6 +990,18 @@ export async function startFilingHelperServer(port: number): Promise<void> {
     `[filing-helper] serving Xverse helper at http://127.0.0.1:${port}/tools/xverse-register/file-signal.html\n`
   );
 }
+
+export {
+  buildNormalizedSignalPayload,
+  checkNewsStatus,
+  findRecoveredSignal,
+  getHelperErrorLogPath,
+  inferFilingStatus,
+  isBeatClaimUrl,
+  isTerminalDuplicateOutcome,
+  recordHelperError,
+  toLiveSignal
+};
 
 async function main(): Promise<void> {
   const { port } = parseArgs(process.argv.slice(2));

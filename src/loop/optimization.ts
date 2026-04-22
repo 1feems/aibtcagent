@@ -115,7 +115,7 @@ function isOnOrBeforeReportDate(timestamp: string, reportDate: string): boolean 
 
 function inferStyleFromSubmissionRecord(submission: AcceptedSubmissionRecord["submission"]): string {
   if (submission.candidateMetadata?.styleTested) {
-    return submission.candidateMetadata.styleTested;
+    return submission.candidateMetadata?.styleTested ?? "single_story_operator_angle";
   }
 
   const headline = submission.headline.toLowerCase();
@@ -235,7 +235,8 @@ function inferSubmissionFactors(
   context: SubmissionFactorContext
 ): string[] {
   const contextText = buildSubmissionContextText(submission);
-  const inferredStyle = submission.candidateMetadata?.styleTested || inferStyleFromSubmissionRecord(submission);
+  const inferredStyle =
+    submission.candidateMetadata?.styleTested || inferStyleFromSubmissionRecord(submission);
   const exactAnchor = hasExactAnchor(submission.headline);
   const structuralPattern = hasStructuralPattern(contextText);
   const operatorConsequence = hasOperatorConsequence(contextText);
@@ -364,6 +365,9 @@ function buildSuccessMetrics(
   rewards: RewardOutcomeRecord[]
 ): DailySuccessMetrics {
   const inBriefWins = approvals.filter((approval) => approval.published === true).length;
+  const approvedNotInBriefCount = approvals.filter(
+    (approval) => approval.approved === true && approval.published !== true
+  ).length;
   const satsEarned = rewards.reduce(
     (total, reward) => total + (typeof reward.satsEarned === "number" ? reward.satsEarned : 0),
     0
@@ -376,6 +380,7 @@ function buildSuccessMetrics(
   return {
     targetInBriefWins,
     inBriefWins,
+    approvedNotInBriefCount,
     satsEarned,
     btcRewards,
     targetMet: inBriefWins >= targetInBriefWins && satsEarned > 0,
@@ -908,6 +913,13 @@ function buildPackagingAdjustments(
   const broaderSameBeatLosses = recentApprovedNotInBriefLearnings.filter((learning) =>
     /\bbroader\b|\bsame-beat\b|\bsame day\b|\boutcompeted\b|\blost to\b/i.test(learning)
   );
+  const narrowFragmentLosses = recentApprovedNotInBriefLearnings.filter((learning) =>
+    /\bnarrow\b|\bfragment\b|\bcomponent-only\b|\bsingle component\b|\bless complete\b|\btoo thin\b/i.test(learning)
+  );
+  const anchoredBroadPackagingSignals = recentApprovedNotInBriefLearnings.filter((learning) =>
+    /\bbroader\b|\bpackage\b|\bbundl/i.test(learning) &&
+    /\bpr\s*#\d+\b|\bissue\s*#\d+\b|\bv\d+\.\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?%\b|\b\d[\d,.]*\b/i.test(learning)
+  );
   const packagingLosses = recentApprovedNotInBriefLearnings.filter((learning) =>
     /\barticle-shaped\b|\bpackage\b|\bpackaging\b|\bbundl/i.test(learning)
   );
@@ -919,10 +931,21 @@ function buildPackagingAdjustments(
   if (packagingLosses.length > 0) {
     rationale.push("Recent losses say packaging was too fragmented or not article-shaped enough.");
   }
+  if (narrowFragmentLosses.length > 0) {
+    rationale.push("Approved-not-in-brief outcomes repeatedly call out narrow same-beat fragments.");
+  }
+  if (anchoredBroadPackagingSignals.length > 0) {
+    rationale.push("Broader same-beat packages with exact anchors are showing up in loss analysis as the stronger slot-winning shape.");
+  }
 
   return {
-    promoteBroadSameBeatPackaging: broaderSameBeatLosses.length > 0 || packagingLosses.length > 0,
-    demoteNarrowFragmentPackaging: broaderSameBeatLosses.length > 0,
+    promoteBroadSameBeatPackaging:
+      broaderSameBeatLosses.length > 0 ||
+      packagingLosses.length > 0 ||
+      anchoredBroadPackagingSignals.length > 0,
+    demoteNarrowFragmentPackaging:
+      broaderSameBeatLosses.length > 0 ||
+      narrowFragmentLosses.length > 0,
     rationale
   };
 }
@@ -947,6 +970,10 @@ function buildNextDayRecommendations(
   const packagingLosses = approvedNotInBriefLearnings.filter((learning) =>
     /\barticle-shaped\b|\bpackage\b|\bpackaging\b|\bbundl/i.test(learning)
   );
+  const anchoredBroadPackagingSignals = approvedNotInBriefLearnings.filter((learning) =>
+    /\bbroader\b|\bpackage\b|\bbundl/i.test(learning) &&
+    /\bpr\s*#\d+\b|\bissue\s*#\d+\b|\bv\d+\.\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?%\b|\b\d[\d,.]*\b/i.test(learning)
+  );
   const promotedStyle = snapshot.stylePerformance.find((style) => style.preference === "promote");
   const demotedStyle = snapshot.stylePerformance.find((style) => style.preference === "demote");
   const packagingAdjustments = snapshot.packagingAdjustments;
@@ -969,6 +996,11 @@ function buildNextDayRecommendations(
   if (packagingLosses.length > 0) {
     recommendations.push(
       "Package related release activity into one operator-facing story with consequence up top; approval-quality fragments are still losing the brief slot."
+    );
+  }
+  if (anchoredBroadPackagingSignals.length > 0) {
+    recommendations.push(
+      "When same-beat lanes are crowded, promote broader packages that carry exact anchors (PR/issue/version/metrics) instead of thin component-only updates."
     );
   }
 
@@ -1445,31 +1477,29 @@ function buildEditorialLearnings(snapshot: {
     /\btoo late\b|\btiming\b/i.test(pattern)
   );
 
-  // Derive beat specialization state from outcome-backed publication rates
   const performingBeats = snapshot.beatPreferences
-    .filter((b) => b.preference === "increase")
-    .sort((a, b) => (b.publicationRate ?? 0) - (a.publicationRate ?? 0));
+    .filter((beat) => beat.preference === "increase")
+    .sort((left, right) => (right.publicationRate ?? 0) - (left.publicationRate ?? 0));
   const primaryBeat = performingBeats[0]?.beat ?? null;
   const secondaryBeat = performingBeats[1]?.beat ?? null;
   const deprioritizedBeats = snapshot.beatPreferences
-    .filter((b) => b.preference === "decrease")
-    .map((b) => b.beat);
+    .filter((beat) => beat.preference === "decrease")
+    .map((beat) => beat.beat);
   const topBeat = performingBeats[0] ?? null;
 
-  // Anti-pattern flags derived from factor attribution
   const rawStatDumpFactor = snapshot.factorAttribution.find(
-    (f) => f.factor === "raw_release_without_operator_consequence"
+    (factor) => factor.factor === "raw_release_without_operator_consequence"
   );
   const dashboardSourcingFactor = snapshot.factorAttribution.find(
-    (f) => f.factor === "dashboard_first_sourcing"
+    (factor) => factor.factor === "dashboard_first_sourcing"
   );
   const rawStatDumpAntiPatternActive =
     rawStatDumpFactor?.verdict === "validated" ||
     (snapshot.packagingAdjustments?.demoteNarrowFragmentPackaging ?? false);
   const feedOnlySourceAntiPatternActive =
     dashboardSourcingFactor?.verdict === "validated" ||
-    snapshot.topCandidatePerformance.commonFailurePatterns.some((p) =>
-      /\bsource\b|\bdomain\b/i.test(p)
+    snapshot.topCandidatePerformance.commonFailurePatterns.some((pattern) =>
+      /\bsource\b|\bdomain\b/i.test(pattern)
     );
 
   const structuralRules = [

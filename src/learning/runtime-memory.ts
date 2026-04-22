@@ -5,7 +5,7 @@ import {
   refreshCompetitionMemory,
   refreshObjectiveMemory
 } from "./context-memory.js";
-import { getBuildPlanMemoryPath, refreshBuildPlanMemory } from "./build-plan-memory.js";
+import { refreshBuildPlanMemory, getBuildPlanMemoryPath } from "./build-plan-memory.js";
 import { refreshEditorialMemory } from "./editorial-memory.js";
 import { refreshOutcomeFeedbackMemory } from "./outcome-feedback.js";
 import { readRepairMemory } from "./repair-memory.js";
@@ -44,61 +44,56 @@ async function writeMemoryIndex(refreshSource: string, baseDir?: string): Promis
     authorityOrder: [
       {
         rank: 1,
-        path: "data/state/build-plan-memory.json",
-        role: "compiled runtime directives from docs/build-plan.md"
-      },
-      {
-        rank: 2,
         path: "data/state/objective-memory.json",
         role: "objective economics, payout, leaderboard, streak, and slot-pressure context"
       },
       {
-        rank: 3,
+        rank: 2,
         path: "data/state/editorial-memory.json",
         role: "editorial context plus Publisher and Fact-Checker hard gates"
       },
       {
-        rank: 4,
+        rank: 3,
         path: "data/state/competition-memory.json",
         role: "crowded beats, beat owners, winning story shapes, and converting source patterns"
       },
       {
-        rank: 5,
+        rank: 4,
         path: "data/state/brief-examples.json",
         role: "recent winners, recent losses, and side-by-side examples of what good looks like"
       },
       {
-        rank: 6,
+        rank: 5,
         path: "data/state/outcome-feedback-memory.json",
         role: "normalized machine labels from publisher outcomes feeding the context layers"
       },
       {
-        rank: 7,
+        rank: 6,
         path: "data/state/leaderboard-memory.json",
         role: "raw leaderboard snapshot referenced by objective-memory"
       },
       {
-        rank: 8,
+        rank: 7,
         path: "data/state/repairable-candidates.json",
         role: "repair contracts for fix-and-resubmit signals"
       },
       {
-        rank: 9,
+        rank: 8,
         path: "data/state/filed-signals.json",
         role: "filing history state used to compile runtime memory"
       },
       {
-        rank: 10,
+        rank: 9,
         path: "data/outcomes/",
         role: "raw real-world outcome records used to compile runtime memory"
       },
       {
-        rank: 11,
+        rank: 10,
         path: "data/training/",
         role: "training examples derived from outcomes"
       },
       {
-        rank: 12,
+        rank: 11,
         path: "memory/learnings.md",
         role: "human-readable rendered archive, not the runtime authority"
       }

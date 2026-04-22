@@ -35,6 +35,7 @@ export interface TrainingReasonTag {
 export interface DailySuccessMetrics {
   targetInBriefWins: number;
   inBriefWins: number;
+  approvedNotInBriefCount: number;
   satsEarned: number;
   btcRewards: string[];
   targetMet: boolean;
@@ -89,7 +90,6 @@ export interface EditorialLearningSnapshot {
   timingRules: string[];
   specializationRules: string[];
   competitionRules: string[];
-  // Structured enforcement flags — used directly in scoring without text parsing
   timingLossObserved: boolean;
   primaryBeat: string | null;
   secondaryBeat: string | null;

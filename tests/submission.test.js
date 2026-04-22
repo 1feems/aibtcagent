@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildPreSubmissionIntelligence } from "../dist/intelligence/index.js";
-import { runGeneralNewsLane, runProtocolUpdateLane } from "../dist/signals/index.js";
+import { runGeneralNewsLane, runInfrastructureLane } from "../dist/signals/index.js";
 import {
   buildEditorialReview,
   buildSubmissionDecision,
@@ -91,7 +91,7 @@ function createGeneralNewsEvent() {
 }
 
 test("submission decision submits valid signals", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
 
   const decision = buildSubmissionDecision(validation, createPreSubmission());
@@ -101,7 +101,7 @@ test("submission decision submits valid signals", () => {
 });
 
 test("submission decision rejects invalid signals", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   subject.candidate.likelyDuplicate = true;
   const validation = validateSubject(subject);
 
@@ -112,7 +112,7 @@ test("submission decision rejects invalid signals", () => {
 });
 
 test("submission payload preserves proof, sources, and disclosure", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
   const payload = buildSubmissionPayload(
     subject,
@@ -140,7 +140,7 @@ test("submission payload preserves proof, sources, and disclosure", () => {
 });
 
 test("submission decision rejects when pre-submission checks are incomplete", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
   const incomplete = buildPreSubmissionIntelligence({
     dailyBriefChecked: false,
@@ -160,7 +160,7 @@ test("submission decision rejects when pre-submission checks are incomplete", ()
 });
 
 test("submission decision does not hard-reject when non-editorial telemetry checks are unavailable", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
   const incomplete = buildPreSubmissionIntelligence({
     dailyBriefChecked: true,
@@ -180,7 +180,7 @@ test("submission decision does not hard-reject when non-editorial telemetry chec
 });
 
 test("submission payload can be serialized to schema-compatible snake_case", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   const validation = validateSubject(subject);
   const payload = buildSubmissionPayload(
     subject,
@@ -203,7 +203,7 @@ test("submission payload can be serialized to schema-compatible snake_case", () 
 });
 
 test("editorial review can hold a technically valid candidate for publisher caution", () => {
-  const subject = runProtocolUpdateLane(createRawProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createRawProtocolEvent()).subject;
   subject.candidate.significance = "the contract is now visible onchain";
   const validation = validateSubject(subject);
   const submissionDecision = buildSubmissionDecision(validation, createPreSubmission());
@@ -221,7 +221,7 @@ test("editorial review can hold a technically valid candidate for publisher caut
 });
 
 test("submission payload supports versioned release-style protocol updates", () => {
-  const subject = runProtocolUpdateLane(createReleaseProtocolEvent()).subject;
+  const subject = runInfrastructureLane(createReleaseProtocolEvent()).subject;
   const validation = validateSubject(subject);
   const payload = buildSubmissionPayload(
     subject,

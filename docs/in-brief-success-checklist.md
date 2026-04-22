@@ -1,5 +1,12 @@
 # In Brief Success Checklist
 
+## Document Role
+
+- Category: `living implementation`
+- Scope: active success criteria and checked progress
+- Use this when: you need to know the current goal state and which concrete work items are complete
+- Do not use this as: the sole workflow contract for daily execution
+
 ## Purpose
 This is the active build checklist for the current agent objective.
 
@@ -452,7 +459,7 @@ Current state:
   `tests/filing-queue.test.js`
   `tests/operator-summary.test.js`
   `docs/in-brief-success-checklist.md`
-  `docs/testing-plan.md`
+  `docs/build-plan.md`
   Missing preflight, unconfirmed beat permission, and approval-time signability drift now have explicit regression coverage instead of living only in memory notes.
 
 ### Phase 23: Preflight Automation

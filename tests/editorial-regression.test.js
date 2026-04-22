@@ -26,7 +26,7 @@ test("real April 3 winner-style signal clears the guard in isolated context", { 
     const result = await evaluateSignalGuard({
       reportDate: "2026-04-03",
       headline: "Stacks Core 3.3.0.0.6 cuts chainstate growth by 20%+ and enables signer global state for block production",
-      beat_slug: "governance",
+      beat_slug: "aibtc-network",
       body: "Stacks Core 3.3.0.0.6 reduces chainstate growth by more than 20% and enables signer global state for block production. For AIBTC operators running AI-agent infrastructure on Stacks, this means lower storage pressure and more reliable signer coordination during production load, which changes how operators plan node capacity and block production risk.",
       sources: [
         { url: "https://docs.stacks.co/whats-new/latest-updates", title: "Stacks latest updates" },
@@ -61,7 +61,7 @@ test("real April 3 filed signal is rejected at the duplicate-first gate", { conc
     const result = await evaluateSignalGuard({
       reportDate: "2026-04-03",
       headline: "Stacks API adds PoX Bitcoin tx endpoints, giving apps indexable burn-chain activity without raw block scans",
-      beat_slug: "governance",
+      beat_slug: "aibtc-network",
       body: "The February 26, 2026 Stacks API update adds PoX-related Bitcoin transaction endpoints for both burn blocks and Bitcoin addresses. Builders can query indexed Bitcoin-layer PoX activity directly instead of scanning raw blocks.",
       sources: [
         { url: "https://docs.stacks.co/whats-new/latest-updates", title: "Stacks latest updates" },

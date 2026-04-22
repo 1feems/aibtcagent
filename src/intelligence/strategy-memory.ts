@@ -1,11 +1,13 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import {
-  loadBriefExamplesMemory,
-  loadCompetitionMemory,
-  loadEditorialMemory,
-  loadObjectiveMemory
-} from "../learning/index.js";
+
+const STRATEGY_DOCS = [
+  "docs/brief-win-rules.md",
+  "docs/signal-sourcing-checklist.md",
+  "docs/brief-winner-tracking.md",
+  "docs/sources.md",
+  "docs/beat-strategy.md"
+] as const;
 
 export interface DailyStrategySnapshot {
   kind: "daily_strategy_snapshot";
@@ -17,7 +19,66 @@ export interface DailyStrategySnapshot {
   competitionRules: string[];
   antiPatterns: string[];
   historicalNotes: string[];
-  editorialRules: string[];
+}
+
+interface HistoricalBriefSeed {
+  kind: "historical_brief_seed";
+  label: string;
+  notes: string[];
+}
+
+async function readDoc(relativePath: string, baseDir?: string): Promise<string> {
+  return readFile(resolve(baseDir ?? process.cwd(), relativePath), "utf8");
+}
+
+async function readHistoricalBriefNotes(baseDir?: string): Promise<string[]> {
+  const root = resolve(baseDir ?? process.cwd(), "data/brief-history");
+  let files: string[] = [];
+
+  try {
+    files = (await readdir(root)).filter((fileName) => fileName.endsWith(".json")).sort();
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+
+  const notes: string[] = [];
+  for (const fileName of files) {
+    const seed = JSON.parse(
+      await readFile(resolve(root, fileName), "utf8")
+    ) as HistoricalBriefSeed;
+    for (const note of seed.notes ?? []) {
+      if (!notes.includes(note)) {
+        notes.push(note);
+      }
+    }
+  }
+
+  return notes;
+}
+
+function extractBulletLines(markdown: string): string[] {
+  return markdown
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim());
+}
+
+function pickMatching(lines: string[], patterns: RegExp[], limit: number): string[] {
+  const picked: string[] = [];
+  for (const line of lines) {
+    if (patterns.some((pattern) => pattern.test(line)) && !picked.includes(line)) {
+      picked.push(line);
+    }
+    if (picked.length >= limit) {
+      break;
+    }
+  }
+  return picked;
 }
 
 export async function buildDailyStrategySnapshot(
@@ -25,65 +86,87 @@ export async function buildDailyStrategySnapshot(
   generatedAt: string,
   baseDir?: string
 ): Promise<DailyStrategySnapshot> {
-  const [objective, editorial, competition, briefExamples, optimizationModule] = await Promise.all([
-    loadObjectiveMemory(baseDir),
-    loadEditorialMemory(baseDir),
-    loadCompetitionMemory(baseDir),
-    loadBriefExamplesMemory(baseDir),
-    import("../loop/optimization.js")
+  const [docs, historicalNotes] = await Promise.all([
+    Promise.all(STRATEGY_DOCS.map((relativePath) => readDoc(relativePath, baseDir))),
+    readHistoricalBriefNotes(baseDir)
   ]);
-  const optimization = await optimizationModule.readDailyOptimizationSnapshot(reportDate, { baseDir });
+  const bulletLines = docs.flatMap((doc) => extractBulletLines(doc));
+
+  const priorities = pickMatching(
+    bulletLines,
+    [
+      /\bin_brief\b/i,
+      /\bbroadest\b/i,
+      /\bstructural\b/i,
+      /\bhidden driver\b/i,
+      /\brisk window\b/i,
+      /\boperator\b/i,
+      /\bselection probability\b/i,
+      /\bfewer, stronger\b/i
+    ],
+    8
+  );
+  const sourceLanes = pickMatching(
+    bulletLines,
+    [
+      /\bgithub\b/i,
+      /\breleases?\b/i,
+      /\bapi\b/i,
+      /\bexplorer\b/i,
+      /\bresearch\b/i,
+      /\bsecurity researcher\b/i,
+      /\bregulatory\b/i,
+      /\bexternal actionable\b/i,
+      /\bdaily brief\b/i,
+      /\blive activity feed\b/i,
+      /\bapproved\b/i,
+      /\bsubmitted\b/i,
+      /\brejected\b/i,
+      /\bmempool\b/i,
+      /\bprimary source\b/i,
+      /\bhuman news\b/i
+    ],
+    10
+  );
+  const competitionRules = pickMatching(
+    bulletLines,
+    [
+      /\brepeat\b/i,
+      /\boccupied\b/i,
+      /\bsame-beat\b/i,
+      /\bstronger same-beat\b/i,
+      /\bbrief slot\b/i,
+      /\bflooded\b/i
+    ],
+    8
+  );
+  const antiPatterns = pickMatching(
+    bulletLines,
+    [
+      /\bdashboard-first\b/i,
+      /\braw\b/i,
+      /\bchangelog\b/i,
+      /\bartifact\b/i,
+      /\bgeneric\b/i,
+      /\bno operational consequence\b/i,
+      /\bwithout clear causality\b/i,
+      /\bmulti-sentence\b/i,
+      /\bsecondary summaries\b/i
+    ],
+    8
+  );
 
   return {
     kind: "daily_strategy_snapshot",
     reportDate,
     generatedAt,
-    sourceDocs: unique([
-      ...objective.sourcePaths,
-      editorial.sourcePath,
-      ...competition.sourcePaths,
-      ...briefExamples.sourcePaths
-    ]),
-    priorities: unique([
-      objective.mainKpi,
-      ...objective.pressureNotes,
-      ...editorial.qualityBar,
-      ...editorial.focusAreas.map((entry) => `${entry.label}: ${entry.action}`)
-    ]).slice(0, 8),
-    sourceLanes: unique([
-      ...competition.convertingSourcePatterns,
-      ...editorial.factCheckerGate.standards,
-      ...(optimization?.editorialLearnings?.sourcingRules ?? [])
-    ]).slice(0, 10),
-    competitionRules: unique([
-      ...competition.crowdingNotes,
-      ...competition.crowdedBeats.map((entry) => `${entry.beat}: ${entry.reasons[0] ?? "crowded lane"}`),
-      ...competition.beatOwners.slice(0, 3).map((entry) => `${entry.agent} is winning ${entry.beats.join(", ")}`),
-      ...(optimization?.editorialLearnings?.competitionRules ?? []),
-      ...(optimization?.editorialLearnings?.specializationRules ?? []),
-      ...(optimization?.editorialLearnings?.timingRules ?? [])
-    ]).slice(0, 8),
-    antiPatterns: unique([
-      ...briefExamples.recentLosses.map((entry) => entry.whyItLost),
-      ...editorial.preFilingChecks.map((entry) => entry.rule)
-    ]).slice(0, 8),
-    historicalNotes: unique([
-      ...briefExamples.recentWinners.map((entry) => `${entry.headline} — ${entry.whyItWorked}`),
-      ...briefExamples.repairedPatternsThatLaterWorked,
-      ...(optimization?.editorialLearnings?.structuralRules ?? [])
-    ]).slice(0, 8),
-    editorialRules: unique([
-      ...(optimization?.editorialLearnings?.structuralRules ?? []),
-      ...(optimization?.editorialLearnings?.sourcingRules ?? []),
-      ...(optimization?.editorialLearnings?.timingRules ?? []),
-      ...(optimization?.editorialLearnings?.specializationRules ?? []),
-      ...(optimization?.editorialLearnings?.competitionRules ?? [])
-    ]).slice(0, 12)
+    sourceDocs: [...STRATEGY_DOCS],
+    priorities,
+    sourceLanes,
+    competitionRules,
+    antiPatterns,
+    historicalNotes
   };
-}
-
-function unique(values: string[]): string[] {
-  return [...new Set(values.filter((value) => value.trim().length > 0))];
 }
 
 export function buildStrategyNotes(snapshot: DailyStrategySnapshot): string[] {
@@ -103,9 +186,6 @@ export function buildStrategyNotes(snapshot: DailyStrategySnapshot): string[] {
   }
   if (snapshot.historicalNotes[0]) {
     notes.push(`Historical brief pattern: ${snapshot.historicalNotes[0]}`);
-  }
-  if (snapshot.editorialRules[0]) {
-    notes.push(`Editorial learning: ${snapshot.editorialRules[0]}`);
   }
 
   return notes;

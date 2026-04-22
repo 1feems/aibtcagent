@@ -112,7 +112,7 @@ test("buildSignalReport shows only accepted numbered slots and rejected appendix
 });
 
 test("loadSignalTemplate reads signal-template.json", async () => {
-  const template = await loadSignalTemplate("/Users/feems/Desktop/aibtcagent-workspace/aibtcagent");
+  const template = await loadSignalTemplate(process.cwd());
   assert.ok(Array.isArray(template._analysis_rules));
   assert.ok(Array.isArray(template._tags_rules));
   assert.ok(Array.isArray(template._disclosure_rules));
@@ -144,11 +144,12 @@ test("runSignalJob rejects too many tags and vague headline without exact anchor
       resolve(tempDir, "data/manual-submissions/2026-04-08/bad.json"),
       JSON.stringify({
         status: "in_queue",
-        beat_slug: "infrastructure",
+        beat_slug: "aibtc-network",
         headline: "recent relay update causes payment failures",
+        body: "CLAIM: relay changed.\nEVIDENCE: PR #301 updated nonce recovery.\nIMPLICATION: 18 payments can stall.\nDirective: verify the release before deploy.",
         analysis: "CLAIM: relay changed.\nEVIDENCE: PR #301 updated nonce recovery.\nIMPLICATION: 18 payments can stall.\nDirective: verify the release before deploy.",
         sources: [{ url: "https://github.com/aibtcdev/x402-sponsor-relay/pull/301", title: "PR #301" }],
-        tags: ["infrastructure", "security", "deal-flow"],
+        tags: ["aibtc-network", "bitcoin-macro", "quantum"],
         disclosure: "claude-sonnet-4-6; github review of PR #301; verified release notes"
       }, null, 2),
       "utf8"

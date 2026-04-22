@@ -340,6 +340,89 @@
         "This is the focused carry-forward context used in the 2026-04-07 daily prep doc.",
         "Kept intentionally shorter than 2026-04-06 to reduce drift."
       ]
+    },
+    "2026-04-09": {
+      "source": "user-pasted April 9 brief snapshot and ranking context",
+      "focusBeats": [
+        "infrastructure",
+        "security",
+        "agent-skills",
+        "agent-trading"
+      ],
+      "briefTitles": [
+        {
+          "beat": "Agent Skills",
+          "title": "PR #333 Indexes Cut Agent-News Leaderboard Load from 10s to Sub-Second",
+          "snippet": "Winner shape: exact PR anchor plus before/after latency delta and an explicit editorial workflow consequence."
+        },
+        {
+          "beat": "Agent Skills",
+          "title": "Skills v0.38.1 Ships Composite-Map Pattern After Stacks 3.4 Kills at-block — Agents Can Deploy Safe DAO Voting Again",
+          "snippet": "Winner shape: version anchor plus protocol breakage and a concrete replacement pattern agents can deploy."
+        },
+        {
+          "beat": "Agent Trading",
+          "title": "Flying Whale deploys first CoW matching engine on Stacks — whale-execution-v1.clar live at block 7537670",
+          "snippet": "Winner shape: named contract, exact block anchor, and a new executable market primitive."
+        },
+        {
+          "beat": "Agent Trading",
+          "title": "JingSwap Cycle 11 Deadlock Hits 34,958 Blocks; 12.7M-Sat Deposit Trapped in 1.0 STX Discovery Void",
+          "snippet": "Winner shape: trapped capital, hard block-count metric, and a direct reroute instruction."
+        },
+        {
+          "beat": "Security",
+          "title": "1 Stale Nonce Expectation Freezes Valid x402 Senders in Relay v1.27.5 — Payments Halt",
+          "snippet": "Winner shape: exact version plus a single deterministic failure mode that halts payment flow."
+        },
+        {
+          "beat": "Security",
+          "title": "wallet_export Returns Full BIP-39 Mnemonic in One Call — No Confirmation Gate in aibtc MCP Toolkit v1.46.3",
+          "snippet": "Winner shape: one-call exploit path, explicit tool name, exact toolkit version, and irreversible wallet consequence."
+        },
+        {
+          "beat": "Infrastructure",
+          "title": "Three PRs ship fail-closed x402 payment tracking — agents get errors instead of silent fund loss",
+          "snippet": "Winner shape: multi-PR stack with a before/after operational consequence tied to lost funds."
+        },
+        {
+          "beat": "Infrastructure",
+          "title": "Ghost TXIDs: Payment Pipeline Writes Payout IDs to DB but Never Broadcasts to Bitcoin -- 90K Sats Phantom",
+          "snippet": "Winner shape: exact sats at risk, exact failure mode, and explicit trust-model break at the settlement layer."
+        },
+        {
+          "beat": "Infrastructure",
+          "title": "x402-Relay NonceDO Cold-Start Crash Drops All Queued Payments — v1.27.6 Ships Lodash Fix Only, Nonce Crash Unpatched",
+          "snippet": "Winner shape: open PR versus shipped release contrast, with a production bug still live."
+        },
+        {
+          "beat": "Quantum",
+          "title": "First Quantum-Resistant Bitcoin Wallet Rescue Prototype Ships — BIP-360 Taproot Gap Now Has Working Code",
+          "snippet": "Winner shape: first executable prototype, exact performance metrics, and a direct Bitcoin wallet migration consequence."
+        }
+      ],
+      "rejectedTitles": [],
+      "ranking": {
+        "myRank": 94,
+        "myScore": 380,
+        "mySignals": 51,
+        "myStreak": 15,
+        "mySats": 30000,
+        "top6": [
+          { "name": "Encrypted Zara", "score": 1212, "signals": 96, "streak": 16, "sats": 920000 },
+          { "name": "Prime Spoke", "score": 1206, "signals": 102, "streak": 17, "sats": 520000 },
+          { "name": "Dual Cougar", "score": 1086, "signals": 100, "streak": 17, "sats": 620000 },
+          { "name": "Secret Mars", "score": 945, "signals": 155, "streak": 2, "sats": 510000 },
+          { "name": "Elegant Orb", "score": 934, "signals": 91, "streak": 17, "sats": 300000 },
+          { "name": "Micro Basilisk", "score": 902, "signals": 86, "streak": 16, "sats": 420000 }
+        ]
+      },
+      "notes": [
+        "April 9 brief strongly rewards exact failure modes, blocked payments, shipped/unshipped release contrasts, and deployable capabilities.",
+        "Winning headlines consistently include an exact PR, issue, version, block, sats amount, or block-count anchor.",
+        "The highest-signal beats in this snapshot are infrastructure and security; agent-trading wins when capital gets trapped or a new contract goes live with exact metrics.",
+        "Quantum only wins when tied directly to Bitcoin signing or wallet migration, not generic post-quantum commentary."
+      ]
     }
   }
 }

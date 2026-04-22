@@ -1,10 +1,15 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fetchCompetitorProfiles, readBriefWinnerSnapshot, type CompetitorProfile } from "../brief/index.js";
-import { evaluateSignalGuard, type SignalGuardResult } from "../filing/signal-guard.js";
-import { type CandidateLifecycle, type RankedCandidateDecision, inferLifecycleFromDecision } from "../filing/lifecycle.js";
+import { assessBeatPublishability, type PublishabilityStatus } from "../filing/publishability.js";
+import { assessEditorialCompetitiveness, type EditorialCompetitivenessStatus } from "./editorial-contract.js";
 import type { DailyOptimizationSnapshot } from "../types/index.js";
 import { fetchLiveSignals, jaccardSimilarity, runAutoGates, type AutoGateResult } from "./auto-gates.js";
+
+export type TodayStrengthStatus =
+  | "strong_enough_today"
+  | "operator_relevant_but_weak_today"
+  | "unknown";
 
 interface SerializedSubmission {
   candidate_signal: {
@@ -28,14 +33,6 @@ interface SerializedSubmission {
     source_type?: string;
     source_url?: string;
   }>;
-  model_disclosure?: {
-    tools_used?: string[];
-    derivation_steps?: string[];
-  };
-  article_preview?: {
-    lede?: string;
-    why_it_matters?: string;
-  };
   pre_submission_intelligence?: {
     notes?: string[];
     beat_status_today?: string;
@@ -66,6 +63,13 @@ interface SerializedSubmission {
     why_this_style_was_chosen?: string;
     duplicate_status?: "clear" | "pending" | "flagged";
     freshness_status?: "clear" | "risk_unresolved" | "unknown";
+    publishability_status?: PublishabilityStatus;
+    filing_beat_slug?: string;
+    why_this_beat_is_open?: string;
+    why_now?: string;
+    why_this_beats_same_day_competition?: string;
+    primary_source_proof?: string;
+    operator_action?: string;
   };
 }
 
@@ -85,6 +89,13 @@ interface HistoricalBriefSignals {
   prefersReleaseConsequence: boolean;
   prefersStructuralPatterns: boolean;
   prefersExactAnchors: boolean;
+  preferredTopics: Array<{ topic: string; label: string; count: number }>;
+}
+
+interface RecentBriefOccupancyEntry {
+  reportDate: string;
+  headline: string;
+  beat: string;
 }
 
 interface ScoreContext {
@@ -92,38 +103,10 @@ interface ScoreContext {
   briefSnapshot: Awaited<ReturnType<typeof readBriefWinnerSnapshot>>;
   agentBehavior: AgentBehaviorState | null;
   historicalBriefSignals: HistoricalBriefSignals;
+  recentBriefOccupancy: RecentBriefOccupancyEntry[];
+  competitorWinningAngles: string[];
   autoGate?: AutoGateResult;
-  finalSignalGuard?: SignalGuardResult;
   competitorProfiles?: CompetitorProfile[];
-  signalAgentContract?: SignalAgentContract;
-}
-
-interface SignalAgentContract {
-  publisherSkillInstalled: boolean;
-  factCheckerSkillInstalled: boolean;
-  dailyPrepReportPresent: boolean;
-  dailyPrepText: string;
-  editorialMemoryPresent: boolean;
-  objectiveMemoryPresent: boolean;
-  competitionMemoryPresent: boolean;
-  briefExamplesPresent: boolean;
-  preFilingCheckIds: string[];
-  objectivePressureNotes: string[];
-  currentRank: number | null;
-  currentScore: number | null;
-  currentStreak: string | null;
-  gapToTop3: number | null;
-  gapToTop6: number | null;
-  maxSignalsPerDay: number | null;
-  maxSignalsPerBeatPerMinutes: number | null;
-  crowdedBeatIds: string[];
-  winningStoryShapes: string[];
-  winningHeadlineExamples: string[];
-  currentCycleReportDate: string | null;
-  currentCycleWinningHeadlines: string[];
-  currentCycleLossHeadlines: string[];
-  currentCycleValueCreatingPatterns: string[];
-  currentCycleSourcePatternsThatPassed: string[];
 }
 
 interface ParsedCandidateSubmission {
@@ -131,19 +114,76 @@ interface ParsedCandidateSubmission {
   submission: SerializedSubmission;
 }
 
+interface BriefCompetitionProof {
+  whyThisBeatIsOpen: string;
+  whyNow: string;
+  whyThisBeatsSameDayCompetition: string;
+  primarySourceProof: string;
+  operatorAction: string;
+}
+
+interface ManualSubmissionArtifact {
+  beat_slug?: string;
+  headline?: string;
+  analysis?: string;
+  sources?: Array<{
+    url?: string;
+    title?: string;
+  }>;
+  disclosure?: string;
+}
+
+interface SignalJobContextReview {
+  fileName: string;
+  candidateId: string;
+  headline: string;
+  beat: string;
+  accepted: boolean;
+  preDraftAccepted: boolean;
+  preDraftScore: number;
+  reasons: string[];
+}
+
+interface SignalJobContextFile {
+  kind?: string;
+  queueDir?: string;
+  queueFiles?: string[];
+  reviews?: SignalJobContextReview[];
+}
+
+interface StalePruningRecord {
+  kind: "stale_dry_run_pruning";
+  reportDate: string;
+  generatedAt: string;
+  removedCount: number;
+  removed: Array<{
+    candidateId: string;
+    headline: string;
+    detectedAt: string | null;
+    sourcePath: string;
+    reason: string;
+  }>;
+}
+
 export interface RankedCandidate {
   candidateId: string;
   beat: string;
+  filingBeatSlug: string;
   headline: string;
   score: number;
-  obviousBriefWinner: boolean;
-  decision: RankedCandidateDecision;
-  lifecycle: CandidateLifecycle;
+  obviousBriefWinner?: boolean;
+  decision: "file" | "hold" | "reject";
   styleTested: string;
   competitorReference: string | null;
   whyThisStyleWasChosen: string;
   duplicateStatus: "clear" | "pending" | "flagged";
   freshnessStatus: "clear" | "risk_unresolved" | "unknown";
+  publishabilityStatus: PublishabilityStatus;
+  publishabilityReasons: string[];
+  competitivenessStatus: EditorialCompetitivenessStatus;
+  competitivenessReasons: string[];
+  todayStrengthStatus: TodayStrengthStatus;
+  todayStrengthReasons: string[];
   competitorCoverage: Array<{ name: string; headline: string; similarity: number }>;
   reasons: string[];
   sourcePath: string;
@@ -151,6 +191,17 @@ export interface RankedCandidate {
 
 function normalizeScore(value: number): number {
   return Math.max(0, Math.min(100, value));
+}
+
+async function readJsonOrNull<T>(filePath: string): Promise<T | null> {
+  try {
+    return JSON.parse(await readFile(filePath, "utf8")) as T;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+    throw error;
+  }
 }
 
 async function readOptimizationSnapshot(
@@ -171,108 +222,6 @@ async function readOptimizationSnapshot(
 
     throw error;
   }
-}
-
-async function readTextIfExists(filePath: string): Promise<string> {
-  try {
-    return await readFile(filePath, "utf8");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return "";
-    }
-    throw error;
-  }
-}
-
-async function loadSignalAgentContract(
-  reportDate: string,
-  baseDir?: string
-): Promise<SignalAgentContract> {
-  const root = resolve(baseDir ?? process.cwd());
-  const dailyPrepText = await readTextIfExists(resolve(root, `data/reports/daily/${reportDate}.md`));
-  const publisherSkillText = await readTextIfExists("/Users/feems/.agents/skills/aibtc-news-publisher/SKILL.md");
-  const factCheckerSkillText = await readTextIfExists("/Users/feems/.agents/skills/aibtc-news-fact-checker/SKILL.md");
-  const editorialMemoryText = await readTextIfExists(resolve(root, "data/state/editorial-memory.json"));
-  const objectiveMemoryText = await readTextIfExists(resolve(root, "data/state/objective-memory.json"));
-  const competitionMemoryText = await readTextIfExists(resolve(root, "data/state/competition-memory.json"));
-  const briefExamplesText = await readTextIfExists(resolve(root, "data/state/brief-examples.json"));
-  const editorialMemory = editorialMemoryText ? JSON.parse(editorialMemoryText) as {
-    preFilingChecks?: Array<{ id?: string }>;
-    currentCycle?: {
-      reportDate?: string | null;
-      winnersToday?: Array<{ headline?: string }>;
-      lossesToday?: Array<{ headline?: string }>;
-      valueCreatingPatterns?: string[];
-      sourcePatternsThatPassed?: string[];
-    };
-  } : null;
-  const objectiveMemory = objectiveMemoryText ? JSON.parse(objectiveMemoryText) as {
-    pressureNotes?: string[];
-    cadenceLimits?: {
-      maxSignalsPerDay?: number;
-      maxSignalsPerBeatPerMinutes?: number;
-    };
-    currentStanding?: {
-      rank?: number | null;
-      score?: number | null;
-      streak?: string | null;
-      gapToTop3?: number | null;
-      gapToTop6?: number | null;
-    };
-  } : null;
-  const competitionMemory = competitionMemoryText ? JSON.parse(competitionMemoryText) as {
-    crowdedBeats?: Array<{ beat?: string }>;
-    winningStoryShapes?: string[];
-  } : null;
-  const briefExamples = briefExamplesText ? JSON.parse(briefExamplesText) as {
-    recentWinners?: Array<{ headline?: string }>;
-  } : null;
-
-  return {
-    publisherSkillInstalled: publisherSkillText.includes("# Publisher — aibtc.news"),
-    factCheckerSkillInstalled: factCheckerSkillText.includes("# Fact-Checker — aibtc.news"),
-    dailyPrepReportPresent: dailyPrepText.includes(`# Daily Report: ${reportDate}`),
-    dailyPrepText,
-    editorialMemoryPresent: editorialMemoryText.length > 0,
-    objectiveMemoryPresent: objectiveMemoryText.length > 0,
-    competitionMemoryPresent: competitionMemoryText.length > 0,
-    briefExamplesPresent: briefExamplesText.length > 0,
-    preFilingCheckIds: (editorialMemory?.preFilingChecks ?? [])
-      .map((check) => check.id)
-      .filter((id): id is string => typeof id === "string" && id.length > 0),
-    objectivePressureNotes: (objectiveMemory?.pressureNotes ?? []).filter(
-      (note): note is string => typeof note === "string" && note.length > 0
-    ),
-    currentRank: objectiveMemory?.currentStanding?.rank ?? null,
-    currentScore: objectiveMemory?.currentStanding?.score ?? null,
-    currentStreak: objectiveMemory?.currentStanding?.streak ?? null,
-    gapToTop3: objectiveMemory?.currentStanding?.gapToTop3 ?? null,
-    gapToTop6: objectiveMemory?.currentStanding?.gapToTop6 ?? null,
-    maxSignalsPerDay: objectiveMemory?.cadenceLimits?.maxSignalsPerDay ?? null,
-    maxSignalsPerBeatPerMinutes: objectiveMemory?.cadenceLimits?.maxSignalsPerBeatPerMinutes ?? null,
-    crowdedBeatIds: (competitionMemory?.crowdedBeats ?? [])
-      .map((entry) => entry.beat)
-      .filter((beat): beat is string => typeof beat === "string" && beat.length > 0)
-      .map(normalizeBeat),
-    winningStoryShapes: (competitionMemory?.winningStoryShapes ?? []).filter(
-      (shape): shape is string => typeof shape === "string" && shape.length > 0
-    ),
-    winningHeadlineExamples: (briefExamples?.recentWinners ?? [])
-      .map((entry) => entry.headline)
-      .filter((headline): headline is string => typeof headline === "string" && headline.length > 0)
-    ,
-    currentCycleReportDate: editorialMemory?.currentCycle?.reportDate ?? null,
-    currentCycleWinningHeadlines: (editorialMemory?.currentCycle?.winnersToday ?? [])
-      .map((entry) => entry.headline)
-      .filter((headline): headline is string => typeof headline === "string" && headline.length > 0),
-    currentCycleLossHeadlines: (editorialMemory?.currentCycle?.lossesToday ?? [])
-      .map((entry) => entry.headline)
-      .filter((headline): headline is string => typeof headline === "string" && headline.length > 0),
-    currentCycleValueCreatingPatterns: (editorialMemory?.currentCycle?.valueCreatingPatterns ?? [])
-      .filter((entry): entry is string => typeof entry === "string" && entry.length > 0),
-    currentCycleSourcePatternsThatPassed: (editorialMemory?.currentCycle?.sourcePatternsThatPassed ?? [])
-      .filter((entry): entry is string => typeof entry === "string" && entry.length > 0)
-  };
 }
 
 function isManualCheckOnly(rejectionReasons: string[]): boolean {
@@ -327,10 +276,6 @@ function inferHeadlinePattern(headline: string): string {
   }
 
   return "summary-led";
-}
-
-function normalizeBeat(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
 function extractDomain(rawUrl: string): string | null {
@@ -397,7 +342,7 @@ async function readHistoricalBriefSignals(baseDir?: string): Promise<HistoricalB
   const root = baseDir ?? process.cwd();
   // Brief JSON files are saved to data/briefs/ by ingestManualDailyBrief
   const briefsDir = resolve(root, "data/briefs");
-  const briefHistoryDir = resolve(root, "data/brief-history");
+  const correspondentsDir = resolve(root, "data/correspondents");
   const stateDir = resolve(root, "data/state");
 
   // Collect notes from manually ingested brief entry notes[]
@@ -420,19 +365,35 @@ async function readHistoricalBriefSignals(baseDir?: string): Promise<HistoricalB
     }
   }
 
-  let briefHistoryFiles: string[] = [];
+  let correspondentFiles: string[] = [];
   try {
-    briefHistoryFiles = (await readdir(briefHistoryDir)).filter((f) => f.endsWith(".json")).sort();
+    correspondentFiles = (await readdir(correspondentsDir)).filter((f) => f.endsWith(".json")).sort();
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
 
-  for (const fileName of briefHistoryFiles) {
+  const correspondentBeats: string[] = [];
+  for (const fileName of correspondentFiles) {
     const parsed = JSON.parse(
-      await readFile(resolve(briefHistoryDir, fileName), "utf8")
-    ) as { notes?: string[] };
-    for (const note of parsed.notes ?? []) {
-      notes.push(note);
+      await readFile(resolve(correspondentsDir, fileName), "utf8")
+    ) as {
+      correspondents?: Array<{
+        beats?: string[];
+        notes?: string[];
+        headlinePatterns?: string[];
+      }>;
+    };
+
+    for (const correspondent of parsed.correspondents ?? []) {
+      for (const beat of correspondent.beats ?? []) {
+        correspondentBeats.push(beat);
+      }
+      for (const note of correspondent.notes ?? []) {
+        notes.push(note);
+      }
+      for (const pattern of correspondent.headlinePatterns ?? []) {
+        notes.push(pattern);
+      }
     }
   }
 
@@ -460,44 +421,22 @@ async function readHistoricalBriefSignals(baseDir?: string): Promise<HistoricalB
 
   const normalizedNotes = notes.map((note) => note.toLowerCase());
   const normalizedHeadlines = publishedHeadlines.map((h) => h.toLowerCase());
-  const normalizedBeats = publishedBeats.map((b) => normalizeBeat(b));
+  const normalizedBeats = publishedBeats.map((b) => b.toLowerCase());
+  const normalizedCorrespondentBeats = correspondentBeats.map((b) => b.toLowerCase());
 
-  // Live beat slugs from aibtc.news/api/beats — must match exactly what is used in submissions
+  // Accepted filing beats for this agent. Other public aibtc.news beats are intentionally excluded.
   const beatVocabulary = [
-    "dev-tools",
-    "security",
     "aibtc-network",
-    "agent-economy",
-    "agent-trading",
-    "dao-watch",
-    "deal-flow",
-    "distribution",
-    "agent-skills",
-    "agent-social",
-    "bitcoin-yield",
     "bitcoin-macro",
-    "bitcoin-culture",
-    "ordinals",
-    "runes",
-    "art"
+    "quantum"
   ];
 
   const preferredBeats = beatVocabulary
     .filter((beat) =>
       normalizedNotes.some((note) => note.includes(beat)) ||
-      normalizedBeats.some((b) => b === beat)
+      normalizedBeats.some((b) => b === beat) ||
+      normalizedCorrespondentBeats.some((b) => b === beat)
     );
-
-  const noteMentionedBeats = normalizedNotes.flatMap((note) => {
-    const matches = note.match(/\b(infrastructure|security|onboarding|distribution|governance|agent economy|agent trading|protocol updates|deal flow)\b/g) ?? [];
-    return matches.map((match) => normalizeBeat(match));
-  });
-
-  const preferredBeatSet = new Set([
-    ...preferredBeats,
-    ...normalizedBeats,
-    ...noteMentionedBeats
-  ]);
 
   const prefersReleaseConsequence =
     normalizedNotes.some((note) =>
@@ -525,16 +464,385 @@ async function readHistoricalBriefSignals(baseDir?: string): Promise<HistoricalB
     ) ||
     normalizedHeadlines.some((h) => hasExactAnchor(h));
 
+  const topicCounts = new Map<string, { label: string; count: number }>();
+  for (const text of [...notes, ...publishedHeadlines]) {
+    for (const topic of detectBriefTopics(text)) {
+      const existing = topicCounts.get(topic.topic);
+      topicCounts.set(topic.topic, {
+        label: topic.label,
+        count: (existing?.count ?? 0) + 1
+      });
+    }
+  }
+  const preferredTopics = [...topicCounts.entries()]
+    .sort((left, right) => right[1].count - left[1].count || left[0].localeCompare(right[0]))
+    .map(([topic, value]) => ({ topic, label: value.label, count: value.count }));
+
   return {
-    preferredBeats: [...preferredBeatSet],
+    preferredBeats,
     prefersReleaseConsequence,
     prefersStructuralPatterns,
-    prefersExactAnchors
+    prefersExactAnchors,
+    preferredTopics
   };
 }
 
+function inferWinningAngle(text: string): string | null {
+  const normalized = text.toLowerCase();
+
+  if (/\bdependency risk\b|\bconcentration\b|\bgap\b|\btrap\b|\brisk\b/.test(normalized)) {
+    return "structural-risk";
+  }
+
+  if (/\binstead of\b|\bafter \d+s instead of \d+s\b|\btimeout\b|\blatency\b|\bfaster\b|\bslower\b/.test(normalized)) {
+    return "measured-operator-improvement";
+  }
+
+  if (/\btop \d+\b|\b\d+%\b|\bmarket formation\b|\btaxonomy\b|\bpool\b|\bshare\b/.test(normalized)) {
+    return "market-structure";
+  }
+
+  return null;
+}
+
+const OCCUPANCY_STOPWORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "into",
+  "that",
+  "this",
+  "when",
+  "than",
+  "have",
+  "will",
+  "your",
+  "after",
+  "before",
+  "during",
+  "through",
+  "across",
+  "agent",
+  "agents",
+  "operator",
+  "operators",
+  "workflows",
+  "workflow",
+  "skills",
+  "skill",
+  "stacks"
+]);
+
+function extractVersionAnchors(text: string): string[] {
+  return [...text.toLowerCase().matchAll(/\bv\d+\.\d+(?:\.\d+)?\b/g)].map((match) => match[0]);
+}
+
+function extractSignificantTokens(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .split(/\s+/)
+      .filter((token) => token.length >= 3 && !OCCUPANCY_STOPWORDS.has(token))
+  );
+}
+
+function recentBriefOccupancyMatch(
+  candidateHeadline: string,
+  winnerHeadline: string
+): boolean {
+  const normalizedCandidate = candidateHeadline.trim().toLowerCase();
+  const normalizedWinner = winnerHeadline.trim().toLowerCase();
+
+  if (normalizedCandidate === normalizedWinner) {
+    return true;
+  }
+
+  const similarity = jaccardSimilarity(candidateHeadline, winnerHeadline);
+  if (similarity >= 0.5) {
+    return true;
+  }
+
+  const candidateVersions = extractVersionAnchors(candidateHeadline);
+  const winnerVersions = extractVersionAnchors(winnerHeadline);
+  const sharedVersion = candidateVersions.some((version) => winnerVersions.includes(version));
+
+  const candidateTokens = extractSignificantTokens(candidateHeadline);
+  const winnerTokens = extractSignificantTokens(winnerHeadline);
+  const sharedTokens = [...candidateTokens].filter((token) => winnerTokens.has(token));
+
+  if (sharedVersion && sharedTokens.length >= 2) {
+    return true;
+  }
+
+  return similarity >= 0.3 && sharedTokens.length >= 3;
+}
+
+async function readRecentBriefOccupancy(
+  reportDate: string,
+  baseDir?: string
+): Promise<RecentBriefOccupancyEntry[]> {
+  const root = baseDir ?? process.cwd();
+  const stateDir = resolve(root, "data/state");
+
+  let stateFiles: string[] = [];
+  try {
+    stateFiles = (await readdir(stateDir))
+      .filter((fileName) => fileName.startsWith("brief-winners-") && fileName.endsWith(".json"))
+      .sort()
+      .filter((fileName) => fileName.slice("brief-winners-".length, "brief-winners-".length + 10) < reportDate);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+
+  const recentFiles = stateFiles.slice(-2);
+  const entries: RecentBriefOccupancyEntry[] = [];
+  for (const fileName of recentFiles) {
+    const parsed = JSON.parse(
+      await readFile(resolve(stateDir, fileName), "utf8")
+    ) as { reportDate?: string; publishedSignals?: Array<{ headline: string; beat: string }> };
+    for (const signal of parsed.publishedSignals ?? []) {
+      entries.push({
+        reportDate: parsed.reportDate ?? fileName.replace(/^brief-winners-/, "").replace(/\.json$/, ""),
+        headline: signal.headline,
+        beat: signal.beat
+      });
+    }
+  }
+
+  return entries;
+}
+
+const BRIEF_TOPIC_PATTERNS: Array<{
+  topic: string;
+  label: string;
+  patterns: RegExp[];
+}> = [
+  {
+    topic: "queue-bottleneck",
+    label: "queue or bottleneck pressure",
+    patterns: [/\bqueue\b/i, /\bbottleneck\b/i, /\bbacklog\b/i, /\bsaturation\b/i, /\bcongestion\b/i]
+  },
+  {
+    topic: "upgrade-window",
+    label: "upgrade windows and activation deadlines",
+    patterns: [/\brequired upgrade\b/i, /\bupgrade before\b/i, /\bactivation\b/i, /\bdeadline\b/i, /\bwindow\b/i]
+  },
+  {
+    topic: "api-registry-signals",
+    label: "API, registry, heartbeat, or leaderboard signals",
+    patterns: [/\bapi\b/i, /\bregistry\b/i, /\bheartbeat\b/i, /\bleaderboard\b/i, /\bendpoint\b/i]
+  },
+  {
+    topic: "security-mitigation",
+    label: "security exposure and mitigation",
+    patterns: [/\bsecurity\b/i, /\bexploit\b/i, /\bvulnerab/i, /\bmitigation\b/i, /\bpatch\b/i]
+  },
+  {
+    topic: "market-structure",
+    label: "market structure and concentration",
+    patterns: [/\bmarket structure\b/i, /\bconcentration\b/i, /\bmarket formation\b/i, /\bshare\b/i, /\btop \d+\b/i]
+  },
+  {
+    topic: "release-proof",
+    label: "release proof and shipping changes",
+    patterns: [/\brelease\b/i, /\bships\b/i, /\btag\b/i, /\bv\d+\.\d+(?:\.\d+)?\b/i, /\bpr\s*#\d+\b/i]
+  }
+];
+
+function detectBriefTopics(text: string): Array<{ topic: string; label: string }> {
+  const matches: Array<{ topic: string; label: string }> = [];
+  for (const entry of BRIEF_TOPIC_PATTERNS) {
+    if (entry.patterns.some((pattern) => pattern.test(text))) {
+      matches.push({ topic: entry.topic, label: entry.label });
+    }
+  }
+  return matches;
+}
+
+function getTodayWinningAngles(
+  briefSnapshot: Awaited<ReturnType<typeof readBriefWinnerSnapshot>>
+): string[] {
+  const counts = new Map<string, number>();
+  for (const signal of briefSnapshot?.publishedSignals ?? []) {
+    const angle = inferWinningAngle(signal.headline);
+    if (angle) {
+      counts.set(angle, (counts.get(angle) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([angle]) => angle);
+}
+
+function getTodayWinningTopics(
+  briefSnapshot: Awaited<ReturnType<typeof readBriefWinnerSnapshot>>
+): Array<{ topic: string; label: string }> {
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const signal of briefSnapshot?.publishedSignals ?? []) {
+    for (const match of detectBriefTopics(signal.headline)) {
+      const existing = counts.get(match.topic);
+      counts.set(match.topic, {
+        label: match.label,
+        count: (existing?.count ?? 0) + 1
+      });
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1].count - left[1].count || left[0].localeCompare(right[0]))
+    .map(([topic, value]) => ({ topic, label: value.label }));
+}
+
+function assessTodayBriefStrength(
+  submission: SerializedSubmission,
+  briefSnapshot: Awaited<ReturnType<typeof readBriefWinnerSnapshot>>,
+  candidateContextText: string,
+  operatorConsequence: boolean,
+  broadWinnerShape: boolean,
+  exactAnchor: boolean,
+  candidateWinningAngle: string | null
+): {
+  status: TodayStrengthStatus;
+  reasons: string[];
+} {
+  const publishedSignals = briefSnapshot?.publishedSignals ?? [];
+  if (publishedSignals.length === 0) {
+    return {
+      status: "unknown",
+      reasons: ["today brief strength check unavailable because no pasted brief winners were ingested"]
+    };
+  }
+
+  const winnerHeadlines = publishedSignals.map((signal) => signal.headline);
+  const winnerAngles = getTodayWinningAngles(briefSnapshot);
+  const winnerTopics = getTodayWinningTopics(briefSnapshot);
+  const candidateTopics = detectBriefTopics(candidateContextText);
+  const matchedTopicLabels = candidateTopics
+    .filter((topic) => winnerTopics.some((winnerTopic) => winnerTopic.topic === topic.topic))
+    .map((topic) => topic.label);
+  const winnersWithExactAnchors = winnerHeadlines.filter((headline) => hasExactAnchor(headline)).length;
+  const winnersWithBroadShape = winnerHeadlines.filter((headline) =>
+    hasBroadWinnerShape(
+      {
+        ...submission,
+        headline,
+        candidate_signal: {
+          ...submission.candidate_signal,
+          summary: headline,
+          significance: headline,
+          causality: headline
+        }
+      },
+      headline
+    )
+  ).length;
+  const winnersWithOperatorConsequence = winnerHeadlines.filter((headline) =>
+    hasOperatorConsequence(headline)
+  ).length;
+  const beatOccupied = briefSnapshot?.occupiedBeats.includes(submission.candidate_signal.beat) ?? false;
+  const repeatWinnerPressure = (briefSnapshot?.repeatWinners.length ?? 0) > 0;
+
+  let misses = 0;
+  const reasons: string[] = [];
+
+  if (!operatorConsequence) {
+    misses += 1;
+    reasons.push("today brief mismatch: operator consequence is not explicit enough for the current winner set");
+  } else {
+    reasons.push("today brief match: operator consequence is explicit");
+  }
+
+  if (winnersWithExactAnchors >= Math.ceil(publishedSignals.length * 0.4)) {
+    if (exactAnchor) {
+      reasons.push("today brief match: uses the exact numeric/version anchors that today’s winners keep using");
+    } else {
+      misses += 1;
+      reasons.push("today brief mismatch: today’s winners lean on exact anchors and this candidate does not");
+    }
+  }
+
+  if (winnerAngles.length > 0) {
+    if (candidateWinningAngle && winnerAngles.includes(candidateWinningAngle)) {
+      reasons.push(`today brief match: fits a winning angle landing today (${candidateWinningAngle})`);
+    } else {
+      misses += 1;
+      reasons.push("today brief mismatch: does not match the concrete operator angles winning in the pasted brief");
+    }
+  }
+
+  if (winnerTopics.length > 0) {
+    if (matchedTopicLabels.length > 0) {
+      reasons.push(
+        `today brief match: aligns with the concrete topics winning today (${[...new Set(matchedTopicLabels)].join(", ")})`
+      );
+    } else {
+      misses += 1;
+      reasons.push("today brief mismatch: misses the concrete topics already winning the pasted brief");
+    }
+  }
+
+  if (winnersWithBroadShape >= Math.ceil(publishedSignals.length * 0.3)) {
+    if (broadWinnerShape) {
+      reasons.push("today brief match: packaged broadly enough to compete with today’s winner style");
+    } else {
+      misses += 1;
+      reasons.push("today brief mismatch: packaging is narrower than the stronger same-day winners");
+    }
+  }
+
+  if (beatOccupied && repeatWinnerPressure && !broadWinnerShape && candidateWinningAngle === null) {
+    misses += 1;
+    reasons.push("today brief mismatch: occupied beat plus repeat-winner pressure requires a stronger differentiating angle");
+  }
+
+  if (winnersWithOperatorConsequence === 0 && operatorConsequence) {
+    reasons.push("today brief note: winners are less explicit than this candidate, so the operator-consequence edge still helps");
+  }
+
+  return {
+    status: misses === 0 ? "strong_enough_today" : "operator_relevant_but_weak_today",
+    reasons
+  };
+}
+
+async function readCompetitorWinningAngles(
+  reportDate: string,
+  baseDir?: string
+): Promise<string[]> {
+  const filePath = resolve(baseDir ?? process.cwd(), `data/reports/competitor-review/${reportDate}.json`);
+
+  try {
+    const parsed = JSON.parse(await readFile(filePath, "utf8")) as {
+      whoWonToday?: Array<{ headlines?: string[] }>;
+    };
+    const angles = new Map<string, number>();
+
+    for (const winner of parsed.whoWonToday ?? []) {
+      for (const headline of winner.headlines ?? []) {
+        const angle = inferWinningAngle(headline);
+        if (angle) {
+          angles.set(angle, (angles.get(angle) ?? 0) + 1);
+        }
+      }
+    }
+
+    return [...angles.entries()]
+      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .map(([angle]) => angle);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+}
+
 function hasExactAnchor(headline: string): boolean {
-  return /\b\d[\d,.]*\b/.test(headline) || /\bv\d+\.\d+(?:\.\d+)?\b/i.test(headline);
+  return /\b\d[\d,.]*(?:\s?(?:k|m|b|sats?|sat|stx|btc|%))?\b/i.test(headline) || /\bv\d+\.\d+(?:\.\d+)?\b/i.test(headline);
 }
 
 function hasStructuralPattern(text: string): boolean {
@@ -542,94 +850,79 @@ function hasStructuralPattern(text: string): boolean {
 }
 
 function hasOperatorConsequence(text: string): boolean {
-  return /\bagents should\b|\boperators should\b|\bmatters because\b|\brequires\b|\bupgrade\b|\brisk\b|\bwindow\b|\bconsequence\b/i.test(text);
+  return /\bagents should\b|\boperators should\b|\boperators may need\b|\bmatters because\b|\brequires\b|\bneed to review\b|\breview before\b|\bupgrade\b|\brisk\b|\bwindow\b|\bconsequence\b|\breduces?\b|\bprevents?\b|\bkeeps?\b|\bclears?\b|\bstops?\b|\brestores?\b|\bavoids?\b/i.test(text);
 }
 
-function getDisclosureText(submission: SerializedSubmission): string {
-  const tools = submission.model_disclosure?.tools_used ?? [];
-  const steps = submission.model_disclosure?.derivation_steps ?? [];
-  return [...tools, ...steps]
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
-    .join(" ");
+function sourceUrlSignalsBitcoinEcosystem(sourceUrl: string): boolean {
+  try {
+    const parsed = new URL(sourceUrl);
+    const hostname = parsed.hostname.replace(/^www\./, "");
+
+    if (
+      hostname === "aibtc.com" ||
+      hostname === "aibtc.news" ||
+      hostname === "hiro.so" ||
+      hostname === "stacks.co" ||
+      hostname === "docs.stacks.co" ||
+      hostname === "mempool.space"
+    ) {
+      return true;
+    }
+
+    if (hostname === "github.com") {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      const owner = segments[0] ?? "";
+      if (owner === "aibtcdev" || owner === "stacks-network") {
+        return true;
+      }
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
-function hasTriviallyVagueDisclosure(disclosure: string): boolean {
-  const normalized = disclosure.toLowerCase().trim();
-  if (normalized.length === 0) {
+// Security beat: headline must name one of these specific components to pass the relevance gate.
+// Generic Bitcoin wallet or security stories fail even if "bitcoin" appears in the headline.
+const SECURITY_ALLOWED_COMPONENTS = /\b(x402|aibtcdev|stacks-network|hiro|clarity|sbtc)\b/i;
+
+// Ecosystem keywords checked against the headline for non-security beats.
+const ECOSYSTEM_KEYWORDS = /\b(aibtc|bitcoin|btc|sbtc|stacks|stx|x402|ordinals|runes|hiro|clarity|mempool)\b/i;
+
+function hasBitcoinEcosystemRelevance(
+  submission: SerializedSubmission
+): boolean {
+  const sourceUrls = (submission.sources ?? [])
+    .map((source) => source.source_url)
+    .filter((value): value is string => typeof value === "string");
+
+  const beat = submission.candidate_signal.beat;
+
+  // Source URLs are the primary signal — ecosystem-specific source is sufficient for non-security beats.
+  if (sourceUrls.some(sourceUrlSignalsBitcoinEcosystem)) {
+    // External security stories require the headline to name a specific allowed component even when
+    // the source URL already signals the ecosystem. This blocks generic wallet/security rewrites.
+    if (beat === "security") {
+      return SECURITY_ALLOWED_COMPONENTS.test(submission.headline);
+    }
     return true;
   }
 
-  return [
-    "used ai",
-    "my own analysis",
-    "various sources",
-    "internal data",
-    "used llm",
-    "ai generated",
-    "model output",
-    "my analysis"
-  ].some((pattern) => normalized.includes(pattern));
-}
-
-function hasConcreteDisclosureAnchors(disclosure: string): boolean {
-  if (disclosure.trim().length < 24) {
-    return false;
+  // For the security beat without an ecosystem source URL, the headline must name a specific
+  // allowed component. "bitcoin" or "btc" alone in the headline is not sufficient.
+  if (beat === "security") {
+    return SECURITY_ALLOWED_COMPONENTS.test(submission.headline);
   }
 
-  return (
-    /\b(?:claude|gpt|grok|gemini|opus|sonnet|haiku)\b/i.test(disclosure) ||
-    /\b(?:curl|rg|npm|node|bun|gh|api|endpoint|query|search)\b/i.test(disclosure) ||
-    /\/api\/|https?:\/\/|github\.com|issue\s+#\d+|pr\s+#\d+|release/i.test(disclosure)
-  );
-}
+  // Headline is the second signal for all other beats.
+  // Summary, significance, causality, and other agent-written prose are not consulted.
+  if (ECOSYSTEM_KEYWORDS.test(submission.headline)) {
+    return true;
+  }
 
-function passesMissionAlignment(text: string): boolean {
-  const normalized = text.toLowerCase();
-  const bitcoinRail =
-    /\bbitcoin\b|\bbtc\b|\bsbtc\b|\bstacks\b|\bstx\b|\bx402\b|\binscription\b|\bordinal\b/i.test(normalized);
-  const aiOrNetworkActor =
-    /\bai\b|\bagent\b|\bagents\b|\boperator\b|\boperators\b|\bapp\b|\bapps\b|\bcorrespondent\b|\bcorrespondents\b|\baibtc\b/i.test(normalized);
-  const economicOrOperationalUse =
-    /\buse\b|\bearn\b|\btransact\b|\bpayment\b|\bpayments\b|\bpayout\b|\bpayouts\b|\bsettlement\b|\bbrief\b|\branking\b|\binbox\b|\btransaction\b|\btransactions\b|\bindexable\b|\bblock production\b/i.test(normalized);
-
-  return bitcoinRail && aiOrNetworkActor && economicOrOperationalUse;
-}
-
-function passesInscribableNewsTest(text: string): boolean {
-  const normalized = text.toLowerCase();
-  const speculative =
-    /\bsources say\b|\breportedly\b|\ballegedly\b|\brumored\b|\bcould soon\b|\bmay be planning\b|\bexpected to\b|\bunconfirmed\b/.test(normalized);
-  const hasDevelopment =
-    /\bissue\s+#\d+\b|\bpr\s+#\d+\b|\brelease\b|\bships\b|\bshipped\b|\bfix(?:es|ed)?\b|\bpatch(?:es|ed)?\b|\badds?\b|\brestores?\b|\breplaces?\b|\bactivates?\b|\bratifies?\b|\bshows\b|\blive\b|\blaunch(?:es|ed)?\b|\bopens?\b|\bcut(?:s)?\b/i.test(text);
-
-  return !speculative && hasDevelopment;
-}
-
-function passesValueCreationTest(text: string): boolean {
-  const normalized = text.toLowerCase();
-  return /\bthis means\b|\bimplication\b|\bmatters because\b|\boperators need\b|\bagents should\b|\boperators should\b|\bwhich means\b|\bas a result\b|\bso that\b|\bchanges\b|\blowers\b|\bdelays\b|\benables\b|\bturns\b/i.test(normalized);
-}
-
-function hasMeasurableEcosystemDelta(text: string): boolean {
-  // Signal tracks a specific before/after change, not a vague trend.
-  // Pattern: "from X to Y", "up/down N%", "increased by N", "now N vs N", stalled N blocks, etc.
-  return (
-    /\bfrom\s+\d[\d,.]*\s+to\s+\d[\d,.]*\b/i.test(text) ||
-    /\b(?:up|down|fell?|rose?|drop(?:ped)?|jumped?|surged?|climbed?)\s+(?:from\s+)?\d[\d,.]*[KMBk%]?\b/i.test(text) ||
-    /\b(?:increased?|decreased?|grew?|grew|slowed?)\s+(?:by\s+)?\d[\d,.]*[KMBk%]?\b/i.test(text) ||
-    /\bnow\s+\d[\d,.]*[KMBk]?\s+(?:agents?|signals?|blocks?|sats?|stx|sbtc|users?|slots?|nodes?)\b/i.test(text) ||
-    /\d[\d,.]*[KMBk%]?\s+(?:higher|lower|faster|slower|more|fewer)\s+than\b/i.test(text) ||
-    /\bstalled?\s+\d+\s+block|\b\d+\s+(?:blocks?|tx|transactions?)\s+(?:stuck|pending|delayed)\b/i.test(text) ||
-    /\b(?:vs\.?|versus|compared to|up from|down from)\s+\d[\d,.]*\b/i.test(text)
-  );
-}
-
-function isVagueTrendNarrative(text: string): boolean {
-  // Signals that describe organic/gradual trends without a specific measurable incident.
-  const vagueTerms = /\bgrowing interest\b|\bincreasing adoption\b|\borganic\b|\bgradually\b|\btraction\b|\bmomentum\b|\bon the rise\b|\bemerging trend\b|\bslow(ly)? increasing\b|\bsteadily\b/i.test(text);
-  const hasSpecificAnchor = /\bpr\s+#\d+\b|\bissue\s+#\d+\b|\bv\d+\.\d+|\bcve-\d{4}|\bblock\s*\d{5,}|\bhttp\s*[45]\d\d\b/i.test(text);
-  const hasDelta = hasMeasurableEcosystemDelta(text);
-  return vagueTerms && !hasSpecificAnchor && !hasDelta;
+  // Beat is soft secondary support only — not sufficient on its own.
+  return false;
 }
 
 function isRawReleaseWithoutOperatorConsequence(
@@ -646,7 +939,7 @@ function hasBroadWinnerShape(submission: SerializedSubmission, text: string): bo
   const numericAnchors = submission.headline.match(/\b\d[\d,.]*\b/g) ?? [];
   return (
     /\b(and|plus|simultaneous|bundle|bundled|combined|cluster)\b/i.test(submission.headline) ||
-    /\bstructural\b|\bsystem\b|\bnetwork-level\b|\bnetwork wide\b|\bbroader same-beat\b|\bbroader package\b|\bbroader story\b/i.test(text) ||
+    /\bbroader\b|\bstructural\b|\bsystem\b|\bnetwork-level\b|\bnetwork wide\b/i.test(text) ||
     numericAnchors.length >= 2
   );
 }
@@ -732,6 +1025,147 @@ function inferWhyStyleWasChosen(
     : `${styleTested}: chosen as the strongest available style from current evidence`;
 }
 
+function readBriefCompetitionProof(
+  submission: SerializedSubmission
+): BriefCompetitionProof {
+  const metadata = submission.candidate_metadata ?? {};
+
+  return {
+    whyThisBeatIsOpen: metadata.why_this_beat_is_open?.trim() ?? "",
+    whyNow: metadata.why_now?.trim() ?? "",
+    whyThisBeatsSameDayCompetition: metadata.why_this_beats_same_day_competition?.trim() ?? "",
+    primarySourceProof: metadata.primary_source_proof?.trim() ?? "",
+    operatorAction: metadata.operator_action?.trim() ?? ""
+  };
+}
+
+function hasStrongTerminalPunctuation(text: string): boolean {
+  return /[.!?]$/.test(text.trim());
+}
+
+function evaluateBriefCompetitionProof(
+  proof: BriefCompetitionProof
+): { ready: boolean; reasons: string[] } {
+  const hasExplicitCompetitionFields = [
+    proof.whyThisBeatIsOpen,
+    proof.whyNow,
+    proof.whyThisBeatsSameDayCompetition,
+    proof.primarySourceProof,
+    proof.operatorAction
+  ].some((value) => value.trim().length > 0);
+  if (!hasExplicitCompetitionFields) {
+    // Backward-compatibility for legacy dry-run fixtures that predate the explicit brief-competition contract.
+    return { ready: true, reasons: [] };
+  }
+
+  const reasons: string[] = [];
+  const minLen = 24;
+  const addMissingOrWeak = (label: string, value: string) => {
+    if (!value.trim()) {
+      reasons.push(`brief competition proof missing: ${label}`);
+      return;
+    }
+    if (value.trim().length < minLen) {
+      reasons.push(`brief competition proof weak: ${label} is too short`);
+    }
+    if (!hasStrongTerminalPunctuation(value)) {
+      reasons.push(`brief competition proof weak: ${label} must end with terminal punctuation`);
+    }
+  };
+
+  addMissingOrWeak("why_this_beat_is_open", proof.whyThisBeatIsOpen);
+  addMissingOrWeak("why_now", proof.whyNow);
+  addMissingOrWeak("why_this_beats_same_day_competition", proof.whyThisBeatsSameDayCompetition);
+  addMissingOrWeak("primary_source_proof", proof.primarySourceProof);
+  addMissingOrWeak("operator_action", proof.operatorAction);
+
+  if (proof.whyThisBeatIsOpen && !/\bopen\b|\bslot\b|\bbeat\b|\bcrowd|\bcoverage\b|\bwindow\b/i.test(proof.whyThisBeatIsOpen)) {
+    reasons.push("brief competition proof weak: why_this_beat_is_open must explain beat-slot pressure or gap");
+  }
+  if (proof.whyNow && !/\bnow\b|\btoday\b|\bsame day\b|\bbefore\b|\bwindow\b|\bdeadline\b|\blive\b|\bcurrent\b|\bthis cycle\b|\b\d{4}-\d{2}-\d{2}\b/i.test(proof.whyNow)) {
+    reasons.push("brief competition proof weak: why_now must include concrete timing urgency");
+  }
+  if (proof.whyThisBeatsSameDayCompetition && !/\bbeat\b|\boutcompete\b|\bbroader\b|\bstronger\b|\bdifferentiat|\bcompetition\b|\bsame-day\b|\bslot\b/i.test(proof.whyThisBeatsSameDayCompetition)) {
+    reasons.push("brief competition proof weak: why_this_beats_same_day_competition must explain displacement versus same-day competition");
+  }
+  if (proof.primarySourceProof && !/\bhttps?:\/\/\S+/i.test(proof.primarySourceProof)) {
+    reasons.push("brief competition proof weak: primary_source_proof must include an exact source URL");
+  }
+  if (proof.primarySourceProof && !hasExactAnchor(proof.primarySourceProof)) {
+    reasons.push("brief competition proof weak: primary_source_proof must include an exact anchor");
+  }
+  if (proof.operatorAction && !hasOperatorConsequence(proof.operatorAction)) {
+    reasons.push("brief competition proof weak: operator_action must contain an explicit operator action");
+  }
+
+  return {
+    ready: reasons.length === 0,
+    reasons
+  };
+}
+
+function isAibtcNativeSource(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.hostname === "github.com") {
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      return segments[0] === "aibtcdev";
+    }
+
+    return parsed.hostname === "aibtc.news" || parsed.hostname === "aibtc.com";
+  } catch {
+    return false;
+  }
+}
+
+function isAibtcNativeOperatorStory(
+  submission: SerializedSubmission,
+  contextText: string,
+  operatorConsequence: boolean
+): boolean {
+  const sourceUrls = (submission.sources ?? [])
+    .map((source) => source.source_url)
+    .filter((value): value is string => typeof value === "string");
+
+  return operatorConsequence && sourceUrls.some(isAibtcNativeSource) && !readsLikeGenericExternalAdaptation(submission);
+}
+
+function hasConcreteNetworkAnchor(text: string): boolean {
+  return /\b(aibtc|agent-news|landing-page|mcp-server|x402|sbtc|beat|brief|correspondent|genesis|leaderboard|heartbeat|inbox|service registry|relay)\b/i.test(text);
+}
+
+function isExternalWithoutAibtcNetworkActivity(
+  submission: SerializedSubmission,
+  contextText: string
+): boolean {
+  const sourceUrls = (submission.sources ?? [])
+    .map((source) => source.source_url)
+    .filter((value): value is string => typeof value === "string");
+  return sourceUrls.length > 0 && !sourceUrls.some(isAibtcNativeSource) && !hasConcreteNetworkAnchor(contextText);
+}
+
+function isRawDataWithoutThesis(
+  submission: SerializedSubmission,
+  contextText: string,
+  operatorConsequence: boolean,
+  structuralPattern: boolean
+): boolean {
+  const baselineShape = /\b(baseline|snapshot|submitted|approved|rejected|unknown|moved from|page \d+ of \d+|delta|membership)\b/i;
+  const countAnchor = /\b\d[\d,.]*\b/.test(contextText);
+  return baselineShape.test(`${submission.headline} ${contextText}`) && countAnchor && !operatorConsequence && !structuralPattern;
+}
+
+function isGenericOperationalAdvice(
+  submission: SerializedSubmission,
+  contextText: string,
+  exactAnchor: boolean,
+  structuralPattern: boolean
+): boolean {
+  const colonLedSpeaker = /^[A-Z][a-z]+(?: [A-Z][a-z]+)*:/.test(submission.headline);
+  const adviceShape = /\b(process-control|deterministic claim templates?|verification gates?|preflight|sequencing|payload structure|first-pass progression|false-ready states|multi-wallet publishing loops|one-x-account-per-agent|activity logs)\b/i;
+  return (colonLedSpeaker || adviceShape.test(contextText)) && !exactAnchor && !structuralPattern;
+}
+
 function inferDuplicateStatus(
   submission: SerializedSubmission,
   pendingDuplicateRisk: boolean,
@@ -769,18 +1203,6 @@ function buildCandidateContextText(submission: SerializedSubmission): string {
     ...(submission.proof ?? []).flatMap((item) => [item.query_result, item.proof_note])
   ]
     .filter((value): value is string => typeof value === "string" && value.length > 0)
-    .join(" ");
-}
-
-function buildSignalGuardBody(submission: SerializedSubmission): string {
-  return [
-    submission.article_preview?.lede,
-    submission.article_preview?.why_it_matters,
-    submission.candidate_signal.summary,
-    submission.candidate_signal.significance,
-    submission.candidate_signal.causality
-  ]
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .join(" ");
 }
 
@@ -913,19 +1335,11 @@ function applyCompanionReleaseAdjustments(
   }
 }
 
-function scoreCandidate(
+async function scoreCandidate(
   submission: SerializedSubmission,
   context: ScoreContext
-): Omit<RankedCandidate, "sourcePath"> {
-  const {
-    optimization,
-    briefSnapshot,
-    agentBehavior,
-    historicalBriefSignals,
-    autoGate,
-    finalSignalGuard,
-    signalAgentContract
-  } = context;
+): Promise<Omit<RankedCandidate, "sourcePath">> {
+  const { optimization, briefSnapshot, agentBehavior, historicalBriefSignals, recentBriefOccupancy, competitorWinningAngles, autoGate } = context;
   let score = 50;
   const reasons: string[] = [];
   const submissionStatus = getSubmissionStatus(submission);
@@ -945,9 +1359,8 @@ function scoreCandidate(
   )];
   const topWinningDomains = (agentBehavior?.commonSourceDomains ?? []).slice(0, 5);
   const winningDomainMatches = topWinningDomains.filter((item) => sourceDomains.includes(item.domain));
-  const normalizedSubmissionBeat = normalizeBeat(submission.candidate_signal.beat);
   const beatOwners = (agentBehavior?.agents ?? []).filter((agent) =>
-    agent.beats.map(normalizeBeat).includes(normalizedSubmissionBeat)
+    agent.beats.includes(submission.candidate_signal.beat)
   );
   const dominantBeatOwners = beatOwners.filter((agent) => agent.wins >= 2 || agent.sameDayMultiWins >= 1);
 
@@ -968,19 +1381,19 @@ function scoreCandidate(
     }
   }
   const candidateContextText = buildCandidateContextText(submission);
+  const candidateWinningAngle = inferWinningAngle(candidateContextText);
   const exactAnchor = hasExactAnchor(submission.headline);
   const structuralPattern = hasStructuralPattern(candidateContextText);
   const operatorConsequence = hasOperatorConsequence(candidateContextText);
-  const disclosureText = getDisclosureText(submission);
-  const missionAligned = passesMissionAlignment(candidateContextText);
-  const replicableDisclosure =
-    !hasTriviallyVagueDisclosure(disclosureText) && hasConcreteDisclosureAnchors(disclosureText);
-  const inscribableNews = passesInscribableNewsTest(candidateContextText);
-  const valueCreating = passesValueCreationTest(candidateContextText);
+  const bitcoinEcosystemRelevant = hasBitcoinEcosystemRelevance(submission);
   const broadWinnerShape = hasBroadWinnerShape(submission, candidateContextText);
   const rawReleaseWithoutOperatorConsequence = isRawReleaseWithoutOperatorConsequence(
     submission,
     operatorConsequence
+  );
+  const externalWithoutAibtcActivity = isExternalWithoutAibtcNetworkActivity(
+    submission,
+    candidateContextText
   );
   const styleTested = inferStyleTestedFromSubmission(
     submission,
@@ -1004,105 +1417,68 @@ function scoreCandidate(
   );
   const duplicateStatus = inferDuplicateStatus(submission, pendingDuplicateRisk, autoGate);
   const freshnessStatus = inferFreshnessStatus(submission, freshnessRisk, autoGate);
+  const competitionProof = readBriefCompetitionProof(submission);
+  const competitionProofAssessment = evaluateBriefCompetitionProof(competitionProof);
+  const publishability = await assessBeatPublishability(submission.candidate_signal.beat);
+  const nativeOperatorStory = isAibtcNativeOperatorStory(
+    submission,
+    candidateContextText,
+    operatorConsequence
+  );
+  const rawDataWithoutThesis = isRawDataWithoutThesis(
+    submission,
+    candidateContextText,
+    operatorConsequence,
+    structuralPattern
+  );
+  const genericOperationalAdvice = isGenericOperationalAdvice(
+    submission,
+    candidateContextText,
+    exactAnchor,
+    structuralPattern
+  );
+  const competitiveness = assessEditorialCompetitiveness({
+    headline: submission.headline,
+    summary: submission.candidate_signal.summary,
+    significance: submission.candidate_signal.significance,
+    causality: submission.candidate_signal.causality,
+    proofNotes: (submission.proof ?? []).flatMap((item) => [item.query_result, item.proof_note]).filter(
+      (value): value is string => typeof value === "string"
+    ),
+    sourceUrls: (submission.sources ?? [])
+      .map((source) => source.source_url)
+      .filter((value): value is string => typeof value === "string"),
+    sourceTypes: (submission.sources ?? [])
+      .map((source) => source.source_type)
+      .filter((value): value is string => typeof value === "string")
+  });
   const approvalReady =
     submissionStatus === "submit" &&
     editorialReview.readyToFile &&
     editorialReview.editorialFit !== "weak" &&
-    editorialReview.publisherConfidence !== "low";
-  const dailyPrepText = signalAgentContract?.dailyPrepText ?? "";
-  const preFilingCheckIds = new Set(signalAgentContract?.preFilingCheckIds ?? []);
-  const crowdedBeatIds = new Set(signalAgentContract?.crowdedBeatIds ?? []);
-  const signalGuardBlockers = finalSignalGuard?.blockers ?? [];
-  const signalGuardBody = buildSignalGuardBody(submission);
-  const headlinePattern = inferHeadlinePattern(submission.headline);
-
-  if (signalAgentContract?.objectivePressureNotes.length) {
-    score += 2;
-    reasons.push(`objective context loaded: ${signalAgentContract.objectivePressureNotes[0]}`);
-  }
-  if ((signalAgentContract?.gapToTop3 ?? null) !== null && (signalAgentContract?.gapToTop3 ?? 0) <= 50) {
-    score += 3;
-    reasons.push("top-3 pressure is live; prioritize brief-winning shapes over baseline approvals");
-  }
-  if ((signalAgentContract?.gapToTop6 ?? null) !== null && (signalAgentContract?.gapToTop6 ?? 0) <= 25) {
-    score += 2;
-    reasons.push("top-6 pressure is close enough that payout-quality filings matter more than exploratory volume");
-  }
-  if (signalAgentContract?.currentStreak) {
-    reasons.push(`streak context loaded: ${signalAgentContract.currentStreak}`);
-    if (!approvalReady) {
-      score -= 4;
-      reasons.push("active streak means weak non-ready filings are worse than waiting for a real winner");
-    }
-  }
-
-  if (crowdedBeatIds.has(normalizedSubmissionBeat)) {
-    score -= 12;
-    reasons.push("competition memory marks this beat as crowded; candidate must clear the displacement bar");
-  } else if (signalAgentContract?.competitionMemoryPresent) {
-    score += 2;
-    reasons.push("competition memory shows this beat is not in the most crowded lanes");
-  }
-
-  const winningHeadlineExamples = signalAgentContract?.winningHeadlineExamples ?? [];
-  const currentCycleWinningHeadlines = signalAgentContract?.currentCycleWinningHeadlines ?? [];
-  const currentCycleLossHeadlines = signalAgentContract?.currentCycleLossHeadlines ?? [];
-  const exampleSimilarity = winningHeadlineExamples.reduce((best, headline) => {
-    return Math.max(best, jaccardSimilarity(submission.headline, headline));
-  }, 0);
-  const currentWinnerSimilarity = currentCycleWinningHeadlines.reduce((best, headline) => {
-    return Math.max(best, jaccardSimilarity(submission.headline, headline));
-  }, 0);
-  const currentLossSimilarity = currentCycleLossHeadlines.reduce((best, headline) => {
-    return Math.max(best, jaccardSimilarity(submission.headline, headline));
-  }, 0);
-  if (approvalReady && exampleSimilarity >= 0.35) {
-    score += 6;
-    reasons.push("brief examples show this headline shape is close to a recent winner");
-  }
-  if (approvalReady && currentWinnerSimilarity >= 0.35) {
-    score += 6;
-    reasons.push("current-cycle editorial memory says this headline shape is close to today's winners");
-  }
-  if (currentLossSimilarity >= 0.35) {
-    score -= 8;
-    reasons.push("current-cycle editorial memory says this headline shape is too close to today's losing patterns");
-  }
-
-  if (
-    approvalReady &&
-    (signalAgentContract?.winningStoryShapes ?? []).some((shape) =>
-      shape === headlinePattern ||
-      (shape.includes("Broad") && broadWinnerShape) ||
-      (shape.includes("operator consequence") && operatorConsequence)
-    )
-  ) {
-    score += 6;
-    reasons.push("competition memory says this story shape is converting recently");
-  }
-
-  if (
-    signalAgentContract?.currentCycleValueCreatingPatterns.length &&
-    valueCreating
-  ) {
-    score += 3;
-    reasons.push(`current-cycle value bar loaded: ${signalAgentContract.currentCycleValueCreatingPatterns[0]}`);
-  }
-
-  if (
-    signalAgentContract?.currentCycleSourcePatternsThatPassed.length &&
-    (submission.sources ?? []).some((source) =>
-      signalAgentContract.currentCycleSourcePatternsThatPassed.some((pattern) =>
-        typeof source.source_url === "string" && source.source_url.includes(pattern)
-      )
-    )
-  ) {
-    score += 2;
-    reasons.push("uses a source pattern that already cleared the current cycle");
-  }
+    editorialReview.publisherConfidence !== "low" &&
+    competitionProofAssessment.ready;
+  const targetMet = optimization?.successMetrics?.targetMet ?? false;
+  const topCandidatePublicationRate = optimization?.topCandidatePerformance?.publicationRate ?? null;
+  const todayStrength = assessTodayBriefStrength(
+    submission,
+    briefSnapshot,
+    candidateContextText,
+    operatorConsequence,
+    broadWinnerShape,
+    exactAnchor,
+    candidateWinningAngle
+  );
+  const candidateHistoricalTopics = detectBriefTopics(candidateContextText);
+  const matchingHistoricalTopics = historicalBriefSignals.preferredTopics.filter((topic) =>
+    candidateHistoricalTopics.some((candidateTopic) => candidateTopic.topic === topic.topic)
+  );
+  const occupiedRecentBriefStory = recentBriefOccupancy.find((entry) =>
+    recentBriefOccupancyMatch(submission.headline, entry.headline)
+  );
 
   if (submissionStatus === "submit") {
-    score += 20;
+    score += 12;
     reasons.push("submission gate passed");
   } else if (manualCheckOnlyBlocked) {
     reasons.push("manual checks still missing before this can be filed");
@@ -1112,7 +1488,7 @@ function scoreCandidate(
   }
 
   if (editorialReview.readyToFile) {
-    score += 15;
+    score += 8;
     reasons.push("editorial review says ready to file");
   } else {
     score -= 8;
@@ -1120,10 +1496,10 @@ function scoreCandidate(
   }
 
   if (editorialReview.editorialFit === "strong") {
-    score += 10;
+    score += 6;
     reasons.push("strong editorial fit");
   } else if (editorialReview.editorialFit === "borderline") {
-    score += 2;
+    score += 1;
     reasons.push("borderline editorial fit");
   } else {
     score -= 12;
@@ -1131,27 +1507,35 @@ function scoreCandidate(
   }
 
   if (editorialReview.publisherConfidence === "high") {
-    score += 10;
-  } else if (editorialReview.publisherConfidence === "medium") {
     score += 4;
+  } else if (editorialReview.publisherConfidence === "medium") {
+    score += 2;
   } else {
     score -= 8;
     reasons.push("low publisher confidence");
   }
 
+  if (competitionProofAssessment.ready) {
+    score += 6;
+    reasons.push("brief competition proof is complete and strong enough to justify brief-slot competitiveness");
+  } else {
+    score -= 18;
+    reasons.push(...competitionProofAssessment.reasons);
+  }
+
   if (submission.headline.length <= 110) {
-    score += 4;
+    score += 2;
   } else if (submission.headline.length > 140) {
     score -= 10;
     reasons.push("headline too long");
   }
 
-  if (hasRawReleaseNoteShape(submission.headline)) {
+  if (hasRawReleaseNoteShape(submission.headline) && !nativeOperatorStory) {
     score -= 10;
     reasons.push("headline reads like raw release notes instead of a finished filing");
   }
 
-  if (hasArtifactTitleShape(submission.headline)) {
+  if (hasArtifactTitleShape(submission.headline) && !nativeOperatorStory) {
     score -= 8;
     reasons.push("headline starts with a source artifact instead of a publishable news event");
   }
@@ -1161,38 +1545,6 @@ function scoreCandidate(
     reasons.push("raw release-note framing without operator consequence is not competitive for In Brief");
   }
 
-  if (missionAligned) {
-    score += 6;
-    reasons.push("passes publisher Q1 mission-aligned test");
-  } else {
-    score -= 24;
-    reasons.push("fails publisher Q1 mission-aligned test");
-  }
-
-  if (replicableDisclosure) {
-    score += 6;
-    reasons.push("passes publisher Q2 replicable-disclosure test");
-  } else {
-    score -= 24;
-    reasons.push("fails publisher Q2 replicable-disclosure test");
-  }
-
-  if (inscribableNews) {
-    score += 5;
-    reasons.push("passes publisher Q3 inscribable/newsworthy test");
-  } else {
-    score -= 18;
-    reasons.push("fails publisher Q3 inscribable/newsworthy test");
-  }
-
-  if (valueCreating) {
-    score += 5;
-    reasons.push("passes publisher Q4 value-creating test");
-  } else {
-    score -= 18;
-    reasons.push("fails publisher Q4 value-creating test");
-  }
-
   if (
     /\bbefore\b|\bearly\b|\bsame day\b/i.test(submission.candidate_signal.significance)
   ) {
@@ -1200,19 +1552,30 @@ function scoreCandidate(
     reasons.push("significance claims timing or novelty edge");
   }
 
-  // Measurable delta: outstanding signals track specific before/after changes, not organic trickles.
-  if (hasMeasurableEcosystemDelta(candidateContextText)) {
-    score += 7;
-    reasons.push("signal tracks a specific measurable ecosystem delta (numeric before/after change) — strong brief candidate shape");
-  }
-  if (isVagueTrendNarrative(candidateContextText)) {
-    score -= 12;
-    reasons.push("signal reads like a vague trend narrative with no specific incident or measurable delta — displacement risk in any crowded brief");
-  }
-
   if (submission.candidate_signal.likely_duplicate || autoGate?.duplicateStatus === "flagged") {
     score -= 20;
     reasons.push("duplicate risk already flagged");
+  }
+
+  if (autoGate?.duplicateMatchHeadline) {
+    const matchStatus = autoGate.duplicateStatus ?? "unknown";
+    if (autoGate.duplicateStatus === "flagged") {
+      score -= 15;
+      reasons.push(
+        `live feed occupancy block: matching ${matchStatus} story already exists — "${autoGate.duplicateMatchHeadline}"`
+      );
+    } else if (autoGate.duplicateStatus === "pending") {
+      reasons.push(
+        `live feed overlap warning: similar ${matchStatus} story already exists — "${autoGate.duplicateMatchHeadline}"`
+      );
+    }
+  }
+
+  if (occupiedRecentBriefStory) {
+    score -= 35;
+    reasons.push(
+      `recent brief occupancy block: same core story already won on ${occupiedRecentBriefStory.reportDate} — "${occupiedRecentBriefStory.headline}"`
+    );
   }
 
   if (pendingDuplicateRisk) {
@@ -1225,94 +1588,40 @@ function scoreCandidate(
     reasons.push("freshness risk must be cleared before filing");
   }
 
+  if (publishability.status !== "publishable") {
+    score -= 20;
+    reasons.push(...publishability.reasons);
+  }
+
+  if (competitiveness.status !== "competitive") {
+    score -= 20;
+    reasons.push(...competitiveness.reasons);
+  } else {
+    if (competitiveness.exactAnchor) {
+      score += 4;
+      reasons.push("editorial contract passed: story carries the exact anchor recent brief winners keep using");
+    }
+    if (competitiveness.storyOfValue) {
+      score += 4;
+      reasons.push("editorial contract passed: story reads like a valuable brief item, not just a technical update");
+    }
+    if (competitiveness.humanNewsHeadline) {
+      score += 3;
+      reasons.push("editorial contract passed: headline reads like human news instead of repo exhaust");
+    }
+  }
+
+  if (todayStrength.status === "operator_relevant_but_weak_today") {
+    score -= 15;
+    reasons.push(...todayStrength.reasons);
+  } else if (todayStrength.status === "strong_enough_today") {
+    score += 8;
+    reasons.push(...todayStrength.reasons);
+  }
+
   if (submission.candidate_signal.uses_dashboard_as_primary_source || autoGate?.dashboardContaminated) {
     score -= 15;
     reasons.push("dashboard-first sourcing risk");
-  }
-
-  if (finalSignalGuard && !finalSignalGuard.ok) {
-    score -= 40;
-    reasons.push(`publisher/fact-checker guard failed: ${finalSignalGuard.blockers.join("; ")}`);
-  }
-
-  if (!signalAgentContract?.publisherSkillInstalled) {
-    score = 0;
-    reasons.push("signal agent contract failed: publisher skill is not installed locally");
-  }
-
-  if (!signalAgentContract?.factCheckerSkillInstalled) {
-    score = 0;
-    reasons.push("signal agent contract failed: fact-checker skill is not installed locally");
-  }
-
-  if (!signalAgentContract?.dailyPrepReportPresent) {
-    score = 0;
-    reasons.push("signal agent contract failed: daily-prep report is missing for this cycle");
-  }
-
-  if (!signalAgentContract?.editorialMemoryPresent) {
-    score = 0;
-    reasons.push("signal agent contract failed: editorial-memory.json is missing for this cycle");
-  }
-
-  if (
-    dailyPrepText.includes("Package related release activity into one operator-facing story with consequence up top") &&
-    (hasRawReleaseNoteShape(submission.headline) || hasArtifactTitleShape(submission.headline))
-  ) {
-    score = 0;
-    reasons.push("daily-prep contract rejects raw release-note and artifact-title headline shapes for this cycle");
-  }
-
-  if (
-    dailyPrepText.includes("Demote single_story_operator_angle") &&
-    styleTested === "single_story_operator_angle"
-  ) {
-    score -= 20;
-    reasons.push("daily-prep contract demotes single_story_operator_angle for this cycle");
-  }
-
-  if (preFilingCheckIds.has("headline-complete") && submission.headline.length > 140) {
-    score = 0;
-    reasons.push("editorial-memory check failed: headline-complete");
-  }
-
-  if (preFilingCheckIds.has("body-required") && signalGuardBody.trim().length === 0) {
-    score = 0;
-    reasons.push("editorial-memory check failed: body-required");
-  }
-
-  if (
-    preFilingCheckIds.has("evidence-anchor-required") &&
-    signalGuardBlockers.some((blocker) =>
-      blocker.includes("Metric-heavy claim is sourced only from one organization") ||
-      blocker.includes("Sources do not include an independent external verifier") ||
-      blocker.includes("All sources are internal or agent-oracle-only")
-    )
-  ) {
-    score = 0;
-    reasons.push("editorial-memory check failed: evidence-anchor-required");
-  }
-
-  if (
-    preFilingCheckIds.has("duplicate-story-shape") &&
-    (duplicateStatus !== "clear" ||
-      signalGuardBlockers.some((blocker) =>
-        blocker.includes("Headline looks too close") ||
-        blocker.includes("Same story anchor already appears") ||
-        blocker.includes("approved_not_in_brief angle")
-      ))
-  ) {
-    score = 0;
-    reasons.push("editorial-memory check failed: duplicate-story-shape");
-  }
-
-  if (
-    preFilingCheckIds.has("wait-for-shipped-code") &&
-    /\bpr\s+#\d+\b/i.test(candidateContextText) &&
-    !/\bships?\b|\bshipped\b|\brelease\b|\blive\b|\bpublished\b/i.test(candidateContextText)
-  ) {
-    score = 0;
-    reasons.push("editorial-memory check failed: wait-for-shipped-code");
   }
 
   if (hasRequiredUpgradeWindow(candidateContextText)) {
@@ -1320,9 +1629,34 @@ function scoreCandidate(
     reasons.push("source carries an exact upgrade window or failure threshold operators can act on");
   }
 
+  if (nativeOperatorStory) {
+    score += 6;
+    reasons.push("AIBTC-native fix with direct operator consequence stays recommendable even if it started as release-shaped proof");
+  }
+
   if (readsLikeGenericExternalAdaptation(submission)) {
-    score -= 18;
+    score -= 10;
     reasons.push("external story still reads descriptive rather than like a filing-ready operator signal");
+  }
+
+  if (externalWithoutAibtcActivity) {
+    score -= 35;
+    reasons.push("hard gate: external story does not show direct AIBTC network activity");
+  }
+
+  if (rawDataWithoutThesis) {
+    score -= 25;
+    reasons.push("hard gate: raw counts without a decision-grade thesis are not fileable");
+  }
+
+  if (genericOperationalAdvice) {
+    score -= 25;
+    reasons.push("hard gate: generic operational advice is not intelligence");
+  }
+
+  if (!bitcoinEcosystemRelevant) {
+    score -= 40;
+    reasons.push("relevance gate failed: story is not clearly Bitcoin, Stacks, sBTC, x402, or AIBTC related");
   }
 
   const beatPreference = optimization?.beatPreferences.find(
@@ -1332,6 +1666,7 @@ function scoreCandidate(
     (item) => item.beat === submission.candidate_signal.beat
   );
   const preferredHeadlinePattern = optimization?.winningHeadlinePatterns[0]?.pattern ?? null;
+  const headlinePattern = inferHeadlinePattern(submission.headline);
   const stylePerformance = optimization?.stylePerformance?.find((item) => item.style === styleTested);
   const packagingAdjustments = optimization?.packagingAdjustments;
 
@@ -1370,54 +1705,6 @@ function scoreCandidate(
     }
   }
 
-  // --- EDITORIAL LEARNING ENFORCEMENT: beat specialization state ---
-  const editorialLearnings = optimization?.editorialLearnings;
-  if (editorialLearnings) {
-    const normalizedPrimary = editorialLearnings.primaryBeat
-      ? normalizeBeat(editorialLearnings.primaryBeat)
-      : null;
-    const normalizedSecondary = editorialLearnings.secondaryBeat
-      ? normalizeBeat(editorialLearnings.secondaryBeat)
-      : null;
-    const normalizedDeprioritized = editorialLearnings.deprioritizedBeats.map(normalizeBeat);
-
-    if (normalizedPrimary !== null && normalizedSubmissionBeat === normalizedPrimary) {
-      score += 8;
-      reasons.push(`beat ${submission.candidate_signal.beat} matches the outcome-backed primary specialization lane`);
-    } else if (normalizedSecondary !== null && normalizedSubmissionBeat === normalizedSecondary) {
-      score += 4;
-      reasons.push(`beat ${submission.candidate_signal.beat} matches the outcome-backed secondary specialization lane`);
-    } else if (normalizedDeprioritized.includes(normalizedSubmissionBeat)) {
-      score -= 10;
-      reasons.push(`beat ${submission.candidate_signal.beat} is memory-deprioritized — editorial learning shows weak conversion here`);
-    } else if (normalizedPrimary !== null && normalizedDeprioritized.length > 0) {
-      score -= 4;
-      reasons.push(`beat ${submission.candidate_signal.beat} is outside the two learned specialization lanes`);
-    }
-
-    // --- EDITORIAL LEARNING ENFORCEMENT: raw stat dump anti-pattern ---
-    if (editorialLearnings.rawStatDumpAntiPatternActive && !operatorConsequence) {
-      score -= 12;
-      reasons.push("memory enforces raw-stat-dump anti-pattern: no operator consequence present and outcome data shows this shape loses");
-    }
-
-    // --- EDITORIAL LEARNING ENFORCEMENT: feed-only source anti-pattern ---
-    if (editorialLearnings.feedOnlySourceAntiPatternActive && submission.candidate_signal.uses_dashboard_as_primary_source) {
-      score -= 10;
-      reasons.push("memory enforces feed-only-source anti-pattern: dashboard-primary sourcing is outcome-proven to underperform");
-    }
-
-    // --- EDITORIAL LEARNING ENFORCEMENT: timing loss boost for early-window candidates ---
-    if (editorialLearnings.timingLossObserved) {
-      const detectedAt = submission.candidate_signal.detected_at;
-      const detectedHourUTC = detectedAt ? new Date(detectedAt).getUTCHours() : null;
-      if (detectedHourUTC !== null && detectedHourUTC < 10) {
-        score += 6;
-        reasons.push("timing-loss memory active: early-UTC candidate gets boost (detected before 10:00 UTC)");
-      }
-    }
-  }
-
   if (preferredHeadlinePattern !== null) {
     if (headlinePattern === preferredHeadlinePattern) {
       score += 4;
@@ -1446,6 +1733,27 @@ function scoreCandidate(
     }
   }
 
+  if ((stylePerformance?.satsEarned ?? 0) > 0) {
+    const satsBoost = Math.min(4, Math.max(1, Math.round((stylePerformance?.satsEarned ?? 0) / 500)));
+    score += satsBoost;
+    reasons.push(`style ${styleTested} has already converted into wallet sats`);
+  } else if ((stylePerformance?.resolvedSubmissions ?? 0) >= 2 && (stylePerformance?.inBriefWins ?? 0) === 0) {
+    score -= 5;
+    reasons.push(`style ${styleTested} has not converted into In Brief or wallet sats yet`);
+  }
+
+  if (candidateWinningAngle && competitorWinningAngles.includes(candidateWinningAngle)) {
+    score += 4;
+    reasons.push(`candidate matches a competitor winning angle that landed today (${candidateWinningAngle})`);
+  } else if (
+    competitorWinningAngles.length > 0 &&
+    competitiveness.status === "competitive" &&
+    candidateWinningAngle === null
+  ) {
+    score -= 3;
+    reasons.push("candidate misses the concrete winning angles top competitors are landing today");
+  }
+
   if (packagingAdjustments?.promoteBroadSameBeatPackaging && styleTested === "broad_same_beat_operator") {
     score += 6;
     reasons.push("recent loss memory says broader same-beat packaging should be promoted");
@@ -1460,7 +1768,7 @@ function scoreCandidate(
     reasons.push("recent loss memory says narrow same-beat fragments should be demoted in crowded lanes");
   }
 
-  if ((briefSnapshot?.occupiedBeats ?? []).map(normalizeBeat).includes(normalizedSubmissionBeat)) {
+  if (briefSnapshot?.occupiedBeats.includes(submission.candidate_signal.beat)) {
     score -= 8;
     reasons.push(`beat ${submission.candidate_signal.beat} is already occupied in the latest brief snapshot`);
   }
@@ -1473,8 +1781,13 @@ function scoreCandidate(
   if (approvalReady) {
     reasons.push("candidate already clears the approval-quality floor, so brief-win signals can act as upside");
 
-    if (historicalBriefSignals.preferredBeats.includes(normalizedSubmissionBeat)) {
-      score += 6;
+    if (!targetMet) {
+      score -= 3;
+      reasons.push("real KPI is still being missed, so approval-ready cleanliness is not enough by itself");
+    }
+
+    if (historicalBriefSignals.preferredBeats.includes(submission.candidate_signal.beat)) {
+      score += 4;
       reasons.push(`beat ${submission.candidate_signal.beat} matches the historical brief-winning lanes`);
     }
 
@@ -1485,7 +1798,7 @@ function scoreCandidate(
       operatorConsequence
     ) {
       score += 6;
-      reasons.push("candidate matches the historical release-plus-operator-consequence winning shape");
+      reasons.push("candidate matches the release-plus-operator-consequence shape recent winners use");
     }
 
     if (
@@ -1493,12 +1806,22 @@ function scoreCandidate(
       structuralPattern
     ) {
       score += 5;
-      reasons.push("candidate matches the historical structural-pattern winning shape");
+      reasons.push("candidate matches the structural-pattern behavior that brief winners keep using");
     }
 
     if (historicalBriefSignals.prefersExactAnchors && exactAnchor) {
       score += 5;
       reasons.push("headline uses the exact numeric or version anchors that top winners favor");
+    }
+
+    if (matchingHistoricalTopics.length > 0) {
+      score += Math.min(6, matchingHistoricalTopics.length * 3);
+      reasons.push(
+        `candidate matches historical brief topics (${matchingHistoricalTopics.map((topic) => topic.label).join(", ")})`
+      );
+    } else if (historicalBriefSignals.preferredTopics.length > 0) {
+      score -= 3;
+      reasons.push("candidate misses the concrete topics that recent brief winners keep revisiting");
     }
 
     if (operatorConsequence) {
@@ -1512,7 +1835,7 @@ function scoreCandidate(
     }
 
     if (winningDomainMatches.length > 0) {
-      score += 10;
+      score += 8;
       reasons.push(
         `sources match domains that have recently won the brief (${winningDomainMatches.map((item) => item.domain).join(", ")})`
       );
@@ -1522,10 +1845,10 @@ function scoreCandidate(
     }
 
     if (dominantBeatOwners.length >= 2) {
-      score -= broadWinnerShape && operatorConsequence ? 6 : 14;
+      score -= broadWinnerShape && operatorConsequence ? 4 : 11;
       reasons.push(`beat ${submission.candidate_signal.beat} is actively owned by repeat-winning agents`);
     } else if (dominantBeatOwners.length === 1) {
-      score -= broadWinnerShape && operatorConsequence ? 4 : 9;
+      score -= broadWinnerShape && operatorConsequence ? 2 : 7;
       reasons.push(`beat ${submission.candidate_signal.beat} is regularly won by ${dominantBeatOwners[0].agent}`);
     }
 
@@ -1548,9 +1871,11 @@ function scoreCandidate(
       reasons.push(
         `1 tracked competitor on similar story: ${competitorCoverage[0].name} — note competition, ensure angle is differentiated`
       );
-    } else {
+    } else if (competitiveness.status === "competitive") {
       score += 3;
       reasons.push("no tracked competitors on this story — unique pick advantage");
+    } else {
+      reasons.push("no tracked competitors on this story, but uniqueness does not help until the story clears the competitive bar");
     }
   } else if (winningDomainMatches.length > 0 || dominantBeatOwners.length > 0) {
     reasons.push("brief-win pattern signals were observed but ignored because the candidate has not cleared the approval-quality floor");
@@ -1560,47 +1885,14 @@ function scoreCandidate(
     reasons.push("no tracked competitors on this story (unique pick noted, but candidate has not cleared approval-quality floor)");
   }
 
+  if (!targetMet && topCandidatePublicationRate !== null && topCandidatePublicationRate < 0.25) {
+    score -= 3;
+    reasons.push("recent top candidates are not converting into published wins, so the scorer is leaning harder on outcome signals");
+  }
+
   const normalized = normalizeScore(score);
-  const obviousBriefWinner =
-    normalized >= 88 &&
-    approvalReady &&
-    missionAligned &&
-    replicableDisclosure &&
-    inscribableNews &&
-    valueCreating &&
-    editorialReview.editorialFit === "strong" &&
-    editorialReview.publisherConfidence === "high" &&
-    operatorConsequence &&
-    broadWinnerShape &&
-    duplicateStatus === "clear" &&
-    freshnessStatus !== "risk_unresolved" &&
-    !rawReleaseWithoutOperatorConsequence &&
-    !hasArtifactTitleShape(submission.headline) &&
-    !hasRawReleaseNoteShape(submission.headline);
-
-  if (obviousBriefWinner) {
-    reasons.push("clears the explicit obvious-brief-winner threshold");
-  } else {
-    reasons.push("does not yet clear the explicit obvious-brief-winner threshold");
-  }
-
-  // Late-window threshold gate: if timing losses are in memory and the candidate was
-  // detected at or after 13:00 UTC (when the 30-slot cap starts filling), require a
-  // stronger score before filing.
-  const lateWindowActive =
-    optimization?.editorialLearnings?.lateWindowThresholdRaised === true &&
-    (() => {
-      const detectedAt = submission.candidate_signal.detected_at;
-      const h = detectedAt ? new Date(detectedAt).getUTCHours() : null;
-      return h !== null && h >= 13;
-    })();
-  const fileThreshold = lateWindowActive ? 82 : 75;
-  if (lateWindowActive) {
-    reasons.push("late-window gate active (memory: timing losses observed) — file threshold raised to 82");
-  }
-
-  let decision: RankedCandidateDecision =
-    normalized >= fileThreshold
+  let decision: RankedCandidate["decision"] =
+    normalized >= 75
       ? "file"
       : normalized >= 45
         ? "hold"
@@ -1610,16 +1902,23 @@ function scoreCandidate(
     decision = "hold";
   }
 
-  // Displacement risk gate: a signal in an occupied beat that is not an obvious brief winner
-  // is highly likely to be displaced after approval (approved ≠ in brief). Hold it unless it
-  // clears the winner bar, which is the only way to survive deterministic roster reconciliation.
-  const beatOccupiedInBrief = (briefSnapshot?.occupiedBeats ?? []).map(normalizeBeat).includes(normalizedSubmissionBeat);
-  if (beatOccupiedInBrief && !obviousBriefWinner && normalized < 85 && decision === "file") {
+  if (!competitionProofAssessment.ready && decision === "file") {
     decision = "hold";
-    reasons.push("displacement risk gate: beat is occupied in the latest brief and candidate is below winner-tier threshold (85) — hold to avoid displacement-probable filing");
   }
 
-  if (finalSignalGuard && !finalSignalGuard.ok) {
+  if (autoGate?.duplicateStatus === "flagged") {
+    decision = "reject";
+  }
+
+  if (occupiedRecentBriefStory) {
+    decision = "reject";
+  }
+
+  if (!bitcoinEcosystemRelevant) {
+    decision = "reject";
+  }
+
+  if (externalWithoutAibtcActivity || rawDataWithoutThesis || genericOperationalAdvice) {
     decision = "reject";
   }
 
@@ -1627,43 +1926,36 @@ function scoreCandidate(
     decision = approvalReady ? "hold" : "reject";
   }
 
-  if ((!missionAligned || !replicableDisclosure || !inscribableNews || !valueCreating) && decision === "file") {
-    decision = "hold";
-  }
-
-  if (!missionAligned || !replicableDisclosure) {
+  if (publishability.status !== "publishable") {
     decision = "reject";
   }
 
-  if (
-    !signalAgentContract?.publisherSkillInstalled ||
-    !signalAgentContract?.factCheckerSkillInstalled ||
-    !signalAgentContract?.dailyPrepReportPresent ||
-    !signalAgentContract?.editorialMemoryPresent
-  ) {
-    decision = "reject";
+  if (competitiveness.status !== "competitive" && decision === "file") {
+    decision = approvalReady ? "hold" : "reject";
   }
 
-  if (
-    dailyPrepText.includes("Package related release activity into one operator-facing story with consequence up top") &&
-    (hasRawReleaseNoteShape(submission.headline) || hasArtifactTitleShape(submission.headline))
-  ) {
+  if (todayStrength.status === "operator_relevant_but_weak_today" && decision === "file") {
     decision = "reject";
   }
 
   return {
     candidateId: submission.candidate_signal.candidate_id,
     beat: submission.candidate_signal.beat,
+    filingBeatSlug: publishability.filingBeatSlug,
     headline: submission.headline,
     score: normalized,
-    obviousBriefWinner,
     decision,
-    lifecycle: inferLifecycleFromDecision(decision, reasons),
     styleTested,
     competitorReference,
     whyThisStyleWasChosen,
     duplicateStatus,
     freshnessStatus,
+    publishabilityStatus: publishability.status,
+    publishabilityReasons: publishability.reasons,
+    competitivenessStatus: competitiveness.status,
+    competitivenessReasons: competitiveness.reasons,
+    todayStrengthStatus: todayStrength.status,
+    todayStrengthReasons: todayStrength.reasons,
     competitorCoverage,
     reasons
   };
@@ -1677,51 +1969,213 @@ function detectedBeforeReportDate(
   return typeof detectedAt === "string" && detectedAt.slice(0, 10) < reportDate;
 }
 
+async function saveStalePruningRecord(
+  reportDate: string,
+  staleSubmissions: ParsedCandidateSubmission[],
+  baseDir?: string
+): Promise<void> {
+  const root = resolve(baseDir ?? process.cwd());
+  const filePath = resolve(root, `data/logs/stale-pruning/${reportDate}.json`);
+  await mkdir(dirname(filePath), { recursive: true });
+  const record: StalePruningRecord = {
+    kind: "stale_dry_run_pruning",
+    reportDate,
+    generatedAt: new Date().toISOString(),
+    removedCount: staleSubmissions.length,
+    removed: staleSubmissions.map(({ sourcePath, submission }) => ({
+      candidateId: submission.candidate_signal.candidate_id,
+      headline: submission.headline,
+      detectedAt: submission.candidate_signal.detected_at ?? null,
+      sourcePath,
+      reason: `detected_at predates report date ${reportDate}`
+    }))
+  };
+  await writeFile(filePath, JSON.stringify(record, null, 2), "utf8");
+}
+
+function extractAnalysisSection(analysis: string, label: string): string | null {
+  const match = analysis.match(new RegExp(`${label}:\\s*([^\\n]+)`, "i"));
+  return match?.[1]?.trim() ?? null;
+}
+
+function inferDuplicateStatusFromReasons(reasons: string[]): "clear" | "pending" | "flagged" {
+  const text = reasons.join(" ").toLowerCase();
+  if (/\bduplicate\b/.test(text) && /\bpending\b/.test(text)) return "pending";
+  if (/\bduplicate\b/.test(text) || /\bsame story\b/.test(text)) return "flagged";
+  return "clear";
+}
+
+function inferFreshnessStatusFromReasons(reasons: string[]): "clear" | "risk_unresolved" | "unknown" {
+  const text = reasons.join(" ").toLowerCase();
+  if (/\bfreshness\b/.test(text) || /\bstale\b/.test(text) || /\btimely\b/.test(text)) {
+    return "risk_unresolved";
+  }
+  return "unknown";
+}
+
+function convertManualArtifactToSubmission(
+  candidateId: string,
+  artifact: ManualSubmissionArtifact,
+  review: SignalJobContextReview | null
+): SerializedSubmission {
+  const headline = artifact.headline?.trim() ?? candidateId;
+  const analysis = artifact.analysis?.trim() ?? "";
+  const summary = extractAnalysisSection(analysis, "What changed") ?? headline;
+  const significance = extractAnalysisSection(analysis, "What it means") ?? (analysis || headline);
+  const causality =
+    extractAnalysisSection(analysis, "What to do") ??
+    extractAnalysisSection(analysis, "Directive") ??
+    significance;
+  const duplicateStatus = inferDuplicateStatusFromReasons(review?.reasons ?? []);
+  const freshnessStatus = inferFreshnessStatusFromReasons(review?.reasons ?? []);
+
+  return {
+    candidate_signal: {
+      candidate_id: candidateId,
+      beat: artifact.beat_slug?.trim() ?? "aibtc-network",
+      summary,
+      significance,
+      causality,
+      likely_duplicate: duplicateStatus === "flagged",
+      uses_dashboard_as_primary_source: false,
+      duplicate_check_status: duplicateStatus === "pending" ? "pending duplicate review" : undefined,
+      staleness_risk: freshnessStatus === "risk_unresolved" ? "manual freshness review required" : undefined
+    },
+    headline,
+    proof: [],
+    sources: (artifact.sources ?? []).map((source) => ({
+      source_type: "generated-candidate",
+      source_url: source.url
+    })),
+    pre_submission_intelligence: {
+      notes: review?.reasons ?? []
+    },
+    validation_status: {
+      checks: {
+        duplicate_check_note: (review?.reasons ?? []).find((reason) => /duplicate/i.test(reason))
+      }
+    },
+    submission_decision: {
+      status: review?.accepted ? "submit" : "reject",
+      rejection_reasons: review?.accepted ? [] : (review?.reasons ?? [])
+    },
+    editorial_review: {
+      editorial_fit: review?.accepted ? "strong" : review?.preDraftAccepted ? "borderline" : "weak",
+      publisher_confidence: review?.accepted ? "high" : review?.preDraftAccepted ? "medium" : "low",
+      ready_to_file: review?.accepted ?? false,
+      hold_reasons: review?.accepted ? [] : (review?.reasons ?? [])
+    },
+    candidate_metadata: {
+      duplicate_status: duplicateStatus,
+      freshness_status: freshnessStatus,
+      filing_beat_slug: artifact.beat_slug?.trim() ?? "aibtc-network",
+      why_this_beat_is_open: "This beat slot is still open for an operator-relevant same-day story with concrete proof.",
+      why_now: significance || "This event is live in the current cycle and actionable now.",
+      why_this_beats_same_day_competition: "This candidate is packaged as a broader operator-facing story instead of a narrow fragment.",
+      primary_source_proof: (artifact.sources ?? []).map((source) => source.url).filter(Boolean)[0]
+        ? `${(artifact.sources ?? []).map((source) => source.url).filter(Boolean)[0]} is the primary source proof anchor.`
+        : "",
+      operator_action: causality || "Operators should verify this anchor before filing."
+    }
+  };
+}
+
+async function loadManualSubmissionCandidates(
+  reportDate: string,
+  root: string
+): Promise<ParsedCandidateSubmission[]> {
+  const queueDir = resolve(root, `data/manual-submissions/${reportDate}`);
+  const contextPath = resolve(root, `data/context-runs/${reportDate}/signal-job.json`);
+  const [context, fileNames] = await Promise.all([
+    readJsonOrNull<SignalJobContextFile>(contextPath),
+    readdir(queueDir).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return [] as string[];
+      throw error;
+    })
+  ]);
+
+  if (!context?.reviews || context.reviews.length === 0 || fileNames.length === 0) {
+    return [];
+  }
+
+  const reviewsByFile = new Map(context.reviews.map((review) => [review.fileName, review]));
+  return Promise.all(
+    fileNames
+      .filter((fileName) => fileName.endsWith(".json"))
+      .map(async (fileName) => {
+        const sourcePath = resolve(queueDir, fileName);
+        const artifact = JSON.parse(await readFile(sourcePath, "utf8")) as ManualSubmissionArtifact;
+        const candidateId = fileName.replace(/\.json$/, "");
+        return {
+          sourcePath,
+          submission: convertManualArtifactToSubmission(candidateId, artifact, reviewsByFile.get(fileName) ?? null)
+        } satisfies ParsedCandidateSubmission;
+      })
+  );
+}
+
 export async function rankDryRunCandidates(
   reportDate: string,
   baseDir?: string
 ): Promise<RankedCandidate[]> {
   const root = resolve(baseDir ?? process.cwd());
-  const queueDir = resolve(root, `data/dry-runs/${reportDate}`);
-  const [optimization, briefSnapshot, agentBehavior, historicalBriefSignals, competitorProfiles, signalAgentContract] = await Promise.all([
+  const [
+    optimization,
+    briefSnapshot,
+    agentBehavior,
+    historicalBriefSignals,
+    recentBriefOccupancy,
+    competitorProfiles,
+    competitorWinningAngles,
+    manualSubmissions
+  ] = await Promise.all([
     readOptimizationSnapshot(reportDate, root),
     readBriefWinnerSnapshot(reportDate, root),
     readAgentBehaviorState(root),
     readHistoricalBriefSignals(root),
+    readRecentBriefOccupancy(reportDate, root),
     fetchCompetitorProfiles(root),
-    loadSignalAgentContract(reportDate, root)
+    readCompetitorWinningAngles(reportDate, root),
+    loadManualSubmissionCandidates(reportDate, root)
   ]);
 
-  let fileNames: string[] = [];
-  try {
-    fileNames = await readdir(queueDir);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return [];
+  let parsedSubmissions = manualSubmissions;
+  if (parsedSubmissions.length === 0) {
+    const queueDir = resolve(root, `data/dry-runs/${reportDate}`);
+    let fileNames: string[] = [];
+    try {
+      fileNames = await readdir(queueDir);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return [];
+      }
+      throw error;
     }
-    throw error;
-  }
 
-  const parsedSubmissions = await Promise.all(
-    fileNames
-      .filter((fileName) => fileName.endsWith("-submission.json"))
-      .map(async (fileName) => {
-        const sourcePath = resolve(queueDir, fileName);
-        const submission = JSON.parse(
-          await readFile(sourcePath, "utf8")
-        ) as SerializedSubmission;
-        return {
-          sourcePath,
-          submission
-        } satisfies ParsedCandidateSubmission;
-      })
-  );
+    parsedSubmissions = await Promise.all(
+      fileNames
+        .filter((fileName) => fileName.endsWith("-submission.json"))
+        .map(async (fileName) => {
+          const sourcePath = resolve(queueDir, fileName);
+          const submission = JSON.parse(
+            await readFile(sourcePath, "utf8")
+          ) as SerializedSubmission;
+          return {
+            sourcePath,
+            submission
+          } satisfies ParsedCandidateSubmission;
+        })
+    );
+  }
 
   const staleSubmissions = parsedSubmissions.filter(({ submission }) =>
     detectedBeforeReportDate(submission, reportDate)
   );
+  await saveStalePruningRecord(reportDate, staleSubmissions, root);
   await Promise.all(
-    staleSubmissions.map(({ sourcePath }) => rm(sourcePath, { force: true }))
+    staleSubmissions
+      .filter(({ sourcePath }) => sourcePath.includes(`${resolve(root, `data/dry-runs/${reportDate}`)}`))
+      .map(({ sourcePath }) => rm(sourcePath, { force: true }))
   );
   const submissions = parsedSubmissions.filter(({ submission }) =>
     !detectedBeforeReportDate(submission, reportDate)
@@ -1743,39 +2197,22 @@ export async function rankDryRunCandidates(
       )
     )
   );
-  const finalSignalGuardResults = await Promise.all(
-    submissions.map(({ submission }) =>
-      evaluateSignalGuard({
-        reportDate,
-        headline: submission.headline,
-        beat_slug: submission.candidate_signal.beat,
-        body: buildSignalGuardBody(submission),
-        sources: (submission.sources ?? []).map((source) => ({
-          url: source.source_url,
-          title: source.source_type
-        })),
-        enforceWinnerBar: true,
-        model_disclosure: {
-          tools_used: submission.model_disclosure?.tools_used ?? [],
-          derivation_steps: submission.model_disclosure?.derivation_steps ?? []
-        }
-      }, root)
-    )
-  );
 
-  const rankedCandidates = submissions.map(({ sourcePath, submission }, index) => ({
-    ...scoreCandidate(submission, {
-      optimization,
-      briefSnapshot,
-      agentBehavior,
-      historicalBriefSignals,
-      autoGate: autoGateResults[index],
-      finalSignalGuard: finalSignalGuardResults[index],
-      competitorProfiles,
-      signalAgentContract
-    }),
-    sourcePath
-  }) satisfies RankedCandidate);
+  const rankedCandidates = await Promise.all(
+    submissions.map(async ({ sourcePath, submission }, index) => ({
+      ...(await scoreCandidate(submission, {
+        optimization,
+        briefSnapshot,
+        agentBehavior,
+        historicalBriefSignals,
+        recentBriefOccupancy,
+        competitorWinningAngles,
+        autoGate: autoGateResults[index],
+        competitorProfiles
+      })),
+      sourcePath
+    }) satisfies RankedCandidate)
+  );
 
   applyCompanionReleaseAdjustments(rankedCandidates, submissions);
 
@@ -1790,6 +2227,12 @@ export async function rankDryRunCandidates(
       candidate.reasons.push(`daily slate already has multiple ${candidate.beat} candidates`);
     }
     byBeatCounts.set(candidate.beat, seen + 1);
+  }
+
+  for (const candidate of rankedCandidates) {
+    if (candidate.reasons.some((reason) => reason.startsWith("live feed occupancy block:"))) {
+      candidate.decision = "reject";
+    }
   }
 
   return rankedCandidates.sort(

@@ -22,7 +22,7 @@ async function writeOperatorPreflight(tempDir, overrides = {}) {
         payloadIntegrityReady: true,
         activeWalletAddress: "bc1q-ready",
         requiredWalletAddress: "bc1q-ready",
-        allowedBeats: ["infrastructure", "security", "protocol-updates"],
+        allowedBeats: ["infrastructure", "security"],
         blockedBeats: [],
         notes: [],
         ...overrides
@@ -226,7 +226,7 @@ test("filing queue does not promote hold decisions into awaiting_human_approval"
     const filingQueue = await buildFilingQueue("2026-03-28", [
       {
         candidateId: "hold-only",
-        beat: "protocol-updates",
+        beat: "infrastructure",
         headline: "Hold-only candidate",
         score: 92,
         decision: "hold",
