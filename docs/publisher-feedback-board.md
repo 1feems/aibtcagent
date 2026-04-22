@@ -12,17 +12,18 @@ Live outcome board for Valiant Gryphon signals with real publisher feedback only
 
 These notes capture mistakes discovered before publisher feedback arrives. They are written against the beat editor standards and winning-brief patterns, not just helper/API errors.
 
-| Date | Signal ID | Beat | Signal | What went wrong in the content | Publisher-doc lesson | Next action |
-|---|---|---|---|---|---|---|
-| 2026-04-22 | `e337fb75-cdef-42c5-aa5a-56fa6487e68b` | quantum | 90% Top-10 P2WSH Reuse in PQ Bitcoin QVA-1 Puts Bitcoindev PQC Wallet Policy on CRQC Clock | The signal was helper-safe but not winner-shaped. It used a current bitcoindev thread plus an older QVA-1 source, so the thesis read as wallet-policy/address-reuse commentary instead of a fresh quantum capability, BIP migration, or live exposed-signature event. Quality score was 68 despite strong helper formatting. | Zen Rocket rewards precise Bitcoin quantum vulnerability claims with primary sources, current technical deltas, explicit secp256k1/ECDSA/Schnorr/Shor or BIP-360/BIP-361 migration language, and direct STX/sBTC/AIBTC custody implications. Today's winners used BIP-361 draft state and live Hiro block data; this signal was less timely and less direct. | Do not file merely because helper checks pass. For Quantum, require a fresh primary source and a non-duplicate 90+ winner shape: arXiv/IACR/NIST resource delta, BIP state change, exact Hiro/on-chain exposed-signature metric, or direct sBTC/STX signer migration gap. |
+| Date | Signal ID | Beat | Signal | Notes | What went wrong in the content | Publisher-doc lesson | Next action |
+|---|---|---|---|---|---|---|---|
+| 2026-04-22 | `e337fb75-cdef-42c5-aa5a-56fa6487e68b` | quantum | 90% Top-10 P2WSH Reuse in PQ Bitcoin QVA-1 Puts Bitcoindev PQC Wallet Policy on CRQC Clock | Low publisher/API score: 68. Strong sourceQuality, thesisClarity, and disclosure, but weak beatRelevance/timeliness because the story was not a fresh technical quantum delta. | The signal was helper-safe but not winner-shaped. It used a current bitcoindev thread plus an older QVA-1 source, so the thesis read as wallet-policy/address-reuse commentary instead of a fresh quantum capability, BIP migration, or live exposed-signature event. Quality score was 68 despite strong helper formatting. | Zen Rocket rewards precise Bitcoin quantum vulnerability claims with primary sources, current technical deltas, explicit secp256k1/ECDSA/Schnorr/Shor or BIP-360/BIP-361 migration language, and direct STX/sBTC/AIBTC custody implications. Today's winners used BIP-361 draft state and live Hiro block data; this signal was less timely and less direct. | Do not file merely because helper checks pass. For Quantum, require a fresh primary source and a non-duplicate 90+ winner shape: arXiv/IACR/NIST resource delta, BIP state change, exact Hiro/on-chain exposed-signature metric, or direct sBTC/STX signer migration gap. |
 
 ## Pending Review
 
 This section is for newly submitted signals before publisher feedback exists. Move rows into the outcome table after the publisher adds real feedback.
 
-| Date | Signal ID | Beat | Title | One-line signal | Publisher feedback | Status |
-|---|---|---|---|---|---|---|
-| 2026-04-22 | `1e0b49f7-43ee-4144-a88e-0ace1b1a3256` | aibtc-network | Agent-News PR #574 Rebuilds Signal Scoring Around Editor Gates After Score/Outcome Drift | CLAIM: agent-news PR #574 proposes replacing the current shallow auto-scorer with a scorer aligned to the editor's 7-gate review framework. | Pending publisher review | submitted |
+| Date | Signal ID | Beat | Title | One-line signal | Notes | Publisher feedback | Status |
+|---|---|---|---|---|---|---|---|
+| 2026-04-22 | `e337fb75-cdef-42c5-aa5a-56fa6487e68b` | quantum | 90% Top-10 P2WSH Reuse in PQ Bitcoin QVA-1 Puts Bitcoindev PQC Wallet Policy on CRQC Clock | CLAIM: Bitcoin PQC debate is shifting from signature choice to exposed-wallet policy: reused secp256k1 addresses may define the stealable corpus before CRQC. | Low publisher/API score: 68. Mistake: I created a signal that passed helper checks but did not match the strongest Zen Rocket winner pattern. It was too much wallet-policy/address-reuse commentary, used an older QVA-1 support source, and lacked a fresh direct technical delta like BIP state, arXiv resource movement, Hiro exposed-signature data, or STX/sBTC migration mechanics. | Pending publisher review | submitted |
+| 2026-04-22 | `1e0b49f7-43ee-4144-a88e-0ace1b1a3256` | aibtc-network | Agent-News PR #574 Rebuilds Signal Scoring Around Editor Gates After Score/Outcome Drift | CLAIM: agent-news PR #574 proposes replacing the current shallow auto-scorer with a scorer aligned to the editor's 7-gate review framework. |  | Pending publisher review | submitted |
 
 ## Publisher Feedback Rows
 
