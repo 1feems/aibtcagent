@@ -3,7 +3,6 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAuditedLoop, type AuditInput, type AuditOutput } from "../audit/index.js";
 import { runDailyLearn } from "../loop/index.js";
-import { runDailyPrep } from "../prep/daily-prep.js";
 import { runSignalJob } from "../prep/signal-job.js";
 import {
   replenishCandidateSlate,
@@ -752,15 +751,6 @@ export async function runSignalLoop(argv: string[] = process.argv.slice(2)): Pro
     }
   }
 
-  const dailyPrep = await runDailyPrep(config.reportDate, config.generatedAt);
-  if (dailyPrep.skipped) {
-    process.stdout.write(
-      `[signal-loop] daily-prep skipped: ${dailyPrep.skipReason ?? "unknown reason"}\n`
-    );
-  } else {
-    process.stdout.write(`[signal-loop] daily-prep report saved to ${dailyPrep.reportPath}\n`);
-  }
-
   const learningBriefPath = await writeSignalLearningBrief(config.reportDate, config.generatedAt);
   process.stdout.write(`[signal-loop] distilled learning brief saved to ${learningBriefPath}\n`);
   const outcomeBoard = await writeDailyOutcomeBoard(config.reportDate, config.generatedAt);
@@ -832,7 +822,7 @@ export async function runSignalLoop(argv: string[] = process.argv.slice(2)): Pro
     {
       skill: "analyze-signal-outcomes",
       status: "completed",
-      detail: `daily-learn, outcome auto-labeling, snapshot memory, outcome feedback memory, runtime memory sync, brief tracking, daily-prep, and explicit analysis artifact completed before candidate drafting (${analysisReportPath})`
+      detail: `daily-learn, outcome auto-labeling, snapshot memory, outcome feedback memory, runtime memory sync, brief tracking, and explicit analysis artifact completed before candidate drafting (${analysisReportPath})`
     },
     {
       skill: "create-signal",

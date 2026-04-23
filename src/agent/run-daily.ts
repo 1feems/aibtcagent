@@ -2,7 +2,6 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDailyLearn } from "../loop/index.js";
 import { autoLabelResolvedOutcomes } from "../learning/index.js";
-import { runDailyPrep } from "../prep/daily-prep.js";
 import { runSignalJob } from "../prep/signal-job.js";
 import {
   replenishCandidateSlate,
@@ -145,15 +144,6 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
   if (topCorrespondents) {
     process.stdout.write(`[agent-daily] top correspondents snapshot saved to ${topCorrespondents.dailySnapshotPath}\n`);
     process.stdout.write(`[agent-daily] top correspondent behavior saved to ${topCorrespondents.behaviorPath}\n`);
-  }
-
-  const dailyPrep = await runDailyPrep(config.reportDate, config.generatedAt);
-  if (dailyPrep.skipped) {
-    process.stdout.write(
-      `[agent-daily] daily-prep skipped: ${dailyPrep.skipReason ?? "unknown reason"}\n`
-    );
-  } else {
-    process.stdout.write(`[agent-daily] daily-prep report saved to ${dailyPrep.reportPath}\n`);
   }
 
   const outcomeBoard = await writeDailyOutcomeBoard(config.reportDate, config.generatedAt);

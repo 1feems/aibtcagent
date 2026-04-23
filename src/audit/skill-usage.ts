@@ -40,7 +40,7 @@ const REPO_SKILL_CONTRACTS: RepoSkillContract[] = [
     paths: [
       "src/learning/outcome-feedback.ts",
       "src/learning/editorial-memory.ts",
-      "src/prep/daily-prep.ts"
+      "src/agent/run-signal-loop.ts"
     ],
     requiredPatterns: [
       /repeatedLabels|labelCounts/,

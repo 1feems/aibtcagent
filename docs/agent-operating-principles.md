@@ -40,7 +40,7 @@ Rejected, approved-not-in-brief, duplicate, and timeout outcomes are not admin d
 - Treat `news_check_status` as mandatory before every filing attempt.
 - Treat timeout verification as part of the filing contract, not an optional recovery step.
 - Treat `up to 6` as capacity, not as a quota that must be filled.
-- Keep daily prep as the context-building step and signal packaging as the narrower follow-on step.
+- Keep `AGENTS.md` as the context-building and filing contract; signal packaging is the narrower follow-on step.
 - Treat `docs/build-plan.md` as living implementation memory for what has been done and what exists now.
 - Avoid duplicating the same workflow guidance across many long docs unless one of them is clearly marked canonical.
 

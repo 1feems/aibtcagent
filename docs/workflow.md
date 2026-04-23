@@ -56,7 +56,7 @@ That keeps the active context smaller while still making the right detail availa
 
 The agent has four operating phases:
 
-1. Daily prep
+1. Context refresh
 2. Signal packaging
 3. Human signing and filing
 4. Outcome learning
@@ -82,7 +82,7 @@ Support job:
 Use `docs/company-operating-model.md` for the full job descriptions.
 This workflow defines where each job acts in the day.
 
-## Phase 1: Daily Prep
+## Phase 1: Context Refresh
 
 Goal:
 
@@ -92,7 +92,7 @@ Goal:
 
 Canonical doc:
 
-- `docs/daily-docs-map.md`
+- `AGENTS.md`
 - `docs/build-plan.md` for current implementation constraints when needed
 
 Primary runtime:
@@ -140,7 +140,7 @@ Canonical doc:
 
 What happens:
 
-1. read the daily prep outputs first
+1. read `AGENTS.md` and the required docs for the target beat first
 2. `Outcome Analyst` turns the latest brief, publisher work, same-beat outcomes, and helper bugs into today's drafting rules
 3. `Create Signal` reviews the latest dated brief artifact, beat editor guidance, recent helper-errors.jsonl entries, open beats, duplicate clusters, and recent signal outcomes before drafting
 4. apply editorial memory and hard pre-filing checks
@@ -247,7 +247,7 @@ Rule:
 
 - `docs/architecture.md` explains how the system is structured
 - `docs/company-operating-model.md` explains the jobs, their responsibilities, and handoffs
-- `docs/daily-docs-map.md` is the detailed prep contract
+- `AGENTS.md` is the live filing and context-refresh contract
 - `docs/daily-signal-job.md` is the detailed packaging contract
 - `docs/build-plan.md` is the living implementation document for what has been done and what exists now
 

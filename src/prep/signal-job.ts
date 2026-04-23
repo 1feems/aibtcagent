@@ -484,7 +484,7 @@ export function buildSignalReport(args: {
   priorReference: string;
   accepted: CandidateReview[];
   rejected: CandidateReview[];
-  dailyReportRelative: string;
+  workflowRelative: string;
   briefRelative: string;
   objectiveMemoryRelative: string;
   editorialMemoryRelative: string;
@@ -543,7 +543,7 @@ export function buildSignalReport(args: {
     "Trusted runtime output must come from `data/filing-queue/YYYY-MM-DD.json` and `data/filing-ready/YYYY-MM-DD/*.json` after agent-daily finishes.",
     "",
     "## Inputs used",
-    `- Daily prep report: \`${args.dailyReportRelative}\``,
+    `- Workflow contract: \`${args.workflowRelative}\``,
     `- Current brief artifact: \`${args.briefRelative}\``,
     `- Prior brief artifact or proxy: ${args.priorReference}`,
     `- Structured editorial memory: \`${args.editorialMemoryRelative}\``,
@@ -585,7 +585,7 @@ export function buildSignalReport(args: {
     ...editorialChecks,
     "",
     "## Competitive setup",
-    `- Best beats to target: ${args.competitionMemory.crowdedBeats.length > 0 ? "lanes not showing cap/duplicate pressure today" : "derived from daily prep; crowding memory is thin"}`,
+    `- Best beats to target: ${args.competitionMemory.crowdedBeats.length > 0 ? "lanes not showing cap/duplicate pressure today" : "derive from AGENTS.md beat-capacity and publisher-feedback checks"}`,
     "- Beats to avoid: any story already in today's brief, any known rejection-pattern packaging failure",
     `- Strongest story shapes: ${args.competitionMemory.winningStoryShapes.slice(0, 3).join("; ")}`,
     `- Top-3 pressure: ${args.objectiveMemory.currentStanding.gapToTop3 ?? "unknown"} score gap`,
@@ -861,11 +861,9 @@ export async function runSignalJob(
   const targetCount = 6;
 
   const paths = {
-    dailyReport: resolve(root, `data/reports/daily/${reportDate}.md`),
     dailyHandoff: resolve(root, `data/reports/daily/${reportDate}.json`),
     brief: resolve(root, `data/briefs/${reportDate}.md`),
     priorBrief: resolve(root, `data/briefs/${priorDate}.md`),
-    priorReport: resolve(root, `data/reports/daily/${priorDate}.md`),
     queueDir: resolve(root, `data/manual-submissions/${reportDate}`),
     output: resolve(root, `data/reports/signals/${reportDate}.md`),
     editorialMemory: resolve(root, "data/state/editorial-memory.json"),
@@ -873,15 +871,9 @@ export async function runSignalJob(
     contextRunDir: resolve(root, `data/context-runs/${reportDate}`)
   };
 
-  if (!existsSync(paths.dailyReport)) {
-    process.stdout.write(
-      `[signal-job] BLOCKED — data/reports/daily/${reportDate}.md missing. Run daily prep first.\n`
-    );
-    return { outputPath: "", skipped: true, skipReason: `daily prep report missing for ${reportDate}` };
-  }
   if (!existsSync(paths.brief)) {
     process.stdout.write(
-      `[signal-job] BLOCKED — data/briefs/${reportDate}.md missing. Run daily prep first.\n`
+      `[signal-job] BLOCKED — data/briefs/${reportDate}.md missing. Add the brief artifact or use AGENTS.md live-doc checks before packaging.\n`
     );
     return { outputPath: "", skipped: true, skipReason: `brief artifact missing for ${reportDate}` };
   }
@@ -987,9 +979,7 @@ export async function runSignalJob(
     );
   const priorReference = existsSync(paths.priorBrief)
     ? `\`data/briefs/${priorDate}.md\``
-    : existsSync(paths.priorReport)
-      ? `\`data/reports/daily/${priorDate}.md\` (declared proxy because no prior brief artifact exists)`
-      : "none available";
+    : "none available";
 
   const reportContent = buildSignalReport({
     reportDate,
@@ -998,7 +988,7 @@ export async function runSignalJob(
     priorReference,
     accepted,
     rejected,
-    dailyReportRelative: `data/reports/daily/${reportDate}.md`,
+    workflowRelative: "AGENTS.md",
     briefRelative: `data/briefs/${reportDate}.md`,
     objectiveMemoryRelative: "data/state/objective-memory.json",
     editorialMemoryRelative: "data/state/editorial-memory.json",

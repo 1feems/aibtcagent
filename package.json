@@ -22,7 +22,6 @@
     "refresh-memory": "npm run build && node dist/ops/refresh-memory.js",
     "fetch-and-run": "npm run build && node dist/agent/run-daily.js",
     "heartbeat-reminder": "npm run build && node dist/ops/heartbeat-reminder.js",
-    "daily-prep": "npm run build && node dist/prep/daily-prep.js",
     "signal-job": "npm run signal-loop",
     "register-repair-feedback": "npm run build && node dist/learning/register-repair-feedback.js",
     "audit-agent": "npm run build && node dist/audit/run-audit.js",

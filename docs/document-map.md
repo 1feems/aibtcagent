@@ -33,7 +33,6 @@ These define what a specific step must do.
 
 | Doc | Role | Use |
 |-----|------|-----|
-| `docs/daily-docs-map.md` | Daily prep contract | Follow the prep loop and required outputs |
 | `docs/daily-signal-job.md` | Signal packaging contract | Turn prepared context into reviewable signal packages |
 | `AGENTS.md` | Filing contract | Follow live filing rules and cooldown-safe behavior |
 
@@ -59,12 +58,6 @@ If starting fresh:
 4. `docs/company-operating-model.md`
 5. `docs/workflow.md`
 6. `docs/build-plan.md`
-
-If doing daily prep:
-
-1. `docs/workflow.md`
-2. `docs/daily-docs-map.md`
-3. `docs/build-plan.md`
 
 If packaging signals:
 

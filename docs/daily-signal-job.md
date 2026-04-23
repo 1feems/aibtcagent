@@ -3,19 +3,18 @@
 ## Document Role
 
 - Category: `task contract`
-- Scope: signal review and packaging after daily prep
+- Scope: signal review and packaging after `AGENTS.md` context checks
 - Use this when: the active step is turning prepared context into publishable signal packages
 - Do not use this as: the filing contract or the only source of current implementation state
 
 ## Purpose
-Use this doc after the daily prep loop is complete.
+Use this doc after the `AGENTS.md` required-doc checks are complete.
 
-This doc is for the signal review and packaging step after daily prep.
+This doc is for the signal review and packaging step after the live filing contract has been applied.
 
-This is a separate task from the daily prep task.
+This is a separate task from the live source-review and beat-capacity checks.
 It is expected to run at a different time.
-It depends on the outputs created by the daily prep task for the same active local cycle date.
-It cannot run correctly until the daily prep task has already been completed.
+It depends on current brief, publisher-feedback, helper-bug, source, and beat-editor context for the same active local cycle date.
 
 This step should spend less time rebuilding context and more time selecting, validating, and packaging competitive signals that can earn sats, improve leaderboard position, and help Feems reach weekly top 3.
 
@@ -49,9 +48,8 @@ This signal job has a simple contract.
 ### Reads
 The signal packaging step must read:
 
-- `data/reports/daily/YYYY-MM-DD.md`
 - `data/briefs/YYYY-MM-DD.md`
-- prior-cycle `data/briefs/YYYY-MM-DD.md` or the proxy named in the daily prep report
+- prior-cycle `data/briefs/YYYY-MM-DD.md` when available
 - `data/state/editorial-memory.json`
 - `data/state/filed-signals.json`
 - `memory/learnings.md`
@@ -88,17 +86,16 @@ Do not pad to `6`.
 If the evidence only supports `1`, `2`, or `3` strong signals, return only those.
 
 ## Dependency Rule
-This signal task depends on the daily prep task.
+This signal task depends on current `AGENTS.md` context checks.
 
 Do not run the signal task unless these files already exist for the same active local cycle date:
 
-- `data/reports/daily/YYYY-MM-DD.md`
 - `data/briefs/YYYY-MM-DD.md`
 
-If either file is missing, stop and require the daily prep task from `docs/daily-docs-map.md` first.
+If the brief file is missing, stop and add the brief artifact or use the live docs named in `AGENTS.md` before packaging.
 
 ## Read These First
-Before doing signal work, read the output files created by the daily prep loop.
+Before doing signal work, read `AGENTS.md` and the live docs it names for the target beat.
 
 Always use the files that match the active local cycle date for the current signal job.
 Do not read an older date by default.
@@ -110,10 +107,8 @@ Use the same active local cycle date across all three files:
 
 Read these in order:
 
-1. `data/reports/daily/YYYY-MM-DD.md`
-   Use the completed daily prep report for the active cycle.
-   This is the main handoff doc for signal work.
-   This is the most important output doc.
+1. `AGENTS.md`
+   Use the live filing contract and required-doc list.
 
 2. `data/briefs/YYYY-MM-DD.md`
    Use the archived actual brief for the active cycle.
@@ -121,11 +116,10 @@ Read these in order:
 
 3. `data/briefs/YYYY-MM-DD.md` for the prior cycle
    Use the prior brief artifact if it exists.
-   If it does not exist, use the proxy declared in the daily prep report.
 
 4. `data/state/filed-signals.json`
    Use to avoid duplicate or already-filed angles and to see confirmed state.
-   Use the current confirmed state, including statuses written during today's prep loop.
+   Use the current confirmed state.
 
 5. `data/state/editorial-memory.json`
    Use the structured editorial brain generated from repeated `win:`, `loss:`, and `next:` lessons.
@@ -163,35 +157,30 @@ Only after reading those daily output docs, read the deeper signal docs below.
     This is the only editorial authority for quantum beat drafting and review.
     Do not apply legacy publisher Q1–Q4 guardrails.
 
-## What To Use From The Daily Prep Report
-Extract these sections from `data/reports/daily/YYYY-MM-DD.md` before sourcing:
+## What To Use From AGENTS.md Context
+Extract these checks from `AGENTS.md` and the required live docs before sourcing:
 
-- `Inputs gathered`
-- `Input coverage check`
-- `What Feems sent recently`
-- `Status updates by item`
-- `Today vs prior-day brief`
-- `Approved review`
-- `Rejected/denied review`
-- `Ranking context`
-- `Decision model`
-- `Pending watchlist`
-- `Durable lessons to carry forward`
-- `Signal-generation handoff`
+- beat capacity
+- publisher feedback
+- homepage brief winners
+- daily brief source comparison
+- target beat editor standards
+- source tier rules
+- helper bug patterns
 
-Use the daily prep output as the main operating handoff.
-Do not redo the prep loop unless a required input is still missing.
-Treat `Signal-generation handoff` as the strategy source of truth for the signal job, not as a suggestion.
+Use `AGENTS.md` as the main operating handoff.
+Do not invent a separate prep loop.
+Treat the required-doc list as the strategy source of truth for the signal job, not as a suggestion.
 
 ## What The Signal Packaging Step Must Do
 
-1. Read the daily prep report and brief artifacts first.
+1. Read `AGENTS.md`, publisher feedback, helper bugs, target beat guidance, and brief artifacts first.
 2. Treat today's brief as the editorial template for headline shape, body shape, and consequence framing before drafting anything new.
-3. Use the `Signal-generation handoff` section as the starting strategy and strategy source of truth.
+3. Use the `AGENTS.md` required-doc list as the starting strategy and strategy source of truth.
 4. Read `data/state/editorial-memory.json` before drafting and use its `preFilingChecks` as hard pass/fail rules.
 5. Recheck any unresolved items from the `Pending watchlist` before sourcing fresh ideas, and state whether any of them changed the final 6.
 6. Use the brief comparison, top-6 pressure, and repeat-winner pressure to cut weak candidates before drafting.
-7. Read and use `Published`, `Approved not in brief`, and `Why approved-not-in-brief lost` from the daily prep report as separate selection filters.
+7. Read and use publisher feedback, brief snapshots, and daily source comparison as separate selection filters.
 8. Use today's updated `memory/learnings.md` and today's updated `data/state/filed-signals.json` as live state inputs for the signal job.
 9. Use the deeper signal docs only for qualification and competitive sharpening.
 10. Prefer candidates with the best brief-win, payout, and weekly-prize-upside profile.
@@ -202,7 +191,7 @@ Treat `Signal-generation handoff` as the strategy source of truth for the signal
 15. Default rule for rejected signals: keep them active as repair-and-resubmit candidates unless the publisher feedback clearly says not to resubmit.
 16. Rewrite only the parts the publisher flagged: beat, evidence, headline packaging, or angle.
 
-Do not waste time rebuilding context that already exists in the daily prep outputs.
+Do not waste time rebuilding context that already exists in `AGENTS.md` required docs.
 Do not hand-draft helper payloads when the repo already has a runtime path that can validate and package them.
 
 ## Output File
@@ -260,7 +249,7 @@ Publish-ready means:
 - strong enough to plausibly compete for brief inclusion
 - written clearly enough for immediate human review
 - complete in the required format
-- grounded in the daily prep report and signal docs
+- grounded in `AGENTS.md` required docs and signal docs
 - not already present in today's brief artifact
 - better than merely approval-worthy; winner-tier is the default bar
 - able to be converted into a helper-ready payload without rewriting the core claim
@@ -269,7 +258,7 @@ Publish-ready means:
 
 - optimize for `In Brief`, not just approval
 - optimize for payout and weekly leaderboard prizes, not just acceptable filing volume
-- use the daily prep decision model before exploring new angles
+- use the `AGENTS.md` decision model before exploring new angles
 - use `earned`, `score`, and `rank` together when judging competitive pressure
 - compare Feems's current gap versus the current top 3 before selecting the final 6
 - study what the top earners posted most and what actually got them paid, not just who ranked high
@@ -298,12 +287,12 @@ For each chosen signal, explicitly say:
 ## Handoff Rule
 At the top of the signal output, state:
 
-- which daily prep report was used
+- which `AGENTS.md` context checks were used
 - which brief artifact was used
 - which prior-brief artifact or proxy was used
 - whether any pending items were rechecked before sourcing
 
 ## One-Line Summary
-Read the daily prep outputs first.
+Read `AGENTS.md` and its required docs first.
 Use them as the handoff.
 Then spend time on competitive signals, not context recovery.

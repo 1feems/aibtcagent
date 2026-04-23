@@ -218,7 +218,6 @@ Use these by role:
 - High-level operating rules: `docs/agent-operating-principles.md`
 - System map: `docs/architecture.md`
 - Daily operator flow: `docs/workflow.md`
-- Daily prep contract: `docs/daily-docs-map.md`
 - Signal packaging contract: `docs/daily-signal-job.md`
 - Current build and enforcement details: `docs/build-plan.md`
 
@@ -249,9 +248,8 @@ If the goal is improving signal output:
 1. `docs/workflow.md`
 2. `docs/company-operating-model.md`
 3. `docs/in-brief-success-checklist.md`
-4. `docs/daily-docs-map.md`
-5. `docs/daily-signal-job.md`
-6. `docs/build-plan.md`
+4. `docs/daily-signal-job.md`
+5. `docs/build-plan.md`
 
 ## Architectural Principles
 

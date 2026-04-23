@@ -390,7 +390,7 @@ export async function refreshObjectiveMemory(baseDir?: string): Promise<Objectiv
 
   const memory: ObjectiveMemory = {
     generatedAt: new Date().toISOString(),
-    sourcePaths: ["data/state/leaderboard-memory.json", "docs/daily-docs-map.md", "docs/build-plan.md"],
+    sourcePaths: ["data/state/leaderboard-memory.json", "AGENTS.md", "docs/build-plan.md"],
     mainKpi: "Brief inclusion wins are the primary output metric because they drive both direct payout and leaderboard leverage.",
     payoutModel: {
       briefInclusionSats: 30000,
