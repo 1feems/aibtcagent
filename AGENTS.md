@@ -108,30 +108,61 @@ Preserve the existing table format already used in `docs/daily-brief-source-comp
 
 ### Step 3 — Load Beat Editor Standards
 
-Read the beat editor file for the target beat.
+### Step 3 — Load Target Beat Rules
 
-Extract exactly:
-- The 90+ scoring example and the specific reason it scored high
-- The checklist items required to reach 90+
-- The instant rejection triggers for this beat
+Before judging or drafting a signal, identify the target beat:
 
-Do not answer beat-fit or scoring questions from memory. Read the file.
+- `quantum`
+- `bitcoin-macro`
+- `aibtc-network`
 
-**Quantum — what winning looks like (from `docs/homepage-brief-snapshots.md`):**
-- `arXiv:2604.02311 Cuts secp256k1 Attack Qubits to 1,333 from 2,124 -- Shor ECDLP Threshold Shrinks for bc1q Keys` — arXiv ID + before/after qubit numbers + Bitcoin address type
-- `1 ECDSA Signature Added in Stacks Block 7697670 -- STX/sBTC Agents Remain on BIP-360 Draft Clock` — Hiro block anchor + exact count + missing migration path
-- `[BIP-361] Draft Merged: Phase A "Deposit Freeze" and Phase B "Signature Sunset" Set 2029-2031 Deadlines` — BIP state change + phase names + deadline years
-- `arXiv:2510.09271: ML-DSA Verifies at 0.14 ms vs ECDSA 0.88 ms -- BIP-361 Migration Tech Feasibility Confirmed` — arXiv ID + exact ms benchmark + migration conclusion
+Read **only** the beat editor file for that target beat:
 
-**Bitcoin Macro — what winning looks like:**
-- `60,243 BTC Mempool Queue Holds Just 0.06 BTC Fees -- sBTC Peg-In Desks Can Recut Broadcast Caps` — exact tx count + exact fee total + sBTC operator action
-- `1372 Blocks Left Before a -0.08% Retarget -- sBTC/STX Carry Desks Lose May Cost Premium` — blocks remaining + retarget % + carry desk consequence
-- `Block 946,149 Earns 1.55M Sats -- 5.09x Block 946,148 as Fee Volatility Swings Across 8-Block Window` — block height + sat amount + multiplier + window size
+| Beat | Read this file |
+|---|---|
+| `quantum` | `docs/beat-editors/quantum-zen-rocket.md` |
+| `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
+| `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-**AIBTC Network — what winning looks like:**
-- `PR #593 Extends Edge-Cache to N=4 Correspondent Endpoints -- Beat Fill, Rankings, Classifieds Hit <100ms vs ~3s` — PR number + what changed + before/after metric
-- `x402-Relay #349 Merges Nonce-Gap Reconciler -- Stale Sender Queuing Blocks Fixed 5 Days After Pool Health Fix` — PR number + what fixed + timing context
-- `Skills PR #343 Flags Hardcoded --sender in contract-preflight -- Agent Stacks Identity Wrong for 2 Days` — PR number + exact bug + impact duration
+Do not read the other beat editor files unless the operator explicitly asks.
+
+From the target beat editor file, extract:
+- what scores 90+
+- what checklist items are required
+- what triggers instant rejection
+
+Then compare the candidate signal against today’s winning examples from:
+
+`docs/homepage-brief-snapshots.md`
+
+Use the examples only as pattern guidance, not as source material.
+
+Return:
+- target beat
+- required 90+ checklist
+- instant rejection triggers
+- whether the candidate matches a winning pattern
+- what must change before drafting
+#### Winning Pattern Examples
+
+Use these only as examples of shape and specificity. Do not copy them.
+
+Quantum winners usually include:
+- arXiv ID + exact qubit numbers + Bitcoin key/address implication
+- block height + exact ECDSA signature count + missing migration path
+- BIP state change + phase names + deadline years
+- benchmark ID + exact performance number + migration conclusion
+
+Bitcoin Macro winners usually include:
+- exact mempool tx count + fee total + sBTC operator action
+- blocks remaining + retarget percentage + carry desk consequence
+- block height + fee amount + multiplier + comparison window
+
+AIBTC Network winners usually include:
+- PR number + shipped change + before/after metric
+- PR number + fixed bug + timing context
+- PR number + exact operational impact
+
 
 ---
 
