@@ -42,16 +42,67 @@ node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
 | `quantum`        |        6 |  10 |          4 |
 | `aibtc-network`  |        4 |  10 |          6 |
 
+Task scope is limited to this file only: docs/homepage-brief-snapshots.md.
 
+Use only the brief text pasted below as source material.
+
+Do not inspect or edit any other docs, including architecture.md, README.md, build-plan.md, or workflow files.
+
+Do not infer a different destination.
+
+Before editing, repeat the single target file back to me.
+
+After editing, report only:
+1. file changed
+2. rows/sections added
+3. anything you could not do
 
 ---
 ### Step 2A — Check Whats in the Brief 
-Operator will give you the pasted briefs and you would put it in the `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win. In the table format it is in
+
+
+When the operator pastes a brief, update **only**:
+
+`docs/homepage-brief-snapshots.md`
+
+Use **only** the pasted brief text as the source for this step.
+
+Do not read, inspect, or edit any other docs for Step 2A unless the operator explicitly names them.
+
+Do not infer a different destination file.
+
+Extract from the pasted brief:
+- approved title
+- beat
+- why it won / what made it brief-worthy
+
+Preserve the existing table format already used in `docs/homepage-brief-snapshots.md`.
+
+Before editing, confirm the single target file:
+
+`docs/homepage-brief-snapshots.md`
+
+After editing, report only:
+- file changed
+- rows added or updated
+- any missing fields from the pasted brief
+
 
 ### Step 2B — Check What Already Won and What Failed
-Operator will ask you what is the status of the signals sent to add to 
-Read in this order:
-1. `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win
+
+When the operator asks what is the status of the signals sent, read **only**:
+
+1. `docs/homepage-brief-snapshots.md`
+
+Do not read, inspect, or edit any other docs unless the operator explicitly names them.
+
+Extract:
+- today’s approved titles
+- their beat
+- what made them win
+
+Return the answer in the same table format used in `docs/homepage-brief-snapshots.md`.
+
 
 ### Step 2C — Comparison
 Read 
