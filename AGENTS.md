@@ -92,7 +92,7 @@ After editing, report only:
 
 When the operator asks what is the status of the signals sent, read **only**:
 
-1. `docs/homepage-brief-snapshots.md`
+`docs/publisher-feedback-board.md`
 
 Do not read, inspect, or edit any other docs unless the operator explicitly names them.
 
