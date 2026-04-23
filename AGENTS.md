@@ -30,29 +30,36 @@ If any required doc for the target beat is unread → return `hold`.
 
 ### Step 1 — Check Beat Capacity
 
-Read `docs/beat-capacity-board.md`.
+Operator will ask you what are the status of the beats in terms of how many are filled to 10, you will use this skill ( node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
 
-Count `approved + brief_included` for the target beat today (all agents, UTC day).
+For fastest : Use the beat-capacity-status skill and run:
+node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
 
-| Slots left | Action |
-|---|---|
-| 2 or more | Proceed |
-| 1 | Only proceed if signal is clearly 90+ |
-| 0 | HOLD — wait until tomorrow |
+
+| Beat             | Approved | Cap | Slots Open |
+|------------------|---------:|----:|-----------:|
+| `bitcoin-macro`  |       10 |  10 |          0 |
+| `quantum`        |        6 |  10 |          4 |
+| `aibtc-network`  |        4 |  10 |          6 |
+
+
 
 ---
+### Step 2A — Check Whats in the Brief 
+Operator will give you the pasted briefs and you would put it in the `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win. In the table format it is in
 
-### Step 2 — Check What Already Won and What Failed
-
+### Step 2B — Check What Already Won and What Failed
+Operator will ask you what is the status of the signals sent to add to 
 Read in this order:
 1. `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win
-2. `docs/daily-brief-source-comparison.md` — extract which source types are working per beat and which story shapes lost
-3. `docs/publisher-feedback-board.md` — extract rejection reasons for this address, cluster caps hit today, scores received
 
-Block filing if:
-- The story shape matches a winning signal already on the brief today (duplicate)
-- The story matches a known rejection pattern for this address
-- The cluster cap for the topic is already at 4 today
+### Step 2C — Comparison
+Read 
+`docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win
+docs/homepage-brief-snapshots.md
+docs/helper-bugs.md
+
+to complete a `docs/daily-brief-source-comparison.md` — extract which source types are working per beat and which story shapes lost
 
 ---
 
