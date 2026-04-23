@@ -115,11 +115,8 @@ Once Feems provides the daily inputs, read these in order:
 5. `docs/lean-signal-workflow.md`
    Use for the default low-token sourcing flow and fast-screen behavior.
 
-6. `README.md`
-   Read only:
-   - `Top rejection reasons`
-   - `What gets published (not just approved)`
-   - `Publisher alignment rules`
+6. `AGENTS.md`
+   Read only the current signal workflow, filing rules, and required-doc list.
 
 7. `data/state/filed-signals.json`
    Use to see what was sent, what is unresolved, and what needs status updates.
@@ -502,7 +499,7 @@ To save tokens and stay precise:
 
 - ask Feems for the daily inputs first
 - start with today's brief, the prior day's brief, publisher responses, rankings, and top-6 context
-- read only the named `README.md` sections
+- read only the named `AGENTS.md` sections
 - update recent signal statuses before sourcing fresh ideas
 - use deep docs only after the daily inputs are understood
 - use today's brief as the closest truth

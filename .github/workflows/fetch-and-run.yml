@@ -71,8 +71,7 @@ jobs:
             data/state/ \
             dashboard/ \
             data/logs/ \
-            memory/ \
-            README.md
+            memory/
           git add -f data/filing-queue/
           git diff --cached --quiet && echo "no changes" || git commit -m "chore: run full agent-daily pipeline from fetch alias [skip ci]"
           git push origin HEAD:${GITHUB_REF_NAME}

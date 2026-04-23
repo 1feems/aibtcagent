@@ -108,11 +108,11 @@ Goal:
 - [x] Enforce `aibtcagent`-only startup preflight in runtime docs and operator workflow
 Current state:
   Completed in:
-  `README.md`
+  `AGENTS.md`
   `src/ops/operator-summary.ts`
   `src/agent/run-daily.ts`
   `tests/operator-summary.test.js`
-  The main runbook now makes `aibtcagent` repo confirmation an explicit startup preflight before any runtime command.
+  `AGENTS.md` now makes the active filing contract explicit before any signal work.
   The operator workflow and `agent-daily` console output now repeat that boundary so future sessions start from repo state instead of cross-project memory.
 
 ### Phase 1: KPI Gate

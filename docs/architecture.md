@@ -11,7 +11,7 @@ Use it when you need to understand how the agent is structured without reading t
 - Use this when: you need the shortest accurate map of how the agent is organized
 - Do not use this as: the only source for step-by-step task execution or current implementation history
 
-This file exists because architecture was previously spread across `README.md`, the root agent instructions, `docs/build-plan.md`, and task-specific docs.
+This file exists because architecture was previously spread across root agent instructions, `docs/build-plan.md`, and task-specific docs.
 
 ## Design Goal
 Build an agent that behaves like an operator:
@@ -29,7 +29,7 @@ The repo should be read in layers, not as one giant instruction blob.
 
 Top-level document stack:
 
-1. `README.md` for repo intent and startup orientation
+1. `AGENTS.md` for current operating rules, required docs, and filing behavior
 2. `docs/architecture.md` for the system map
 3. `docs/company-operating-model.md` for the company jobs and handoffs
 4. `docs/workflow.md` for the daily operating flow
@@ -232,7 +232,7 @@ Rule:
 
 If the goal is onboarding:
 
-1. `README.md`
+1. `AGENTS.md`
 2. `docs/architecture.md`
 3. `docs/company-operating-model.md`
 4. `docs/workflow.md`

@@ -505,7 +505,7 @@ function buildDailyReportContent(args: {
   const docsRead = [
     resolve(args.root, "docs/daily-docs-map.md"),
     resolve(args.root, "data/reports/daily/TEMPLATE.md"),
-    resolve(args.root, "README.md"),
+    resolve(args.root, "AGENTS.md"),
     args.filedPath,
     args.briefPath,
     args.priorReportPath,
@@ -607,7 +607,7 @@ function buildDailyReportContent(args: {
     bulletList([
       `Denied: ${statusItems.filter((item) => item.status === "denied").length} item(s) labeled denied in local state`,
       `Rejected: ${statusItems.filter((item) => item.status === "rejected").length} item(s) labeled rejected in local state`,
-      "Patterns to avoid: use README rejection rules plus explicit publisher notes; this deterministic run does not invent reasons that are not present in local state"
+      "Patterns to avoid: use AGENTS.md filing rules plus explicit publisher notes; this deterministic run does not invent reasons that are not present in local state"
     ]),
     "",
     "## Ranking context",

@@ -70,7 +70,6 @@ jobs:
             data/queues/ \
             data/filing-queue/
           git add \
-            memory/ \
-            README.md
+            memory/
           git diff --cached --quiet && echo "no changes" || git commit -m "chore: run autonomous daily agent loop [skip ci]"
           git push origin HEAD:${GITHUB_REF_NAME}

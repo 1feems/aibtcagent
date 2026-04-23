@@ -43,7 +43,7 @@ The attached workflow document argues that the agent should not load all instruc
 
 Use this loading order:
 
-1. `README.md`
+1. `AGENTS.md`
 2. `docs/architecture.md`
 3. `docs/company-operating-model.md`
 4. `docs/workflow.md`

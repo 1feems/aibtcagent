@@ -11,7 +11,7 @@ These define the stable top-level operating model.
 
 | Doc | Role | Use |
 |-----|------|-----|
-| `README.md` | Canonical startup doc | Open first for repo intent and startup orientation |
+| `AGENTS.md` | Canonical startup and filing contract | Open first for current operating rules, required docs, and signal filing behavior |
 | `docs/architecture.md` | Canonical architecture doc | Understand the system shape and document layout |
 | `docs/company-operating-model.md` | Canonical company roles doc | Understand the operating jobs, role boundaries, and handoffs |
 | `docs/workflow.md` | Canonical workflow doc | Understand the daily operator flow |
@@ -53,7 +53,7 @@ These sharpen execution but should not override canonical docs or task contracts
 
 If starting fresh:
 
-1. `README.md`
+1. `AGENTS.md`
 2. `docs/document-map.md`
 3. `docs/architecture.md`
 4. `docs/company-operating-model.md`

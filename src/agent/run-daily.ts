@@ -110,7 +110,7 @@ export async function runAgentDaily(argv: string[] = process.argv.slice(2)): Pro
   const config = parseArgs(argv);
   process.stdout.write(`[agent-daily] starting for ${config.reportDate}\n`);
   process.stdout.write(
-    "[agent-daily] startup preflight: confirm you are in aibtcagent and start from README.md/AGENTS.md, not cross-repo chat memory\n"
+    "[agent-daily] startup preflight: confirm you are in aibtcagent and start from AGENTS.md/docs/document-map.md, not cross-repo chat memory\n"
   );
   process.stdout.write(
     "[agent-daily] goal: maximize expected earnings over the next 30 days through In Brief wins, sats, streak protection, leaderboard gains, and monetizable signal quality; approvals alone do not count\n"
