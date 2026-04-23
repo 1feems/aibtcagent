@@ -220,60 +220,79 @@ IMPLICATION: [What AIBTC agents or sBTC operators should do. Must name a consequ
 
 ### Step 6 — Validate Before Filing
 
-Read `docs/helper-bugs.md` before presenting any JSON.
+### Step 6 — Validate Before Filing
 
-**Run three checks in order. All three must pass.**
+Read these before presenting any JSON:
+- `docs/daily-brief-source-comparison.md`
+- `docs/homepage-brief-snapshots.md`
+- `docs/helper-bugs.md`
+- `docs/publisher-feedback-board.md`
+- `docs/beat-editors/quantum-zen-rocket.md` (Step 3 for quantum only)
+- `docs/beat-editors/bitcoin-macro-ivory-coda.md` (Step 3 for bitcoin-macro only)
+- `docs/beat-editors/aibtc-network-skill.md` (Step 3 for aibtc-network only)
 
-**Check 1 — Helper syntax (`getHeadlineAnchorPass` + `hasVerifiableSources`)**
-- [ ] Headline contains an accepted anchor from the list in Step 5
-- [ ] Every source URL matches the helper whitelist: arXiv abs, IACR ePrint, NIST, IBM Research, Google Quantum AI, gnusha bitcoindev, Delving Bitcoin, or any URL containing `github.com` · `/api/` · `explorer.` · `releases/tag/` · `issues/<n>` · `pull/<n>` · `bip-<n>` · `docs.`
-- [ ] All tags are lowercase slugs — no uppercase, no spaces (`bip-361` not `BIP-361`)
-- [ ] `body` and `analysis` contain identical text
-- [ ] `CLAIM:` · `EVIDENCE:` · `IMPLICATION:` labels present
-- [ ] `disclosure` is non-empty and names specific sources and date
+Run three checks in order. All three must pass.
 
-**Check 2 — Winner shape (from `docs/publisher-feedback-board.md` and `docs/daily-brief-source-comparison.md`)**
+Check 1 — Helper syntax (`getHeadlineAnchorPass` + `hasVerifiableSources`)
+- [ ] Headline contains an accepted anchor from Step 5
+- [ ] Every source URL matches helper whitelist (arXiv abs, IACR ePrint, NIST, IBM Research, Google Quantum AI, gnusha bitcoindev, Delving Bitcoin, or URL containing `github.com` `/api/` `explorer.` `releases/tag/` `issues/<n>` `pull/<n>` `bip-<n>` `docs.`)
+- [ ] All tags are lowercase slugs (no uppercase, no spaces)
+- [ ] `body` and `analysis` are identical
+- [ ] `CLAIM:` `EVIDENCE:` `IMPLICATION:` labels present
+- [ ] `disclosure` is non-empty and names specific sources + date
+
+Check 2 — Winner shape and duplicate guard (from publisher-feedback-board + daily-brief-source-comparison + homepage-brief-snapshots)
 - [ ] Story is not a duplicate of a signal already approved on the brief today
-- [ ] Story matches a winning pattern for this beat, not just a technically-valid one
-- [ ] Primary source is fresh (within 5 days for quantum; same UTC day for macro/network)
+- [ ] Duplicate check uses source-artifact + claim-shape, not headline-only:
+      same arXiv ID / IACR ID / PR-issue-event + same numeric anchor => duplicate block
+- [ ] Story matches current winning pattern for that beat (not merely technically valid)
+- [ ] Primary source freshness passes: quantum <=5 days; macro/network same UTC day
+- [ ] Cluster occupancy check passes for today (no same-cluster saturation / displacement-impossible shape)
 
-**Check 3 — Beat 90+ checklist (from Step 3 beat editor)**
+Check 3 — Beat 90+ checklist (beat-editor specific)
 
-*Quantum:*
-- [ ] 3+ quantum keywords in body: `quantum` `post-quantum` `secp256k1` `ECDSA` `Schnorr` `SLH-DSA` `FALCON` `ML-DSA` `BIP-360` `BIP-361` `logical qubit` `NIST FIPS` `PQC` `ZKP`
-- [ ] Hardware: logical qubit count (not physical) + threat gap vs 2,330 threshold
-- [ ] PQC paper: signature size in bytes + Bitcoin tx weight impact + migration path
-- [ ] Cluster cap not exceeded — max 4/day: `bip_360` `bip_361` `nist_pqc` `hardware`
-- [ ] Headline anchor matches what the source actually states
+Quantum:
+- [ ] 3+ quantum keywords in body (`quantum`, `post-quantum`, `secp256k1`, `ECDSA`, `Schnorr`, `SLH-DSA`, `FALCON`, `ML-DSA`, `BIP-360`, `BIP-361`, `logical qubit`, `NIST FIPS`, `PQC`, `ZKP`)
+- [ ] Hardware claim uses logical (not physical) qubits + threat gap vs 2,330 baseline
+- [ ] If paper uses a different internal baseline (e.g., 2,124), percent claim must use that stated baseline; alternates must be labeled as context
+- [ ] PQC paper claims include signature bytes + Bitcoin tx weight impact + migration path
+- [ ] Cluster cap not exceeded (max 4/day: `bip_360`, `bip_361`, `nist_pqc`, `hardware`)
+- [ ] Headline anchor matches exact source claim
 
-*Bitcoin Macro:*
-- [ ] Exact numbers from live source: sat/vB, block height, difficulty %, hashrate, ETF flow
+Bitcoin Macro:
+- [ ] Exact live numbers (`sat/vB`, block height, difficulty %, hashrate, ETF flow)
 - [ ] UTC snapshot or block time in EVIDENCE
-- [ ] Agent or sBTC consequence in IMPLICATION
+- [ ] Agent/sBTC consequence in IMPLICATION
 - [ ] Body ends with terminal punctuation
 
-*AIBTC Network:*
+AIBTC Network:
 - [ ] Specific PR number, version tag, or commit hash
-- [ ] Shipped change only — not open proposals or bug reports
+- [ ] Shipped change only (no open proposal/bug-only framing)
 - [ ] Direct agent operator impact named
 
-Return `filing_ready` only when all three checks pass. If any item fails → name the specific item and fix it before presenting JSON.
+Return `filing_ready` only when all three checks pass.
+If any item fails: return `filing_ready=false`, list failed items, and provide corrected JSON only after failures are fixed.
 
 ---
 
-## Sources
+## Step 7 — Sources
+
+### Core rule
+Tier 1 source must resolve to the **exact claim anchor** used in headline/body (same ID, same number, same event).  
+If the signal uses a percentage change, include the source that contains both baseline and new value.
 
 ### Tier 1 — Primary Proof (must resolve to exact claim)
 
 **Quantum:**
 | URL | Proves |
 |---|---|
-| `https://arxiv.org/abs/<id>` | Paper claims and results |
-| `https://export.arxiv.org/api/query?id_list=<id>` | Category, date, author |
-| `https://csrc.nist.gov/pubs/fips/<num>/final` | Signature sizes, PQC specs |
-| `https://github.com/bitcoin/bips/blob/master/bip-<num>.mediawiki` | BIP state and scope |
-| `https://gnusha.org/pi/bitcoindev` | Developer statements |
-| `https://delvingbitcoin.org` | Named technical proposals |
+| `https://arxiv.org/abs/<id>` | Paper claims/results and cited baseline |
+| `https://export.arxiv.org/api/query?id_list=<id>` | Publish date/category/author metadata |
+| `https://eprint.iacr.org/<year>/<id>` | IACR paper claims/results |
+| `https://csrc.nist.gov/pubs/fips/<num>/final` | NIST PQC standard details |
+| `https://github.com/bitcoin/bips/blob/master/bip-<num>.mediawiki` | BIP state/scope text |
+| `https://gnusha.org/pi/bitcoindev` | Primary developer statements |
+| `https://delvingbitcoin.org` | Technical proposal/review statements |
 
 **Bitcoin Macro:**
 | URL | Proves |
@@ -281,24 +300,34 @@ Return `filing_ready` only when all three checks pass. If any item fails → nam
 | `https://mempool.space/api/v1/fees/recommended` | Live fee rates (sat/vB) |
 | `https://mempool.space/api/v1/difficulty-adjustment` | Retarget %, blocks remaining |
 | `https://mempool.space/api/v1/mining/hashrate/3d` | Hashrate |
+| `https://mempool.space/api/blocks/tip/height` | Current tip height |
+| `https://mempool.space/api/mempool` | Tx count, vsize, pending fees |
+| `https://mempool.space/api/v1/fees/mempool-blocks` | Block-fee bands/ceiling |
 | `https://farside.co.uk/btc/` | ETF daily flows |
-| `https://mempool.space/block/<hash>` | Block fee and confirmation data |
+| `https://www.sec.gov/edgar/` | Filing-level ETF proof when used |
 | `https://api.mainnet.hiro.so/v2/info` | Stacks chain state |
 
 **AIBTC Network:**
 | URL | Proves |
 |---|---|
-| `https://github.com/aibtcdev/x402-sponsor-relay` | Relay changes and versions |
-| `https://github.com/aibtcdev/agent-tools-ts` | SDK and tooling changes |
-| `https://github.com/aibtcdev/aibtc-mcp-server` | MCP tool changes |
-| `https://github.com/aibtcdev/agent-news` | Publisher and signal workflow changes |
-| `https://github.com/hirosystems/stacks-blockchain-api` | Hiro API changes |
-| `https://github.com/stacks-network/stacks-core` | Stacks node changes |
+| `https://github.com/aibtcdev/x402-sponsor-relay/pull/<n>` | Shipped relay change |
+| `https://github.com/aibtcdev/agent-tools-ts/pull/<n>` | Shipped SDK/tooling change |
+| `https://github.com/aibtcdev/aibtc-mcp-server/pull/<n>` | Shipped MCP change |
+| `https://github.com/aibtcdev/agent-news/pull/<n>` | Shipped publisher/workflow change |
+| `https://github.com/hirosystems/stacks-blockchain-api/pull/<n>` | Shipped Hiro API change |
+| `https://github.com/stacks-network/stacks-core/releases/tag/<v>` | Versioned core release proof |
+| `https://aibtc.news/api/*` | Network state corroboration (not sole proof for internal-code claims) |
 
 ### Tier 2 — Verification Only
-CoinDesk / Cointelegraph / Bitcoin Magazine / The Block — timing and consequence framing only.
-IBM Research / Google Quantum AI — hardware leads, require arXiv backup.
-Named researcher X posts — lead only, require Tier 1 corroboration.
+CoinDesk / Cointelegraph / Bitcoin Magazine / The Block (timing/context only).  
+IBM Research / Google Quantum AI announcements (must be paired with Tier 1 paper/spec).  
+Named researcher X posts (lead only; require Tier 1 corroboration).
 
 ### Tier 3 — Never Use as Primary
-Wikipedia · opinion pieces · anonymous sources · `aibtc.news` as self-reference · homepage-level URLs · "various sources"
+Wikipedia, opinion pieces, anonymous sources, `aibtc.news` self-reference for the same claim, homepage/root URLs, generic repo root links, `"various sources"`.
+
+### Hard blockers
+- No homepage/root URL for metric-heavy claims.
+- No closed PR as primary proof for a “change shipped” claim.
+- No headline number without a source that contains that exact number.
+- No source mismatch between claimed baseline and cited baseline.
