@@ -105,12 +105,41 @@ Return the answer in the same table format used in `docs/homepage-brief-snapshot
 
 
 ### Step 2C — Comparison
-Read 
-`docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win
-docs/homepage-brief-snapshots.md
-docs/helper-bugs.md
+### Step 2C — Complete Daily Brief Source Comparison
 
-to complete a `docs/daily-brief-source-comparison.md` — extract which source types are working per beat and which story shapes lost
+Read **only**:
+
+1. `docs/homepage-brief-snapshots.md`
+2. `docs/helper-bugs.md`
+3. `docs/publisher-feedback-board.md`
+Do not read, inspect, or edit any other docs unless the operator explicitly names them.
+
+Use `docs/homepage-brief-snapshots.md` to extract:
+- today’s approved titles
+- beat
+- what made each signal win
+- source types that appear in winning signals
+- winning story shapes by beat
+
+Use `docs/helper-bugs.md` to extract:
+- story shapes that failed
+- source or formatting patterns that caused problems
+- helper-related failure patterns
+
+Update **only**:
+
+`docs/daily-brief-source-comparison.md`
+
+Do not infer a different destination file.
+
+In `docs/daily-brief-source-comparison.md`, record:
+- source types working per beat
+- winning story shapes per beat
+- story shapes that lost
+- source or helper patterns to avoid
+
+Preserve the existing table format already used in `docs/daily-brief-source-comparison.md`.
+
 
 ---
 
