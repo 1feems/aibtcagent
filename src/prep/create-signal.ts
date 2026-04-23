@@ -58,6 +58,7 @@ interface HelperErrorLogEntry {
   message?: string;
 }
 
+const SAFE_SIGNAL_BODY_SOFT_MIN = 500;
 const SAFE_SIGNAL_BODY_SOFT_MAX = 900;
 
 function isQuantumBeat(beatSlug: string): boolean {
@@ -292,6 +293,9 @@ function buildEffectivenessBlockers(input: CreateSignalInput, template: FilingGa
   const sourceUrls = input.sources.map((source) => source.url.trim()).filter(Boolean);
   const joinedBody = input.body.trim();
 
+  if (joinedBody.length < SAFE_SIGNAL_BODY_SOFT_MIN) {
+    blockers.push(`body is ${joinedBody.length} characters; body must be at least ${SAFE_SIGNAL_BODY_SOFT_MIN} characters to meet publisher completeness threshold`);
+  }
   if (joinedBody.length > 1000) {
     blockers.push(`body is ${joinedBody.length} characters; news_file_signal bodies must stay at or below 1000 characters`);
   } else if (joinedBody.length > SAFE_SIGNAL_BODY_SOFT_MAX) {
@@ -330,6 +334,9 @@ function buildEffectivenessBlockers(input: CreateSignalInput, template: FilingGa
   }
   if (template.implication && !hasOperatorAction(template.implication)) {
     blockers.push("IMPLICATION must name an operator or agent action such as verify, monitor, update, pause, or resume");
+  }
+  if (joinedBody && !hasTerminalPunctuation(joinedBody)) {
+    blockers.push("body must end with terminal punctuation; publisher rejects truncated bodies");
   }
 
   return blockers;
@@ -396,6 +403,11 @@ function buildBriefCompetitionBlockers(
   return blockers;
 }
 
+function isVerifiableSourceUrl(url: string): boolean {
+  return /arxiv\.org\/abs\/|export\.arxiv\.org\/api\/|eprint\.iacr\.org\/|csrc\.nist\.gov\/|research\.ibm\.com\/|research\.google\/|quantumai\.google\/|gnusha\.org\/pi\/bitcoindev|delvingbitcoin\.org/i.test(url) ||
+    /github\.com|\/api\/|explorer\.|releases\/tag\/|issues\/\d+|pull\/\d+|bip-\d+|docs\./i.test(url);
+}
+
 function buildUniversalBeatBlockers(input: CreateSignalInput, template: FilingGate["template"]): string[] {
   const blockers: string[] = [];
   const headline = input.headline.trim();
@@ -414,6 +426,10 @@ function buildUniversalBeatBlockers(input: CreateSignalInput, template: FilingGa
     }
   }
 
+  const uppercaseTags = input.tags.filter((tag) => tag !== tag.toLowerCase());
+  if (uppercaseTags.length > 0) {
+    blockers.push(`tags must be lowercase slugs; found uppercase: ${uppercaseTags.join(", ")}`);
+  }
   if (!lowerTags.includes(beatSlug)) {
     blockers.push("tags must include the beat_slug as a primary tag");
   }
@@ -427,12 +443,23 @@ function buildUniversalBeatBlockers(input: CreateSignalInput, template: FilingGa
     if (invalidSource) {
       blockers.push("every source must include non-empty title and http/https url");
     }
+    const unverifiableSource = input.sources.find((source) => source.url.trim() && !isVerifiableSourceUrl(source.url.trim()));
+    if (unverifiableSource) {
+      blockers.push(`source "${unverifiableSource.url}" is not on the verifiable source whitelist; use arXiv, IACR, NIST, GitHub PR/issue/release, explorer, or API path URLs`);
+    }
   }
 
   if (!input.disclosure.trim()) {
     blockers.push("disclosure is required");
   } else if (!hasConcreteAnchor(input.disclosure) && !/\b(model|gpt|claude|gemini|api|endpoint|query|github|curl|release|issue|pr|block|tx)\b/i.test(input.disclosure)) {
     blockers.push("disclosure must include concrete model/tool/source anchors");
+  }
+
+  if (!isMissionAligned(input.beat_slug, input.headline, input.body)) {
+    blockers.push("signal must connect AI agents or operators to Bitcoin/Stacks — both dimensions required for mission alignment");
+  }
+  if (!isInscribable(input.headline, input.body)) {
+    blockers.push("signal contains speculative language (reportedly, rumored, could soon, maybe, possibly, draft, todo); only verified facts can be inscribed");
   }
 
   if (template.evidence && !/\b\d/.test(template.evidence)) {
