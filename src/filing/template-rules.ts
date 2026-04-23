@@ -24,8 +24,9 @@ export function extractMetricAnchors(text: string): string[] {
   return [...new Set([
     ...text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g),
     ...text.matchAll(/\b\d+(?:\.\d+)?%/g),
-    ...text.matchAll(/\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?|blocks?)\b/gi),
-    ...text.matchAll(/\b\d[\d,.]*[KMBk]?\s*sats?\b/gi)
+    ...text.matchAll(/\b\d[\d,.]*\s*(?:hours?|days?|cycles?|agents?|signals?|slots?|blocks?|txs?)\b/gi),
+    ...text.matchAll(/\b\d[\d,.]*[KMBk]?\s*sats?\b/gi),
+    ...text.matchAll(/\b\d[\d,.]*(?:\.\d+)?\s*(?:bytes?|kb|mb|gb)\b/gi)
   ].map((match) => match[0].toLowerCase()))];
 }
 

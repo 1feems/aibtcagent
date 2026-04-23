@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { buildSignalReport, runSignalJob } from "../dist/prep/signal-job.js";
-import { loadSignalTemplate, hasTemplateAnalysis } from "../dist/filing/template-rules.js";
+import { loadSignalTemplate, hasExactHeadlineAnchor, hasTemplateAnalysis } from "../dist/filing/template-rules.js";
 
 function makeMemoryFiles(root) {
   return Promise.all([
@@ -126,6 +126,17 @@ test("Framework B analysis is recognized by shared template rules", async () => 
     "What to do: verify the new recovery path and monitor settlement after deploy."
   ].join("\n");
   assert.equal(hasTemplateAnalysis(text), true);
+});
+
+test("headline anchor matcher accepts helper-documented byte units", () => {
+  assert.equal(
+    hasExactHeadlineAnchor("BIP-86 zk-STARK Recovery PoC Achieves 1.7 MB Proof on bitcoindev"),
+    true
+  );
+  assert.equal(
+    hasExactHeadlineAnchor("SLH-DSA Path Adds 7,856 bytes Per Signer Under BIP-361"),
+    true
+  );
 });
 
 test("runSignalJob rejects too many tags and vague headline without exact anchor", async () => {

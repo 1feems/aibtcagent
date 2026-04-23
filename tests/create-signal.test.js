@@ -75,6 +75,30 @@ async function seedCreateSignalState(root) {
     "utf8"
   );
   await writeFile(
+    resolve(root, "docs/helper-bugs.md"),
+    [
+      "# Helper Bugs",
+      "",
+      "| Time UTC | Area | Verbatim helper error | What caused it | Fix before next JSON |",
+      "| --- | --- | --- | --- | --- |",
+      "| unknown | Headline anchor | Template issue: headline must include an exact anchor | Missing helper-recognized metric. | Use accepted anchors before JSON. |"
+    ].join("\n"),
+    "utf8"
+  );
+  await writeFile(
+    resolve(root, "docs/publisher-feedback-board.md"),
+    [
+      "# Publisher Feedback Outcome Board",
+      "",
+      "## Pending Review",
+      "",
+      "| Date | Signal ID | Beat | Title | One-line signal | Notes | Publisher feedback | Status |",
+      "|---|---|---|---|---|---|---|---|",
+      "| 2026-04-15 | `sig-test` | aibtc-network | AIBTC /api/leaderboard shows 882 agents | CLAIM: /api/leaderboard shows 882 agents. | quality_score: 83 | Pending publisher review | submitted |"
+    ].join("\n"),
+    "utf8"
+  );
+  await writeFile(
     resolve(root, "data/state/signal-learning-briefs/2026-04-15.json"),
     JSON.stringify({
       kind: "signal_learning_brief",
@@ -179,6 +203,10 @@ test("createSignalArtifact emits the canonical filing artifact contract", async 
     assert.equal(artifact.filing_gate.contextAudit.beatEditorReview.result, "pass");
     assert.equal(artifact.filing_gate.contextAudit.helperErrorsReview.result, "pass");
     assert.equal(artifact.filing_gate.contextAudit.outcomeReview.result, "pass");
+    assert.match(artifact.filing_gate.testedAgainst, /docs\/helper-bugs\.md/);
+    assert.match(artifact.filing_gate.testedAgainst, /docs\/publisher-feedback-board\.md/);
+    assert.match(artifact.filing_gate.contextAudit.helperErrorsReview.rationale, /docs\/helper-bugs\.md/);
+    assert.match(artifact.filing_gate.contextAudit.publisherNotesReview.rationale, /docs\/publisher-feedback-board\.md/);
     assert.equal(validateArtifact(artifact).ok, true);
   } finally {
     await rm(tempDir, { recursive: true, force: true });

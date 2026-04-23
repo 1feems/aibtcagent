@@ -361,8 +361,9 @@ function extractMetricAnchors(text: string): string[] {
   const matches = [
     ...text.matchAll(/\$\d[\d,]*(?:\.\d+)?/g),
     ...text.matchAll(/\b\d+(?:\.\d+)?%/g),
-    ...text.matchAll(/\b\d+\s*(?:hours?|days?|cycles?|agents?|signals?|slots?)\b/gi),
-    ...text.matchAll(/\b\d{2,}\s*sats?\b/gi)
+    ...text.matchAll(/\b\d[\d,.]*\s*(?:hours?|days?|cycles?|agents?|signals?|slots?|blocks?|txs?)\b/gi),
+    ...text.matchAll(/\b\d{2,}\s*sats?\b/gi),
+    ...text.matchAll(/\b\d[\d,.]*(?:\.\d+)?\s*(?:bytes?|kb|mb|gb)\b/gi)
   ].map((match) => match[0].toLowerCase());
 
   return [...new Set(matches)];
