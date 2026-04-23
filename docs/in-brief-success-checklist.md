@@ -533,7 +533,7 @@ Current state:
   `src/filing/candidate-history.ts`
   `src/agent/run-daily.ts`
   `src/ops/operator-summary.ts`
-  `AIBTC-AGENTS.md`
+  `AGENTS.md`
   `tests/filing-queue.test.js`
   `tests/filing-state.test.js`
   `approve-filing` now requires `--approval-note "<why this should win>"` so approval can never be just a binary button press.

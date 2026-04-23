@@ -410,7 +410,7 @@ function buildWorkingLoop(
   dispatchSummary: DailyOperatorSummary["staggeredDispatch"]
 ): string[] {
   const base = [
-    "Startup preflight: confirm this session is inside aibtcagent, then read README.md, AIBTC-AGENTS.md, and memory.md before trusting any prior chat context.",
+    "Startup preflight: confirm this session is inside aibtcagent, then read README.md, AGENTS.md, and memory.md before trusting any prior chat context.",
     `Run agent-daily for ${reportDate}.`,
     `Place the manual brief at data/briefs/${reportDate}.json before re-running agent-daily when editorial context is missing.`,
     `Inspect data/filing-queue/${reportDate}.json for the ranked filing queue.`,

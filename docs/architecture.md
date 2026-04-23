@@ -11,7 +11,7 @@ Use it when you need to understand how the agent is structured without reading t
 - Use this when: you need the shortest accurate map of how the agent is organized
 - Do not use this as: the only source for step-by-step task execution or current implementation history
 
-This file exists because architecture was previously spread across `README.md`, `AIBTC-AGENTS.md`, `docs/build-plan.md`, and task-specific docs.
+This file exists because architecture was previously spread across `README.md`, the root agent instructions, `docs/build-plan.md`, and task-specific docs.
 
 ## Design Goal
 Build an agent that behaves like an operator:
@@ -213,7 +213,8 @@ The intended flow is:
 
 Use these by role:
 
-- Runtime map: `AIBTC-AGENTS.md`
+- Runtime map: `docs/architecture.md`
+- Live filing contract: `AGENTS.md`
 - High-level operating rules: `docs/agent-operating-principles.md`
 - System map: `docs/architecture.md`
 - Daily operator flow: `docs/workflow.md`
@@ -235,12 +236,12 @@ If the goal is onboarding:
 2. `docs/architecture.md`
 3. `docs/company-operating-model.md`
 4. `docs/workflow.md`
-5. `AIBTC-AGENTS.md`
+5. `AGENTS.md`
 
 If the goal is understanding current implementation reality:
 
 1. `docs/build-plan.md`
-2. `AIBTC-AGENTS.md`
+2. `docs/architecture.md`
 3. relevant `src/*` files
 
 If the goal is improving signal output:

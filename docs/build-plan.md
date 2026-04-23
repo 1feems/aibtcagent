@@ -1576,8 +1576,8 @@ Read these in order so future work starts from repo truth, not chat memory:
 
 - `README.md`
   - start here for repo-level setup and operating expectations
-- `AIBTC-AGENTS.md`
-  - read this before changing behavior; it defines the local agent workflow and constraints
+- `AGENTS.md`
+  - read this before changing behavior; it defines the live filing workflow and constraints
 - `docs/build-plan.md`
   - this file is the current strategy and implementation-state summary
 - `docs/prd.md`

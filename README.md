@@ -29,7 +29,7 @@ If something important is learned in a session, write it back into the repo.
 ## Runtime Map
 If you need to understand where the agent actually runs, start here:
 
-- [`AIBTC-AGENTS.md`](./AIBTC-AGENTS.md) — shortest code map for LLMs jumping into the repo
+- [`AGENTS.md`](./AGENTS.md) — live filing contract and current agent instructions
 - [`docs/document-map.md`](./docs/document-map.md) — doc roles: canonical, task-level, living implementation, reference
 - [`docs/architecture.md`](./docs/architecture.md) — canonical high-level system architecture
 - [`docs/workflow.md`](./docs/workflow.md) — canonical operator workflow
@@ -47,7 +47,7 @@ Before running anything, confirm all of these are true:
 
 - you are inside the `aibtcagent` repo, not another workspace project
 - `README.md` is the first runbook you opened for this session
-- [`AIBTC-AGENTS.md`](./AIBTC-AGENTS.md) and [`memory.md`](./memory.md) were checked before using prior chat memory
+- [`AGENTS.md`](./AGENTS.md) and [`memory.md`](./memory.md) were checked before using prior chat memory
 - you are using repo state, saved artifacts, and current workflow files as source of truth
 - you are not pulling context from `Kizuna`, `MkondoMe`, `Synthesis`, or any other repo unless the user explicitly switched projects
 

@@ -63,7 +63,7 @@ Open and confirm current before any session:
 
 | Doc | Why |
 |-----|-----|
-| `AIBTC-AGENTS.md` | Project boundary, code map, operator workflow |
+| `AGENTS.md` | Live filing contract and current agent instructions |
 | `docs/in-brief-success-checklist.md` | Active build phases and success definition |
 | `docs/brief-winner-tracking.md` | Who is winning, on which beats, with what style — update daily |
 | `docs/brief-win-rules.md` | What wins brief slots vs what only gets approved |

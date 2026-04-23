@@ -43,7 +43,6 @@ These sharpen execution but should not override canonical docs or task contracts
 
 | Doc | Role | Use |
 |-----|------|-----|
-| `AIBTC-AGENTS.md` | Runtime map reference | Find code paths and runtime entrypoints quickly |
 | `docs/signal-sourcing-checklist.md` | Sourcing and filing reference | Apply sourcing, qualification, and filing checks |
 | `docs/brief-win-rules.md` | Editorial reference | Understand what wins brief slots |
 | `docs/rejection-rules.md` | Editorial reference | Understand hard reject patterns |
