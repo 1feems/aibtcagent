@@ -23,7 +23,7 @@ Read these before every signal. No exceptions.
 | `docs/helper-bugs.md` | Step 6 — before presenting any JSON |
 
 If any required doc for the target beat is unread → return `hold`.
-https://github.com/1feems/aibtcagent/blob/main/skills/beat-capacity-status/SKILL.md 
+
 ---
 
 ## Steps
