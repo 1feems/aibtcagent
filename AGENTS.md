@@ -219,6 +219,11 @@ Remove all `shape-blocked` sources.
 
 **This list is the only input Step 5.2 is allowed to use.**
 
+For metric-heavy claims:
+- do not rely on one organization alone if the claim combines multiple figures, comparisons, or market-wide implications
+- require at least two independent organizations or source systems unless one canonical primary source alone fully proves the exact claim
+- if one source gives the headline metric and a second source is needed for comparison, baseline, or consequence, both must be in the verified list before Step 5 begins
+
 **Hard rule: if this list is empty → do not proceed to Step 5. Report that no signal can be filed today for this beat.**
 
 #### 4.6 — Update `docs/sources.md`
@@ -241,12 +246,24 @@ Confirm these are available from Steps 3 and 4:
 
 **If any are missing → return to the missing step. Do not re-read docs here. Do not proceed.**
 
+Before selecting any anchor, answer these with `yes` or `no`:
+- Does this candidate repeat a blocked story shape from today or the last 48h brief window?
+- Is this just the same story with fresher numbers?
+- Does this reuse the same metric family, comparison frame, or operator implication as a prior posted brief winner?
+- Does this reuse the same source family + metric family + implication family as a previously rejected recent filing?
+
+If any answer is `yes` → stop, reject the candidate locally, and pick a different claim family before writing JSON.
+
 #### 5.2 — Select Anchor
 
 Pick one source from the verified list produced in Step 4.5. Extract:
 - exact anchor ID (PR #, arXiv ID, BIP, block height, metric value)
 - exact numeric or version claim
 - timestamp / freshness
+
+If the claim is metric-heavy:
+- identify whether one canonical source fully proves it or whether a second independent organization is required
+- if a second source is required for verification, comparison, baseline, or market-wide framing, do not proceed until both sources are selected
 
 **Hard rule: only pick from Step 4.5 output. Do not select a source independently.**
 **Hard rule: if no clear anchor + number exists, abort.**
@@ -265,6 +282,15 @@ Block if ANY match:
 Use the blocked shapes list from Step 3.3 stored in `docs/target-beat-rules.md`. Do not re-derive.
 
 Map your candidate headline structure to every shape on that list. If it maps to any blocked shape → pick a different anchor from Step 4.5 or abort.
+
+Do not check wording alone. Compare the full story family:
+- source anchor family
+- core metric family
+- comparison frame
+- operator implication
+
+If the candidate keeps the same story family and only changes numbers, timestamps, or phrasing, it is still blocked.
+If the candidate is too close to a prior posted brief story family or a previously rejected recent filing, treat that family as burned for the day and switch families entirely.
 
 **Hard rule: do not use a hardcoded shape list. Always use the list extracted fresh in Step 3.3 for today's date.**
 
@@ -287,6 +313,11 @@ IMPLICATION: <direct effect on agents / bitcoin users / system>
 
 **Disclosure:** model name + every doc checked + date + what was verified from which source
 
+Body length rule:
+- target `800-900` characters
+- if the body reaches `900` characters, trim before filing
+- do not rely on the live API to truncate safely
+
 #### 5.4b — Apply Helper Bug Lessons
 
 From `docs/helper-bugs.md` (read in Step 3.2 — do not re-read):
@@ -298,10 +329,13 @@ For every bug entry: read the verbatim error, what caused it, and the fix. Apply
 | Headline anchor regex mismatch | Does headline contain an anchor from the exact accepted list in the file? |
 | Source URL not in whitelist | Does every source URL contain an accepted substring? Check character by character |
 | Uppercase tags rejected by live API | Are all tags lowercase slugs? Check every tag individually |
-| Body over 900 chars | Count the body. If over 900 → trim before output |
+| Body over 900 chars | Count the body. If 900 or above → trim before output; keep filing copy in the safer 800-900 range |
 | Body/analysis mismatch | Are `body` and `analysis` character-for-character identical? |
 | Missing CLAIM/EVIDENCE/IMPLICATION | Are all three labels present and non-empty? |
 | Empty disclosure | Does disclosure name model + sources + date + what was verified? |
+| Prior brief story shape collision | Is this too close to a prior posted brief winner even if the numbers are newer? |
+| Rejected-shape collision | Does this reuse the same source family + metric family + implication family as a recent rejected filing? |
+| Metric-heavy one-source failure | If the claim is metric-heavy, is there enough independent evidence and not just one organization backing the numbers? |
 
 **The goal is not to run a checklist — it is to confirm no known failure mode is present in the payload.**
 
@@ -315,9 +349,10 @@ All must be true before output:
 - [ ] `body` == `analysis` character-for-character
 - [ ] `CLAIM:` `EVIDENCE:` `IMPLICATION:` present and non-empty
 - [ ] At least 1 Tier 1 source matches anchor
+- [ ] Metric-heavy claims have enough independent source support or a single canonical source that fully proves the exact claim
 - [ ] Not duplicate by anchor + claim
 - [ ] Headline structure not in Step 3.3 blocked list
-- [ ] Body under 900 chars
+- [ ] Body is below 900 chars and kept in the safer 800-900 range when possible
 - [ ] All tags lowercase slugs, beat_slug first
 
 #### 5.6 — Final Output (STRICT)
@@ -347,5 +382,3 @@ Hard rule: do not output anything until a valid signal is found. Only one JSON i
 
 
 ---
-
-
