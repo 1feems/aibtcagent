@@ -13,355 +13,339 @@ Read these before every signal. No exceptions.
 | Doc | Read at |
 |---|---|
 | `docs/beat-capacity-board.md` | Step 1 — before anything else |
-| `docs/publisher-feedback-board.md` | Step 2 — check what failed and why |
-| `docs/homepage-brief-snapshots.md` | Step 2 — see what already won today |
-| `docs/daily-brief-source-comparison.md` | Step 2 — see which sources and patterns are working |
+| `docs/publisher-feedback-board.md` | Step 2 + Step 3.2 |
+| `docs/homepage-brief-snapshots.md` | Step 2 + Step 3.2 |
+| `docs/daily-brief-source-comparison.md` | Step 2 + Step 3.2 |
 | `docs/beat-editors/quantum-zen-rocket.md` | Step 3 — quantum signals only |
 | `docs/beat-editors/bitcoin-macro-ivory-coda.md` | Step 3 — bitcoin-macro signals only |
 | `docs/beat-editors/aibtc-network-skill.md` | Step 3 — aibtc-network signals only |
 | `docs/sources.md` | Step 4 — Tier 1/2/3 rules per beat |
-| `docs/helper-bugs.md` | Step 6 — before presenting any JSON |
+| `docs/helper-bugs.md` | Step 3.2 + Step 5.4b |
 
 If any required doc for the target beat is unread → return `hold`.
-
 ---
 
 ## Steps
 
 ### Step 1 — Check Beat Capacity
 
-Operator will ask you what are the status of the beats in terms of how many are filled to 10, you will use this skill ( node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
-
-For fastest : Use the beat-capacity-status skill and run:
+Run:
 node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
 
 
-| Beat             | Approved | Cap | Slots Open |
-|------------------|---------:|----:|-----------:|
-| `bitcoin-macro`  |       10 |  10 |          0 |
-| `quantum`        |        6 |  10 |          4 |
-| `aibtc-network`  |        4 |  10 |          6 |
+Output format:
 
+| Beat | Approved | Cap | Slots Open |
+|---|---:|---:|---:|
+| `bitcoin-macro` | 10 | 10 | 0 |
+| `quantum` | 6 | 10 | 4 |
+| `aibtc-network` | 4 | 10 | 6 |
 
+If slots open = 0 for target beat → do not proceed. Report beat is full.
 
 ---
-### Step 2A — Check Whats in the Brief 
-Operator will give you the pasted briefs and you would put it in the `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win. In the table format it is in
 
-When the operator asks what is the status of the signals sent, read **only**:
+### Step 2A — Check What Is in the Brief
 
-1. `docs/homepage-brief-snapshots.md`
-
-Do not read, inspect, or edit any other docs unless the operator explicitly names them.
+Operator pastes brief content. Write it into `docs/homepage-brief-snapshots.md` in the existing table format.
 
 Extract:
 - today's approved titles
 - their beat
 - what made them win
 
-Return the answer in the same table format used in `docs/homepage-brief-snapshots.md`.
+Return in the same table format used in `docs/homepage-brief-snapshots.md`.
+
+---
 
 ### Step 2B — Check Signal Status
 
-When the operator asks for the status of signals sent:
+Read only `docs/publisher-feedback-board.md`.
 
-Read only:
-- `docs/publisher-feedback-board.md`
-
-Then:
-1. Use the `Pending Review` table as the exact list of signals that still need status checks.
-2. Check the live status for each signal in that table.
-3. For any row that now has real publisher feedback:
-   - remove it from `Pending Review`
-   - add it to `Publisher Feedback Rows`
-   - add a matching note to `Signal Content Review Notes`
-4. For any row that still has no publisher feedback:
-   - leave it in `Pending Review`
-   - keep `Publisher feedback` as `Pending publisher review`
-   - keep `Status` as `submitted`
-
-Output rules:
-- Always show results in the exact same 8-column table format used in `docs/publisher-feedback-board.md`
-- Never switch to a custom summary table
-- If the operator asks for pending signals, show only rows still pending
-- If the operator asks for resolved former pending signals, show those rows in the same table format
+1. Use the `Pending Review` table as the exact list of signals awaiting status
+2. Check live status for each row
+3. For any row with real publisher feedback: move from `Pending Review` to `Publisher Feedback Rows`, add note to `Signal Content Review Notes`
+4. For any row still without feedback: leave in `Pending Review`, keep status as `submitted`
 
 Required table format:
 `| Date | Signal ID | Beat | Title | One-line signal | Notes | Publisher feedback | Status |`
 
 Status meanings:
-- `submitted` = filing succeeded and is awaiting publisher review
-- `approved` = publisher approved it
-- `rejected` = publisher rejected it
-- `replaced` = signal was later displaced/replaced
-- empty/null `publisherFeedback` = no final publisher decision yet
+- `submitted` = filed, awaiting review
+- `approved` = publisher approved
+- `rejected` = publisher rejected
+- `replaced` = displaced by another signal
 
-
-
+---
 
 ### Step 2C — Complete Daily Brief Source Comparison
 
-Read **only**:
-
+Read only:
 1. `docs/homepage-brief-snapshots.md`
 2. `docs/helper-bugs.md`
 3. `docs/publisher-feedback-board.md`
 
-Do not read, inspect, or edit any other docs unless the operator explicitly names them.
-
-Use `docs/homepage-brief-snapshots.md` to extract:
-- today's approved titles
-- beat
-- what made each signal win
-- source types that appear in winning signals
-- winning story shapes by beat
-
-Use `docs/helper-bugs.md` to extract:
-- story shapes that failed
-- source or formatting patterns that caused problems
-- helper-related failure patterns
-
-Use `docs/publisher-feedback-board.md` to extract:
-- Valiant Gryphon signal outcomes (approved, rejected, pending)
-- publisher rejection reasons
-- score breakdown patterns
-
-Update **only**:
-
-`docs/daily-brief-source-comparison.md`
-
-Do not infer a different destination file.
-
-In `docs/daily-brief-source-comparison.md`, record:
+Update only `docs/daily-brief-source-comparison.md` with:
 - source types working per beat
 - winning story shapes per beat
 - story shapes that lost
 - source or helper patterns to avoid
 
-Preserve the existing table format already used in `docs/daily-brief-source-comparison.md`.
+Preserve the existing table format.
 
 ---
 
-### Step 3 — Load Target Beat Rules
+### Step 3 — Load Beat Context (Required Before Any Drafting)
 
-Before judging or drafting a signal, identify the target beat:
+**Goal:** Front-load every constraint Step 5 needs. By the end of Step 3, nothing new should be discovered in Step 5.
 
-- `quantum`
-- `bitcoin-macro`
-- `aibtc-network`
+#### 3.1 — Identify Target Beat
 
-Read **only** the beat editor file for that target beat:
+One of: `quantum` · `bitcoin-macro` · `aibtc-network`
 
-| Beat | Read this file |
+#### 3.2 — Read All Required Docs (no skipping, no reusing cached reads)
+
+Read in this exact order:
+
+| # | File | What to extract |
+|---|---|---|
+| 1 | Beat editor for target beat only | Scoring rules, required checklist, instant rejection triggers, Tier 1 source list |
+| 2 | `docs/homepage-brief-snapshots.md` | Blocked shapes — see 3.3 |
+| 3 | `docs/publisher-feedback-board.md` | Rejection reasons, displacement patterns, score thresholds |
+| 4 | `docs/daily-brief-source-comparison.md` | Story shapes that won and lost, sourcing mistakes |
+| 5 | `docs/helper-bugs.md` | Every bug entry — verbatim error, cause, fix, accepted anchor patterns, accepted source URL substrings, tag rules |
+
+Beat editor files:
+
+| Beat | File |
 |---|---|
 | `quantum` | `docs/beat-editors/quantum-zen-rocket.md` |
 | `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
 | `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-Do not read the other beat editor files unless the operator explicitly asks.
+**Hard rule: read all five. Never skip. Never reuse a cached read from a prior session.**
 
-From the target beat editor file, extract:
-- what scores 90+
-- what checklist items are required
-- what triggers instant rejection
+#### 3.3 — Extract Blocked Shapes (ALWAYS fresh, NEVER cached)
 
-Then compare the candidate signal against today’s winning examples from:
+From `docs/homepage-brief-snapshots.md`:
 
-`docs/homepage-brief-snapshots.md`
+1. Find every brief entry for the target beat from the last 48 hours
+2. For every headline, extract the **structure not the numbers** — `[N] Blocks Left Before [%] Retarget` is the same structure whether N is 1,094 or 1,372
+3. Find every "Duplicates removed" note at the bottom of each brief — extract every structure listed there too
+4. Write every extracted structure into the `Blocked shapes` column of `docs/target-beat-rules.md`
 
-Use the examples only as pattern guidance, not as source material.
+**Hard rule: the `Blocked shapes` column must always be re-extracted fresh from `docs/homepage-brief-snapshots.md` on the current day. Even if a row already exists for today's date and beat, re-extract blocked shapes. Never carry over yesterday's list.**
 
-Return:
-- target beat
-- required 90+ checklist
-- instant rejection triggers
-- whether the candidate matches a winning pattern
-- what must change before drafting
-#### Winning Pattern Examples
+A shape is blocked if it appears anywhere in the last 48h brief for the target beat — regardless of whether the numbers are different.
 
-Use these only as examples of shape and specificity. Do not copy them.
+#### 3.4 — Extract Helper Failure Patterns
 
-Quantum winners usually include:
-- arXiv ID + exact qubit numbers + Bitcoin key/address implication
-- block height + exact ECDSA signature count + missing migration path
-- BIP state change + phase names + deadline years
-- benchmark ID + exact performance number + migration conclusion
+From `docs/helper-bugs.md`, for each bug entry read the verbatim error, what caused it, and the fix. Then record:
+- Every accepted headline anchor pattern (exact list from the file)
+- Every accepted source URL substring (exact list from the file)
+- Tag format rules
 
-Bitcoin Macro winners usually include:
-- exact mempool tx count + fee total + sBTC operator action
-- blocks remaining + retarget percentage + carry desk consequence
-- block height + fee amount + multiplier + comparison window
+These feed directly into Step 5.4b. Reading them here means Step 5.4b is a confirmation check, not a discovery step.
 
-AIBTC Network winners usually include:
-- PR number + shipped change + before/after metric
-- PR number + fixed bug + timing context
-- PR number + exact operational impact
+#### 3.5 — File Into `docs/target-beat-rules.md`
 
+| Date | Beat | What scores 90+ | Required checklist | Instant rejection triggers | Blocked shapes (fresh, today) | Helper failure patterns | Candidate fit | What must change before drafting |
+|---|---|---|---|---|---|---|---|---|
 
----
+Rules:
+- One row per date + beat combination
+- `Blocked shapes`: always re-extracted today, never copied from a prior row
+- `Helper failure patterns`: accepted anchor patterns + accepted source substrings from `helper-bugs.md`
+- `Candidate fit`: `n/a` if no candidate yet, otherwise `yes`, `partial`, or `no`
 
-### Step 4 — Find and Verify Source
+#### 3.6 — Gate Before Step 4
 
-Read `docs/sources.md`.
+Confirm all four before proceeding:
 
-Requirements:
-- One Tier 1 source URL that resolves to the exact claim made — not a homepage
-- One concrete anchor in that source: arXiv ID, PR number, version, block height, or named metric with a number
-- One verification or comparison source when the claim needs a benchmark
+- [ ] All five docs read in full
+- [ ] Blocked shapes extracted fresh from today's `homepage-brief-snapshots.md`
+- [ ] Helper failure patterns recorded
+- [ ] `docs/target-beat-rules.md` updated
 
-If no Tier 1 source resolves to the exact claim → HOLD.
+**Do not proceed to Step 4 until all four are confirmed.**
 
 ---
 
-### Step 5 — Build the Signal
+### Step 4 — Build Verified Source List (Required Before Step 5)
 
-**Headline** (≤119 chars, no period)
-`[Source ID] [What changed or was found] — [Agent/operator implication]`
+**Goal:** Produce a verified, ordered list of Tier 1 sources for Step 5.2 to pick from. Step 5.2 selects from this list only — it does not search independently.
 
-Anchor must be one of the helper-accepted forms (enforced by `getHeadlineAnchorPass`):
-- `PR #123` · `issue #123` · `v1.2.3` · `CVE-2026-XXXX`
-- backtick-wrapped code or path · `GET /api/name` · HTTP `4xx`/`5xx`
-- `block 12345` · dollar amount · percentage · sats · bytes/kb/mb
-- numeric units: hours, days, cycles, agents, signals, slots, blocks
+#### 4.1 — Pull Tier 1 Source List From Beat Editor
 
-**Body / Analysis** (500–900 chars)
-```
-CLAIM: [Single precise statement of what changed.]
+From the beat editor file read in Step 3.2, extract every Tier 1 source URL and what it proves.
 
-EVIDENCE: [Primary source + exact data: date, ID, bytes, qubit count, sat/vB, block height, ms. Comparison figure when available.]
+#### 4.2 — Remove Already-Used Sources
 
-IMPLICATION: [What AIBTC agents or sBTC operators should do. Must name a consequence.]
-```
+From `docs/homepage-brief-snapshots.md` (read in Step 3.2), identify every source URL and numeric anchor already used in today's brief for the target beat.
 
-**Full Payload**
+Mark each Tier 1 source as:
+- `available` — source + numeric anchor not used in today's brief
+- `blocked` — same source + same numeric claim already in today's brief
+
+Remove all `blocked` sources.
+
+**If today's brief is not yet populated, treat all sources as `available` and note this.**
+
+#### 4.3 — Verify Against Helper Whitelist
+
+From `docs/helper-bugs.md` (read in Step 3.2), confirm every remaining source URL contains at least one accepted substring:
+
+`/api/` · `github.com` · `explorer.` · `releases/tag/` · `issues/<n>` · `pull/<n>` · `bip-<n>` · `docs.` · `arxiv.org/abs/` · `eprint.iacr.org/` · `csrc.nist.gov/` · `gnusha.org` · `delvingbitcoin.org`
+
+Remove any source that does not contain an accepted substring.
+
+**Hard rule: a source that fails the helper whitelist cannot enter the JSON.**
+
+#### 4.4 — Check Each Source Against Blocked Shapes
+
+From the blocked shapes list extracted in Step 3.3 (stored in `docs/target-beat-rules.md`), check whether each remaining source can only prove claims that map to a blocked shape.
+
+A source is `available` if it can prove at least one claim in a non-blocked shape.
+A source is `shape-blocked` if every claim it proves maps to a blocked structure.
+
+Remove all `shape-blocked` sources.
+
+#### 4.5 — Output Verified Source List
+
+
+[URL] — proves [metric] — status: available — anchor: [exact value]
+[URL] — proves [metric] — status: available — anchor: [exact value]
+
+
+**This list is the only input Step 5.2 is allowed to use.**
+
+**Hard rule: if this list is empty → do not proceed to Step 5. Report that no signal can be filed today for this beat.**
+
+#### 4.6 — Update `docs/sources.md`
+
+Add any new source patterns found in today's winning briefs not already in `docs/sources.md`.
+
+---
+
+### Step 5 — Create Signal (Deterministic)
+
+**Goal:** Produce exactly one valid, non-duplicate JSON signal using only pre-verified inputs from Steps 3 and 4.
+
+#### 5.1 — Confirm Inputs (do not re-read docs)
+
+Confirm these are available from Steps 3 and 4:
+
+- [ ] Blocked shapes list from Step 3.3 (in `docs/target-beat-rules.md`)
+- [ ] Helper failure patterns from Step 3.4
+- [ ] Verified source list from Step 4.5
+
+**If any are missing → return to the missing step. Do not re-read docs here. Do not proceed.**
+
+#### 5.2 — Select Anchor
+
+Pick one source from the verified list produced in Step 4.5. Extract:
+- exact anchor ID (PR #, arXiv ID, BIP, block height, metric value)
+- exact numeric or version claim
+- timestamp / freshness
+
+**Hard rule: only pick from Step 4.5 output. Do not select a source independently.**
+**Hard rule: if no clear anchor + number exists, abort.**
+
+#### 5.3 — Duplicate Guard
+
+Block if ANY match:
+- same anchor ID already in today's brief
+- same source + same numeric claim already used
+- same cluster already saturated
+
+**Do NOT compare headlines — compare anchor + claim.**
+
+#### 5.3b — Shape Guard
+
+Use the blocked shapes list from Step 3.3 stored in `docs/target-beat-rules.md`. Do not re-derive.
+
+Map your candidate headline structure to every shape on that list. If it maps to any blocked shape → pick a different anchor from Step 4.5 or abort.
+
+**Hard rule: do not use a hardcoded shape list. Always use the list extracted fresh in Step 3.3 for today's date.**
+
+**If every anchor from Step 4.5 maps to a blocked shape → do not file. Report instead.**
+
+#### 5.4 — Construct Signal (fixed order)
+
+**Headline:** anchor + number, non-blocked structure, no paraphrase-only headlines
+
+**Body = Analysis (identical):**
+
+CLAIM: <one sentence with anchor + number>
+
+EVIDENCE: <source-backed facts, include timestamp/ID>
+
+IMPLICATION: <direct effect on agents / bitcoin users / system>
+
+
+**Tags:** lowercase slugs only, beat_slug must be first tag
+
+**Disclosure:** model name + every doc checked + date + what was verified from which source
+
+#### 5.4b — Apply Helper Bug Lessons
+
+From `docs/helper-bugs.md` (read in Step 3.2 — do not re-read):
+
+For every bug entry: read the verbatim error, what caused it, and the fix. Apply the fix to the current JSON.
+
+| Past bug | Check on current JSON |
+|---|---|
+| Headline anchor regex mismatch | Does headline contain an anchor from the exact accepted list in the file? |
+| Source URL not in whitelist | Does every source URL contain an accepted substring? Check character by character |
+| Uppercase tags rejected by live API | Are all tags lowercase slugs? Check every tag individually |
+| Body over 900 chars | Count the body. If over 900 → trim before output |
+| Body/analysis mismatch | Are `body` and `analysis` character-for-character identical? |
+| Missing CLAIM/EVIDENCE/IMPLICATION | Are all three labels present and non-empty? |
+| Empty disclosure | Does disclosure name model + sources + date + what was verified? |
+
+**The goal is not to run a checklist — it is to confirm no known failure mode is present in the payload.**
+
+**If `docs/helper-bugs.md` has been updated since Step 3.2, re-read it now. New entries mean new failure modes.**
+
+#### 5.5 — Pre-Validation
+
+All must be true before output:
+
+- [ ] Headline contains accepted anchor
+- [ ] `body` == `analysis` character-for-character
+- [ ] `CLAIM:` `EVIDENCE:` `IMPLICATION:` present and non-empty
+- [ ] At least 1 Tier 1 source matches anchor
+- [ ] Not duplicate by anchor + claim
+- [ ] Headline structure not in Step 3.3 blocked list
+- [ ] Body under 900 chars
+- [ ] All tags lowercase slugs, beat_slug first
+
+#### 5.6 — Final Output (STRICT)
+
+- Return exactly one JSON object
+- No explanations, no variants, no partial results
+- If any check in 5.5 fails → return to 5.2, select a different anchor from Step 4.5, repeat
+- Do not reuse the same anchor, source, or headline structure when retrying
+- Only exit when a fully valid signal is constructed
+
 ```json
 {
   "beat_slug": "<beat>",
-  "btc_address": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
-  "headline": "<≤119 chars, anchor embedded, no period>",
-  "body": "<CLAIM / EVIDENCE / IMPLICATION, 500–900 chars>",
-  "analysis": "<same as body>",
+  "btc_address": "<address>",
+  "headline": "<headline>",
+  "body": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...",
+  "analysis": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...",
   "sources": [
-    {"title": "<Tier 1 — resolves to exact claim>", "url": "<url>"},
-    {"title": "<verification or comparison source>", "url": "<url>"}
+    { "title": "...", "url": "..." }
   ],
-  "tags": ["<lowercase-slug>", "<all tags present in body>"],
-  "disclosure": "<model>; checked <doc list> on <date>; verified <specific sources and data points>"
+  "tags": ["<beat_slug>", "..."],
+  "disclosure": "..."
 }
-```
+Hard rule: do not output anything until a valid signal is found. Only one JSON is ever returned.
+
+
+
 
 ---
 
-### Step 6 — Validate Before Filing
 
-### Step 6 — Validate Before Filing
-
-Read these before presenting any JSON:
-- `docs/daily-brief-source-comparison.md`
-- `docs/homepage-brief-snapshots.md`
-- `docs/helper-bugs.md`
-- `docs/publisher-feedback-board.md`
-- `docs/beat-editors/quantum-zen-rocket.md` (Step 3 for quantum only)
-- `docs/beat-editors/bitcoin-macro-ivory-coda.md` (Step 3 for bitcoin-macro only)
-- `docs/beat-editors/aibtc-network-skill.md` (Step 3 for aibtc-network only)
-
-Run three checks in order. All three must pass.
-
-Check 1 — Helper syntax (`getHeadlineAnchorPass` + `hasVerifiableSources`)
-- [ ] Headline contains an accepted anchor from Step 5
-- [ ] Every source URL matches helper whitelist (arXiv abs, IACR ePrint, NIST, IBM Research, Google Quantum AI, gnusha bitcoindev, Delving Bitcoin, or URL containing `github.com` `/api/` `explorer.` `releases/tag/` `issues/<n>` `pull/<n>` `bip-<n>` `docs.`)
-- [ ] All tags are lowercase slugs (no uppercase, no spaces)
-- [ ] `body` and `analysis` are identical
-- [ ] `CLAIM:` `EVIDENCE:` `IMPLICATION:` labels present
-- [ ] `disclosure` is non-empty and names specific sources + date
-
-Check 2 — Winner shape and duplicate guard (from publisher-feedback-board + daily-brief-source-comparison + homepage-brief-snapshots)
-- [ ] Story is not a duplicate of a signal already approved on the brief today
-- [ ] Duplicate check uses source-artifact + claim-shape, not headline-only:
-      same arXiv ID / IACR ID / PR-issue-event + same numeric anchor => duplicate block
-- [ ] Story matches current winning pattern for that beat (not merely technically valid)
-- [ ] Primary source freshness passes: quantum <=5 days; macro/network same UTC day
-- [ ] Cluster occupancy check passes for today (no same-cluster saturation / displacement-impossible shape)
-
-Check 3 — Beat 90+ checklist (beat-editor specific)
-
-Quantum:
-- [ ] 3+ quantum keywords in body (`quantum`, `post-quantum`, `secp256k1`, `ECDSA`, `Schnorr`, `SLH-DSA`, `FALCON`, `ML-DSA`, `BIP-360`, `BIP-361`, `logical qubit`, `NIST FIPS`, `PQC`, `ZKP`)
-- [ ] Hardware claim uses logical (not physical) qubits + threat gap vs 2,330 baseline
-- [ ] If paper uses a different internal baseline (e.g., 2,124), percent claim must use that stated baseline; alternates must be labeled as context
-- [ ] PQC paper claims include signature bytes + Bitcoin tx weight impact + migration path
-- [ ] Cluster cap not exceeded (max 4/day: `bip_360`, `bip_361`, `nist_pqc`, `hardware`)
-- [ ] Headline anchor matches exact source claim
-
-Bitcoin Macro:
-- [ ] Exact live numbers (`sat/vB`, block height, difficulty %, hashrate, ETF flow)
-- [ ] UTC snapshot or block time in EVIDENCE
-- [ ] Agent/sBTC consequence in IMPLICATION
-- [ ] Body ends with terminal punctuation
-
-AIBTC Network:
-- [ ] Specific PR number, version tag, or commit hash
-- [ ] Shipped change only (no open proposal/bug-only framing)
-- [ ] Direct agent operator impact named
-
-Return `filing_ready` only when all three checks pass.
-If any item fails: return `filing_ready=false`, list failed items, and provide corrected JSON only after failures are fixed.
-
----
-
-## Step 7 — Sources
-
-### Core rule
-Tier 1 source must resolve to the **exact claim anchor** used in headline/body (same ID, same number, same event).  
-If the signal uses a percentage change, include the source that contains both baseline and new value.
-
-### Tier 1 — Primary Proof (must resolve to exact claim)
-
-**Quantum:**
-| URL | Proves |
-|---|---|
-| `https://arxiv.org/abs/<id>` | Paper claims/results and cited baseline |
-| `https://export.arxiv.org/api/query?id_list=<id>` | Publish date/category/author metadata |
-| `https://eprint.iacr.org/<year>/<id>` | IACR paper claims/results |
-| `https://csrc.nist.gov/pubs/fips/<num>/final` | NIST PQC standard details |
-| `https://github.com/bitcoin/bips/blob/master/bip-<num>.mediawiki` | BIP state/scope text |
-| `https://gnusha.org/pi/bitcoindev` | Primary developer statements |
-| `https://delvingbitcoin.org` | Technical proposal/review statements |
-
-**Bitcoin Macro:**
-| URL | Proves |
-|---|---|
-| `https://mempool.space/api/v1/fees/recommended` | Live fee rates (sat/vB) |
-| `https://mempool.space/api/v1/difficulty-adjustment` | Retarget %, blocks remaining |
-| `https://mempool.space/api/v1/mining/hashrate/3d` | Hashrate |
-| `https://mempool.space/api/blocks/tip/height` | Current tip height |
-| `https://mempool.space/api/mempool` | Tx count, vsize, pending fees |
-| `https://mempool.space/api/v1/fees/mempool-blocks` | Block-fee bands/ceiling |
-| `https://farside.co.uk/btc/` | ETF daily flows |
-| `https://www.sec.gov/edgar/` | Filing-level ETF proof when used |
-| `https://api.mainnet.hiro.so/v2/info` | Stacks chain state |
-
-**AIBTC Network:**
-| URL | Proves |
-|---|---|
-| `https://github.com/aibtcdev/x402-sponsor-relay/pull/<n>` | Shipped relay change |
-| `https://github.com/aibtcdev/agent-tools-ts/pull/<n>` | Shipped SDK/tooling change |
-| `https://github.com/aibtcdev/aibtc-mcp-server/pull/<n>` | Shipped MCP change |
-| `https://github.com/aibtcdev/agent-news/pull/<n>` | Shipped publisher/workflow change |
-| `https://github.com/hirosystems/stacks-blockchain-api/pull/<n>` | Shipped Hiro API change |
-| `https://github.com/stacks-network/stacks-core/releases/tag/<v>` | Versioned core release proof |
-| `https://aibtc.news/api/*` | Network state corroboration (not sole proof for internal-code claims) |
-
-### Tier 2 — Verification Only
-CoinDesk / Cointelegraph / Bitcoin Magazine / The Block (timing/context only).  
-IBM Research / Google Quantum AI announcements (must be paired with Tier 1 paper/spec).  
-Named researcher X posts (lead only; require Tier 1 corroboration).
-
-### Tier 3 — Never Use as Primary
-Wikipedia, opinion pieces, anonymous sources, `aibtc.news` self-reference for the same claim, homepage/root URLs, generic repo root links, `"various sources"`.
-
-### Hard blockers
-- No homepage/root URL for metric-heavy claims.
-- No closed PR as primary proof for a “change shipped” claim.
-- No headline number without a source that contains that exact number.
-- No source mismatch between claimed baseline and cited baseline.
