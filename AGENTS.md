@@ -48,8 +48,6 @@ node skills/beat-capacity-status/scripts/beat-capacity-status.mjs
 ### Step 2A — Check Whats in the Brief 
 Operator will give you the pasted briefs and you would put it in the `docs/homepage-brief-snapshots.md` — extract today's approved titles, their beat, and what made them win. In the table format it is in
 
-### Step 2B — Check What Already Won and What Failed
-
 When the operator asks what is the status of the signals sent, read **only**:
 
 1. `docs/homepage-brief-snapshots.md`
@@ -62,6 +60,44 @@ Extract:
 - what made them win
 
 Return the answer in the same table format used in `docs/homepage-brief-snapshots.md`.
+
+### Step 2B — Check Signal Status
+
+When the operator asks for the status of signals sent:
+
+Read only:
+- `docs/publisher-feedback-board.md`
+
+Then:
+1. Use the `Pending Review` table as the exact list of signals that still need status checks.
+2. Check the live status for each signal in that table.
+3. For any row that now has real publisher feedback:
+   - remove it from `Pending Review`
+   - add it to `Publisher Feedback Rows`
+   - add a matching note to `Signal Content Review Notes`
+4. For any row that still has no publisher feedback:
+   - leave it in `Pending Review`
+   - keep `Publisher feedback` as `Pending publisher review`
+   - keep `Status` as `submitted`
+
+Output rules:
+- Always show results in the exact same 8-column table format used in `docs/publisher-feedback-board.md`
+- Never switch to a custom summary table
+- If the operator asks for pending signals, show only rows still pending
+- If the operator asks for resolved former pending signals, show those rows in the same table format
+
+Required table format:
+`| Date | Signal ID | Beat | Title | One-line signal | Notes | Publisher feedback | Status |`
+
+Status meanings:
+- `submitted` = filing succeeded and is awaiting publisher review
+- `approved` = publisher approved it
+- `rejected` = publisher rejected it
+- `replaced` = signal was later displaced/replaced
+- empty/null `publisherFeedback` = no final publisher decision yet
+
+
+
 
 ### Step 2C — Complete Daily Brief Source Comparison
 
@@ -105,8 +141,6 @@ In `docs/daily-brief-source-comparison.md`, record:
 Preserve the existing table format already used in `docs/daily-brief-source-comparison.md`.
 
 ---
-
-### Step 3 — Load Beat Editor Standards
 
 ### Step 3 — Load Target Beat Rules
 
