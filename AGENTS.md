@@ -403,8 +403,7 @@ All must be true before output:
       "distilledLearningBriefPath": "...",
       "beatEditorGuidancePaths": ["..."]
     }
-  }
-}
+```
 Hard rule: do not output anything until a valid batch is found. Return only the final number of JSON objects required for the batch, and stage finished candidates in `docs/draft-signals.md` first when working more than one signal.
 
 #### 5.7 — Test With Helper Process Before Final Output
