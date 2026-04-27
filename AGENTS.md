@@ -100,8 +100,7 @@ Preserve the existing table format.
 **Goal:** Front-load every constraint Step 5 needs. By the end of Step 3, nothing new should be discovered in Step 5.
 
 #### 3.1 — Identify Target Beat
-
-One of: `quantum` · `bitcoin-macro` · `aibtc-network`
+ Run  for each beat present  availble to submt to from step 1. `quantum` · `bitcoin-macro` · `aibtc-network`
 
 #### 3.2 — Read All Required Docs (no skipping, no reusing cached reads)
 
