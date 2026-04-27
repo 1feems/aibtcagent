@@ -234,7 +234,9 @@ Add any new source patterns found in today's winning briefs not already in `docs
 
 ### Step 5 — Create Signal (Deterministic)
 
-**Goal:** Produce exactly one valid, non-duplicate JSON signal using only pre-verified inputs from Steps 3 and 4.
+**Goal:** Produce the number of valid, non-duplicate JSON signals requested by the operator, using only pre-verified inputs from Steps 3 and 4. Default to a batch of at least `4` unless the operator explicitly asks for fewer. Stage each finished candidate in `docs/draft-signals.md` before final JSON output.
+
+`docs/draft-signals.md` is the ready-to-submit staging file for finished Step 5 candidates. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place helper-ready JSON there once the signal is fully constructed and ready for Step 5.7 validation.
 
 #### 5.1 — Confirm Inputs (do not re-read docs)
 
@@ -313,6 +315,8 @@ IMPLICATION: <direct effect on agents / bitcoin users / system>
 
 **Disclosure:** model name + every doc checked + date + what was verified from which source
 
+**Helper-ready wrapper:** include any helper-required wrapper fields needed by the local filing helper, including `workflow_context` when required by the repo helper path
+
 Body length rule:
 - target `800-900` characters
 - if the body reaches `900` characters, trim before filing
@@ -357,11 +361,15 @@ All must be true before output:
 
 #### 5.6 — Final Output (STRICT)
 
-- Return exactly one JSON object
+- Build the full batch requested by the operator, with a default minimum of `4` JSON objects unless the operator explicitly requests fewer
 - No explanations, no variants, no partial results
-- If any check in 5.5 fails → return to 5.2, select a different anchor from Step 4.5, repeat
+- Each JSON object must independently pass 5.5
+- If any candidate fails 5.5 → return to 5.2 for that candidate, select a different anchor from Step 4.5, repeat
 - Do not reuse the same anchor, source, or headline structure when retrying
-- Only exit when a fully valid signal is constructed
+- Do not reuse the same anchor, source family, metric family, or implication family across multiple JSONs in the same batch unless the operator explicitly requests near-duplicates
+- Stage every finished candidate in `docs/draft-signals.md` before Step 5.7
+- Do not call any batch complete, ready, or final until every JSON in the batch passes Step 5.7
+- Only exit when the requested number of fully valid signals is constructed or when Step 4.5 leaves no valid anchor for an additional signal
 
 ```json
 {
@@ -374,9 +382,64 @@ All must be true before output:
     { "title": "...", "url": "..." }
   ],
   "tags": ["<beat_slug>", "..."],
-  "disclosure": "..."
+  "disclosure": "...",
+  "workflow_context": {
+    "reportDate": "YYYY-MM-DD",
+    "analysisPath": "...",
+    "analysisGeneratedAt": "...",
+    "reviewedInputs": {
+      "signalHistoryPath": "...",
+      "editorialMemoryPath": "...",
+      "outcomeFeedbackPath": "...",
+      "helperErrorsPath": "...",
+      "latestBriefPath": "...",
+      "distilledLearningBriefPath": "...",
+      "beatEditorGuidancePaths": ["..."]
+    }
+  }
 }
-Hard rule: do not output anything until a valid signal is found. Only one JSON is ever returned.
+Hard rule: do not output anything until a valid batch is found. Return only the final number of JSON objects required for the batch, and stage ready-to-submit candidates in `docs/draft-signals.md` first when working more than one signal.
+
+#### 5.7 — Test With Helper Process Before Final Output
+
+Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
+
+`http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
+
+Required:
+- Start or restart the helper if needed
+- Load or paste the exact JSON staged in `docs/draft-signals.md`
+- Validate the exact JSON through the helper normalization path
+- Validate the payload through the local signal-guard path
+- Confirm there are no pre-login helper blockers before the Sign Request stage
+- Check the exact browser-side helper rules in `tools/xverse-register/file-signal.html`, not just the server-side guard approximation
+
+Minimum browser-side checks:
+- `getHeadlineAnchorPass(...)`
+- required template labels
+- empty template sections
+- universal payload hints
+- headline length and no-period rule
+- source presence and source `url` / `title` validity
+- `beat_slug` present in `tags`
+
+This step is specifically for catching:
+- missing helper wrapper fields such as `workflow_context`
+- helper/template/guard failures
+- any pre-login helper error the operator would otherwise discover manually
+
+Pass condition:
+- helper normalization passes
+- local signal guard passes
+- no pre-login helper rejection remains
+- exact browser helper checks in `file-signal.html` pass for the same JSON
+
+Not required:
+- wallet login
+- final signed submission
+
+Hard rule:
+- do not return final JSON output until every JSON in the batch passes Step 5.7
 
 
 
