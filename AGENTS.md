@@ -366,18 +366,20 @@ All must be true before output:
 - [ ] Body is below 900 chars and kept in the safer 800-900 range when possible
 - [ ] All tags lowercase slugs, beat_slug first
 
-Step 5.6 — Final Output (STRICT)
+
 ### Step 5.6 — Final Output (STRICT)
 
 Build the full batch requested by the operator, with a default minimum of 4 JSON objects unless the operator explicitly requests fewer.
 
-Rules:
+**Output requirement:**
+Write each completed JSON candidate into `docs/draft-signals.md` before Step 5.7 testing.
+
+**Rules:**
 - No explanations, no variants, no partial results.
 - Each JSON object must independently pass Step 5.5.
 - If any candidate fails Step 5.5, return to Step 5.2 for that candidate, select a different anchor from Step 4.5, and repeat.
 - Do not reuse the same anchor, source, or headline structure when retrying.
 - Do not reuse the same anchor, source family, metric family, or implication family across multiple JSONs in the same batch unless the operator explicitly requests near-duplicates.
-- Stage every finished candidate in `docs/draft-signals.md` before Step 5.7.
 - Do not call any batch complete, ready, or final until every JSON in the batch passes Step 5.7.
 - Only exit when the requested number of fully valid signals is constructed or when Step 4.5 leaves no valid anchor for an additional signal.
 
@@ -410,59 +412,60 @@ Rules:
 }
 ```
 
-Hard rule:
+** Hard rule **
 
 Do not output anything until a valid batch is found.
 Return only the final number of JSON objects required for the batch.
-Stage finished candidates in docs/draft-signals.md first when working more than one signal.
-Step 5.7 — Test With Helper Process Before Final Output
-Before calling any signal JSON ready, helper-ready, ready to submit, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
 
-http://127.0.0.1:4173/tools/xverse-register/file-signal.html
+### Step 5.7 — Test With Helper Process Before Final Output
 
-Required:
+Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
 
-Start or restart the helper if needed.
-Load or paste the exact JSON staged in docs/draft-signals.md.
-Validate the exact JSON through the helper normalization path.
-Validate the payload through the local signal-guard path.
-Confirm there are no pre-login helper blockers before the Sign Request stage.
-Check the exact browser-side helper rules in tools/xverse-register/file-signal.html, not just the server-side guard approximation.
-Explicit interpretation:
+`http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
 
-Repo-side validation alone is not enough.
-Script output alone is not enough.
-If the operator specifically asked for browser-side confirmation, the agent must actually open or otherwise use the local helper page and check the exact JSON there.
-If browser access is unavailable, blocked, or not performed, the agent must say locally validated only and must not say ready to submit.
-Minimum browser-side checks:
+**Required:**
+- Start or restart the helper if needed.
+- Load or paste the exact JSON staged in `docs/draft-signals.md`.
+- Validate the exact JSON through the helper normalization path.
+- Validate the payload through the local signal-guard path.
+- Confirm there are no pre-login helper blockers before the `Sign Request` stage.
+- Check the exact browser-side helper rules in `tools/xverse-register/file-signal.html`, not just the server-side guard approximation.
 
-getHeadlineAnchorPass(...)
-required template labels
-empty template sections
-universal payload hints
-headline length and no-period rule
-source presence and source url / title validity
-beat_slug present in tags
-This step is specifically for catching:
+**Explicit interpretation:**
+- Repo-side validation alone is not enough.
+- Script output alone is not enough.
+- If the operator specifically asked for browser-side confirmation, the agent must actually open or otherwise use the local helper page and check the exact JSON there.
+- If browser access is unavailable, blocked, or not performed, the agent must say `locally validated only` and must not say `ready to submit`.
 
-missing helper wrapper fields such as workflow_context
-helper/template/guard failures
-any pre-login helper error the operator would otherwise discover manually
-Pass condition:
+**Minimum browser-side checks:**
+- `getHeadlineAnchorPass(...)`
+- required template labels
+- empty template sections
+- universal payload hints
+- headline length and no-period rule
+- source presence and source `url` / `title` validity
+- `beat_slug` present in `tags`
 
-helper normalization passes
-local signal guard passes
-no pre-login helper rejection remains
-exact browser helper checks in file-signal.html pass for the same JSON
-Reporting rule:
+**This step is specifically for catching:**
+- missing helper wrapper fields such as `workflow_context`
+- helper/template/guard failures
+- any pre-login helper error the operator would otherwise discover manually
 
-If all repo-side checks pass but the browser helper page was not actually used, report locally validated only.
-If the browser helper page was used and no pre-login blocker remains, report browser-helper confirmed.
-Only after browser-helper confirmed may the agent say ready to submit.
-Not required:
+**Pass condition:**
+- helper normalization passes
+- local signal guard passes
+- no pre-login helper rejection remains
+- exact browser helper checks in `file-signal.html` pass for the same JSON
 
-wallet login
-final signed submission
-Hard rule:
+**Reporting rule:**
+- If all repo-side checks pass but the browser helper page was not actually used, report `locally validated only`.
+- If the browser helper page was used and no pre-login blocker remains, report `browser-helper confirmed`.
+- Only after `browser-helper confirmed` may the agent say `ready to submit`.
 
-Do not return final JSON output until every JSON in the batch passes Step 5.7.
+**Not required:**
+- wallet login
+- final signed submission
+
+**Hard rule:**
+- Do not return final JSON output until every JSON in the batch passes Step 5.7.
+
