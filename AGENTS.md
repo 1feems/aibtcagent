@@ -236,7 +236,15 @@ Add any new source patterns found in today's winning briefs not already in `docs
 
 **Goal:** Produce the number of valid, non-duplicate JSON signals requested by the operator, using only pre-verified inputs from Steps 3 and 4. Default to a batch of at least `4` unless the operator explicitly asks for fewer. Stage each finished candidate in `docs/draft-signals.md` before final JSON output.
 
-`docs/draft-signals.md` is the ready-to-submit staging file for finished Step 5 candidates. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place helper-ready JSON there once the signal is fully constructed and ready for Step 5.7 validation.
+`docs/draft-signals.md` is the staging file for finished Step 5 candidates that are ready for Step 5.7 testing. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place finished JSON there once the signal is fully constructed and ready for helper testing.
+
+Status language is strict:
+
+- `locally validated` = repo-side checks pass, such as helper normalization and local signal guard
+- `browser-helper confirmed` = the exact JSON has also been checked in `file-signal.html` with no pre-login blocker before `Sign Request`
+- `ready to submit` = only use this phrase after `browser-helper confirmed`
+
+Hard rule: do not treat `docs/draft-signals.md` placement alone as proof that a signal is ready to submit.
 
 #### 5.1 — Confirm Inputs (do not re-read docs)
 
@@ -398,7 +406,7 @@ All must be true before output:
     }
   }
 }
-Hard rule: do not output anything until a valid batch is found. Return only the final number of JSON objects required for the batch, and stage ready-to-submit candidates in `docs/draft-signals.md` first when working more than one signal.
+Hard rule: do not output anything until a valid batch is found. Return only the final number of JSON objects required for the batch, and stage finished candidates in `docs/draft-signals.md` first when working more than one signal.
 
 #### 5.7 — Test With Helper Process Before Final Output
 
@@ -413,6 +421,12 @@ Required:
 - Validate the payload through the local signal-guard path
 - Confirm there are no pre-login helper blockers before the Sign Request stage
 - Check the exact browser-side helper rules in `tools/xverse-register/file-signal.html`, not just the server-side guard approximation
+
+Explicit interpretation:
+- repo-side validation alone is not enough
+- script output alone is not enough
+- if the operator specifically asked for browser-side confirmation, the agent must actually open or otherwise use the local helper page and check the exact JSON there
+- if browser access is unavailable, blocked, or not performed, the agent must say `locally validated only` and must not say `ready to submit`
 
 Minimum browser-side checks:
 - `getHeadlineAnchorPass(...)`
@@ -433,6 +447,11 @@ Pass condition:
 - local signal guard passes
 - no pre-login helper rejection remains
 - exact browser helper checks in `file-signal.html` pass for the same JSON
+
+Reporting rule:
+- If all repo-side checks pass but the browser helper page was not actually used, report `locally validated only`
+- If the browser helper page was used and no pre-login blocker remains, report `browser-helper confirmed`
+- Only after `browser-helper confirmed` may the agent say `ready to submit`
 
 Not required:
 - wallet login
