@@ -135,10 +135,17 @@ Rules:
 
 ### Step 3 — Load Beat Context (Required Before Any Drafting)
 
+### Step 3 — Load Beat Context (Required Before Any Drafting)
+
 **Goal:** Front-load every constraint Step 5 needs. By the end of Step 3, nothing new should be discovered in Step 5.
 
 #### 3.1 — Identify Target Beat
- Run  for each beat present  availble to submt to from step 1. `quantum` · `bitcoin-macro` · `aibtc-network`
+
+Run for each beat currently available to submit to from Step 1:
+
+- `quantum`
+- `bitcoin-macro`
+- `aibtc-network`
 
 #### 3.2 — Read All Required Docs (no skipping, no reusing cached reads)
 
@@ -160,37 +167,40 @@ Beat editor files:
 | `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
 | `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-**Hard rule: read all five. Never skip. Never reuse a cached read from a prior session.**
+**Hard rule:** read all five. Never skip. Never reuse a cached read from a prior session.
 
 #### 3.3 — Extract Blocked Shapes (ALWAYS fresh, NEVER cached)
 
 From `docs/homepage-brief-snapshots.md`:
 
-1. Find every brief entry for the target beat from the last 48 hours
-2. For every headline, extract the **structure not the numbers** — `[N] Blocks Left Before [%] Retarget` is the same structure whether N is 1,094 or 1,372
-3. Find every "Duplicates removed" note at the bottom of each brief — extract every structure listed there too
-4. Write every extracted structure into the `Blocked shapes` column of `docs/target-beat-rules.md`
+1. Find every brief entry for the target beat from the last 48 hours.
+2. For every headline, extract the structure, not the numbers. Example: `[N] Blocks Left Before [%] Retarget` is the same structure whether N is `1,094` or `1,372`.
+3. Find every `Duplicates removed` note at the bottom of each brief and extract every structure listed there too.
+4. Write every extracted structure into the `Blocked shapes` column of `docs/target-beat-rules.md`.
 
-**Hard rule: the `Blocked shapes` column must always be re-extracted fresh from `docs/homepage-brief-snapshots.md` on the current day. Even if a row already exists for today's date and beat, re-extract blocked shapes. Never carry over yesterday's list.**
+**Hard rule:** the `Blocked shapes` column must always be re-extracted fresh from `docs/homepage-brief-snapshots.md` on the current day. Even if a row already exists for today's date and beat, re-extract blocked shapes. Never carry over yesterday’s list.
 
-A shape is blocked if it appears anywhere in the last 48h brief for the target beat — regardless of whether the numbers are different.
+A shape is blocked if it appears anywhere in the last 48h brief for the target beat, regardless of whether the numbers are different.
 
 #### 3.4 — Extract Helper Failure Patterns
 
 From `docs/helper-bugs.md`, for each bug entry read the verbatim error, what caused it, and the fix. Then record:
-- Every accepted headline anchor pattern (exact list from the file)
-- Every accepted source URL substring (exact list from the file)
-- Tag format rules
+
+- every accepted headline anchor pattern
+- every accepted source URL substring
+- tag format rules
 
 These feed directly into Step 5.4b. Reading them here means Step 5.4b is a confirmation check, not a discovery step.
 
 #### 3.5 — File Into `docs/target-beat-rules.md`
 
+Use this table format:
+
 | Date | Beat | What scores 90+ | Required checklist | Instant rejection triggers | Blocked shapes (fresh, today) | Helper failure patterns | Candidate fit | What must change before drafting |
 |---|---|---|---|---|---|---|---|---|
 
 Rules:
-- One row per date + beat combination
+- one row per date + beat combination
 - `Blocked shapes`: always re-extracted today, never copied from a prior row
 - `Helper failure patterns`: accepted anchor patterns + accepted source substrings from `helper-bugs.md`
 - `Candidate fit`: `n/a` if no candidate yet, otherwise `yes`, `partial`, or `no`
@@ -200,7 +210,7 @@ Rules:
 Confirm all four before proceeding:
 
 - [ ] All five docs read in full
-- [ ] Blocked shapes extracted fresh from today's `homepage-brief-snapshots.md`
+- [ ] Blocked shapes extracted fresh from today’s `homepage-brief-snapshots.md`
 - [ ] Helper failure patterns recorded
 - [ ] `docs/target-beat-rules.md` updated
 
@@ -210,62 +220,61 @@ Confirm all four before proceeding:
 
 ### Step 4 — Build Verified Source List (Required Before Step 5)
 
-**Goal:** Produce a verified, ordered list of Tier 1 sources for Step 5.2 to pick from. Step 5.2 selects from this list only — it does not search independently.
+**Goal:** Build the only source list Step 5 may use.
 
-#### 4.1 — Pull Tier 1 Source List From Beat Editor
+#### 4.1 — Pull Tier 1 Sources
 
-From the beat editor file read in Step 3.2, extract every Tier 1 source URL and what it proves.
+From the target beat editor read in Step 3.2, extract every Tier 1 source URL and what it proves.
 
-#### 4.2 — Remove Already-Used Sources
+#### 4.2 — Remove Sources Already Used Today
 
-From `docs/homepage-brief-snapshots.md` (read in Step 3.2), identify every source URL and numeric anchor already used in today's brief for the target beat.
+From `docs/homepage-brief-snapshots.md`, find every source URL and numeric anchor already used today for the target beat.
 
-Mark each Tier 1 source as:
-- `available` — source + numeric anchor not used in today's brief
-- `blocked` — same source + same numeric claim already in today's brief
+Mark each Tier 1 source:
+- `available` = source + numeric anchor not already used today
+- `blocked` = same source + same numeric claim already used today
 
 Remove all `blocked` sources.
 
-**If today's brief is not yet populated, treat all sources as `available` and note this.**
+If today's brief is empty, treat all Tier 1 sources as `available` and note that.
 
-#### 4.3 — Verify Against Helper Whitelist
+#### 4.3 — Apply Helper Whitelist
 
-From `docs/helper-bugs.md` (read in Step 3.2), confirm every remaining source URL contains at least one accepted substring:
+From `docs/helper-bugs.md`, keep only sources whose URL contains at least one accepted substring:
 
 `/api/` · `github.com` · `explorer.` · `releases/tag/` · `issues/<n>` · `pull/<n>` · `bip-<n>` · `docs.` · `arxiv.org/abs/` · `eprint.iacr.org/` · `csrc.nist.gov/` · `gnusha.org` · `delvingbitcoin.org`
 
-Remove any source that does not contain an accepted substring.
+Remove every source that fails this whitelist.
 
-**Hard rule: a source that fails the helper whitelist cannot enter the JSON.**
+**Hard rule:** a source that fails the whitelist cannot enter JSON.
 
-#### 4.4 — Check Each Source Against Blocked Shapes
+#### 4.4 — Remove Shape-Blocked Sources
 
-From the blocked shapes list extracted in Step 3.3 (stored in `docs/target-beat-rules.md`), check whether each remaining source can only prove claims that map to a blocked shape.
+From the blocked shapes stored in `docs/target-beat-rules.md`, check each remaining source:
 
-A source is `available` if it can prove at least one claim in a non-blocked shape.
-A source is `shape-blocked` if every claim it proves maps to a blocked structure.
+- `available` = can prove at least one non-blocked claim
+- `shape-blocked` = every claim it proves maps to a blocked shape
 
 Remove all `shape-blocked` sources.
 
 #### 4.5 — Output Verified Source List
 
+Use this format:
 
-[URL] — proves [metric] — status: available — anchor: [exact value]
-[URL] — proves [metric] — status: available — anchor: [exact value]
+`[URL] — proves [metric] — anchor: [exact value]`
 
-
-**This list is the only input Step 5.2 is allowed to use.**
+This list is the only input Step 5.2 may use.
 
 For metric-heavy claims:
 - do not rely on one organization alone if the claim combines multiple figures, comparisons, or market-wide implications
-- require at least two independent organizations or source systems unless one canonical primary source alone fully proves the exact claim
-- if one source gives the headline metric and a second source is needed for comparison, baseline, or consequence, both must be in the verified list before Step 5 begins
+- require two independent organizations or source systems unless one canonical primary source fully proves the exact claim
+- if a second source is needed for comparison, baseline, or consequence, it must also be in this verified list before Step 5 begins
 
-**Hard rule: if this list is empty → do not proceed to Step 5. Report that no signal can be filed today for this beat.**
+**Hard rule:** if this list is empty, do not proceed to Step 5. Report that no signal can be filed today for this beat.
 
 #### 4.6 — Update `docs/sources.md`
 
-Add any new source patterns found in today's winning briefs not already in `docs/sources.md`.
+Add any new source patterns found in today's winning briefs that are not already in `docs/sources.md`.
 
 ---
 
