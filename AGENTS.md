@@ -480,9 +480,9 @@ Write each completed JSON candidate into `docs/draft-signals.md` only after it f
 }
 
 ```
-### Step 5.7 — Test With Helper Process Before Final Output
+### Step 6 — Test With Helper Process Before Final Output
 
-#### 5.7a — Re-read publisher doc before helper test
+#### 6a — Re-read publisher doc before helper test
 
 Re-read the target beat editor file immediately before helper testing:
 
@@ -500,7 +500,7 @@ Confirm the exact JSON still aligns with:
 
 If the JSON no longer aligns, revise it before helper testing. Do not rely on memory from Step 3.
 
-#### 5.7b — Test exact JSON in the local helper
+#### 6b — Test exact JSON in the local helper
 
 Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
 
@@ -534,7 +534,7 @@ Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or be
 - helper/template/guard failures
 - any pre-login helper error the operator would otherwise discover manually
 
-#### 5.7c — Pass condition and reporting
+#### 6c — Pass condition and reporting
 
 **Pass condition:**
 - helper normalization passes
@@ -553,4 +553,4 @@ Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or be
 - final signed submission
 
 **Hard rule:**
-- Do not return final JSON output until every JSON in the batch passes Step 5.7.
+- Do not return final JSON output until every JSON in the batch passes Step 6.
