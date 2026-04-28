@@ -82,7 +82,7 @@ Status meanings:
 
 ### Step 2C — Complete Daily Brief Source Comparison
 
-Goal:Learn what won today per beat and adjust signal structure to get into the brief.
+**Goal:** Learn what won today per beat and adjust signal structure to get into the brief.
 
 Read only:
 1. `docs/homepage-brief-snapshots.md`
@@ -90,38 +90,45 @@ Read only:
 3. `docs/helper-bugs.md`
 4. `docs/beat-editors/*.md`
 
----
+For each beat, same day only:
 
-For each beat (same day only):
+1. From homepage: extract winning patterns
+   - structure
+   - anchor type
 
-1. From homepage:extract winning patterns (structure + anchor type)
+2. From publisher board: list my signals + outcome
+   - `rejected`
+   - `displaced`
+   - `cap full`
+   - `approved`
 
-2. From publisher board:list my signals + outcome (rejected, displaced, cap full)
+3. From helper: remove blocked shapes
+   - duplicate shape
+   - same metric family
+   - same blocked helper pattern
 
-3. From helper:remove blocked shapes (duplicate, same metric family)
+4. From editor rules: check required structure
+   - anchor
+   - numbers
+   - implication
 
-4. From editor rules:check required structure (anchor, numbers, implication)
----
 Determine:
 - what patterns won
 - which clusters are full
 - how my signals differed
 - which rule I missed
 
----
-Update only `docs/daily-brief-source-comparison.md`:
-Preserve the existing table format.
+Update only `docs/daily-brief-source-comparison.md`.
+
+Preserve the existing table format:
 
 | Date | Beat | What Won Today (Pattern) | Saturated Clusters | My Competing Signals (Outcome) | What They Did Better | Editor Requirement Missed | What To Do Next |
-
----
 
 Rules:
 - same day only
 - no summaries
 - no repetition of headlines
 - each row must end with a clear drafting action
-
 
 
 ---
