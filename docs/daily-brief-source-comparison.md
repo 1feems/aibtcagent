@@ -1,10 +1,53 @@
 # Daily Brief Source Comparison
 
-Source window:
+# Daily Brief Source Comparison
 
-- `homepage-brief-snapshots.md`: 2026-04-19 through 2026-04-23.
-- `publisher-feedback-board.md`: visible feedback rows begin 2026-03-30; overlap with homepage snapshots begins 2026-04-19.
-- Comparison below uses the shared 2026-04-19 to 2026-04-23 window first, then source lessons from the wider feedback board.
+Purpose:
+Learn from today’s brief what patterns win per beat, and adjust signal construction to maximize approval and avoid displacement.
+
+This document is updated daily and focuses on same-day competition between:
+- signals that made the brief
+- signals submitted in the same beat
+
+---
+
+## Source window (dynamic)
+
+- `homepage-brief-snapshots.md`: use the latest available date
+- `publisher-feedback-board.md`: use signals from the same date and beat
+- If no same-day signals exist, use the closest prior overlap
+
+Do not analyze across wide date ranges unless needed for missing context.
+
+---
+
+## How to use this document
+
+This is not a summary of briefs.
+
+For each beat, it answers:
+- What patterns won today
+- What clusters are already covered
+- How my signals compared
+- What to change for the next submission
+
+Each row should reflect:
+- same-day winners
+- same-day competition
+- clear drafting adjustments
+
+---
+
+## Output structure
+
+See “Daily Beat Learnings” table below.
+
+Each row must produce:
+- winning pattern
+- saturation signal (what is already covered)
+- comparison to my signals
+- exact gap
+- next action for drafting
 
 ## Daily Brief Winners By Beat
 
