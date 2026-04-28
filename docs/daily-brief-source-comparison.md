@@ -1,66 +1,47 @@
+## Daily Brief Source Comparison
 
-# Daily Brief Source Comparison
+### Purpose
+Win the brief by copying today’s winning structure.
 
-## Purpose
-Learn what wins each day and adjust signals to get into the brief.
-
-Focus: same-day competition (winners vs my signals).
-
----
-
-## Source Window
-
+### Inputs
 - `homepage-brief-snapshots.md` → latest day
 - `publisher-feedback-board.md` → same day + beat
-- If none, use closest overlap
 
-Avoid wide date analysis.
+### For each beat
 
----
+1. Winners → extract: `anchor + number + implication`
 
-## How to Use
+2. Clusters:
+   - group similar winners
+   - mark full clusters
+3. My signals:list `signal + outcome` (rejected/displaced/cap full/approved)
+4. Compare: what winners had that mine didn’t
+5. Output:exact fix for next signal
 
-Not a summary.
+### Output Table
 
-Per beat, identify:
-- what won (pattern)
-- what’s saturated (cluster)
-- how my signals compared
-- what to change next
+| Date | Beat | What Won Today | Saturated Clusters | My Competing Signals | What They Did Better | What To Do Next |
 
-Each row = same-day comparison + drafting action.
-
----
-
-## Output
-
-Use “Daily Beat Learnings” table.
-
-Each row must include:
-- winning pattern
-- saturated cluster
-- my signals + outcome
-- gap vs winners
-- next drafting action
-
-
+### Rules
+- same-day only
+- no summaries
+- one clear action per row
+- 
 ## Daily Beat Learnings
 
-| Date | Beat | What Won Today | Saturated Clusters | My Competing Signals | What They Did Better | Editor Requirement Missed | What To Do Next |
-|------|------|----------------|--------------------|----------------------|----------------------|---------------------------|------------------|
-| 2026-04-23 | Quantum | Primary-source anchor + exact ID + quantified delta + Bitcoin exposure/migration implication | BIP-360 / BIP-361 / PQ migration full | PQ-MISS (rejected, cap full) + zk-STARK PoC (displaced) | Stronger anchors + clearer threat gap + direct operator consequence | Missing quantified ECDSA threat gap + not strong enough to displace | Add threshold comparison + BTC risk + operator impact OR switch cluster |
-| 2026-04-23 | Quantum | On-chain/system metric + exact exposure proof | Exposure / migration gap covered | Wallet reuse framing (rejected) | Used block-level / BTC exposure data | Missing Tier-1 system metric | Use block height, BTC exposed, or signature count |
-| 2026-04-23 | Bitcoin Macro | Exact numeric state + execution implication | mempool / fee / retarget saturated | Mining concentration (rejected) | Provided “what to do now” (fees, timing, routing) | Missing actionable implication | Add operator action or switch macro family |
-| 2026-04-23 | AIBTC Network | PR + measurable failure/fix + system impact | PR / infra cluster active | PR guardrails / scoring PR | Showed real break (latency, schema, nonce issues) | Missing measurable system impact | Tie PR to failure, latency, or workflow break |
-| 2026-04-22 | Quantum | BIP state + timeline + migration implication | BIP-361 + migration cluster | PQ-MISS (rejected, source fail) + commit-reveal issue (rejected) | Used live BIP + timeline + exposure | Missing correct source + missing PQ keywords | Fix source accuracy + include secp256k1/ECDSA/BIP language |
-| 2026-04-22 | AIBTC Network | PR + operator consequence (latency, identity, schema) | PR cluster active | PR #574 scoring change (submitted) | Tied PR to real operator impact | Weak operator consequence | Show how scoring affects agents/workflow |
-| 2026-04-22 | Bitcoin Macro | Live data + execution implication | mempool + difficulty cluster | — | Turned metrics into decisions | — | Always include execution implication |
-| 2026-04-21 | Quantum | Exposure size + threshold change + migration gap | exposure + PQ migration | PR #2103 (rejected, cap full) | Covered broader exposure + system risk | Too narrow vs cluster | Expand to exposure size or system impact |
-| 2026-04-21 | AIBTC Network | PR + abuse/failure prevention + system impact | PR cluster | PR #552 (submitted) | Showed system-level effect | Missing clear failure scenario | Explain what breaks without fix |
-| 2026-04-21 | Bitcoin Macro | ETF / mempool / retarget → macro decision | macro clusters mixed | — | Connected macro to liquidity/carry | — | Tie macro → treasury/action |
-| 2026-04-20 | Quantum | Migration mechanics + exposure + hardware delta | PQ migration + signing path | bip-p2q.md (rejected) | Used explicit PQ + ECDSA language | Missing quantum keywords | Add secp256k1, ECDSA, BIP-360/361 explicitly |
-| 2026-04-20 | AIBTC Network | PR/API + real operational impact | infra + relay cluster | — | Proved agent workflow change | — | Show agent/system effect |
-| 2026-04-20 | Bitcoin Macro | Data → carry / settlement decision | mempool + difficulty | — | Framed as execution decision | — | Include operator decision |
-| 2026-04-19 | Quantum | Exposure counts + thresholds + missing migration | PQ + exposure cluster | SHRIMPS (rejected) + commit-reveal issue (rejected) | Used exact source + exposure numbers | Missing exact source + duplicate cluster | Use exact paper/source + avoid duplicate cluster |
-| 2026-04-19 | Bitcoin Macro | On-chain + market + execution implication | mempool + funding | Pool concentration (rejected) | Combined metrics + implication | Missing implication + truncated body | Add full implication + avoid truncation |
-| 2026-04-19 | AIBTC Network | PR/issue + failure + system-wide impact | relay / infra failures | — | Showed multi-agent impact | — | Show scale of impact |
+## Daily Beat Learnings (Signal Construction Rules)
+
+| Date | Beat | Winning Structure (build this) | Avoid (cluster/shape) | My Signals (result) | Why It Lost | Build This Instead |
+|------|------|------------------------------|----------------------|--------------------|-------------|--------------------|
+| 2026-04-26 | Quantum | Primary source (PR/arXiv/BIP) + exact ID + hard metric + operator consequence (wallet/signer/sBTC impact) | PQ migration / exposure clusters already dense | — | — | Combine hardware + protocol + exposure into ONE signal with clear BTC risk |
+| 2026-04-26 | Bitcoin Macro | Live numbers (mempool/price/difficulty) + immediate action (fees, timing, carry) | Same mempool/retarget story reused | — | — | Always end with “what to do now” |
+| 2026-04-24 | Quantum | Exact counts/percentages + system impact (BTC exposed / signatures / agents) | Generic PQ commentary | — | — | Use exact numbers + tie to system risk |
+| 2026-04-23 | Quantum | Primary source + quantified threat gap + Bitcoin migration implication | BIP-360 / BIP-361 full cluster | PQ-MISS (rejected); zk-STARK (displaced) | Not strongest in cluster; gap not explicit enough | Add explicit ECDSA break gap + BTC risk OR switch cluster |
+| 2026-04-23 | Quantum | On-chain metric + exposure proof (block/BTC/signatures) | Conceptual framing | Wallet reuse (rejected) | No live system data | Use on-chain metric as proof |
+| 2026-04-23 | Bitcoin Macro | Exact numeric state + execution implication | Static metric without action | Mining concentration (rejected) | No decision/action | Add operator action (fees, routing, timing) |
+| 2026-04-23 | AIBTC Network | PR/issue + failure/fix + measurable system impact | Abstract PR commentary | PR guardrails (rejected) | No concrete failure/impact | Show latency, break, or cost impact |
+| 2026-04-22 | Quantum | BIP state + timeline + exposure implication | Weak source / missing PQ framing | PQ-MISS (rejected); commit-reveal (rejected) | Missing keywords + weak source | Use correct source + include secp256k1/ECDSA/BIP |
+| 2026-04-22 | AIBTC Network | PR + operator consequence (latency, identity, workflow) | PR without impact | PR #574 (submitted) | Weak consequence | Show how agents break or change behavior |
+| 2026-04-21 | Quantum | Exposure size + threshold + system risk | Narrow technical detail | PR #2103 (rejected) | Too narrow | Expand to system-level exposure |
+| 2026-04-20 | Quantum | PQ migration + explicit Bitcoin crypto terms | Missing quantum framing | bip-p2q.md (rejected) | No PQ keywords | Add secp256k1, ECDSA, BIP context |
+| 2026-04-19 | Quantum | Exact source + exposure numbers + migration gap | Duplicate story cluster | SHRIMPS + commit-reveal (rejected) | Duplicate + weak source | Use new angle + exact source |
