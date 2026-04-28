@@ -1,4 +1,3 @@
-# Daily Brief Source Comparison
 
 # Daily Brief Source Comparison
 
