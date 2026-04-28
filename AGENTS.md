@@ -237,7 +237,7 @@ Add any new source patterns found in today's winning briefs not already in `docs
 
 **Goal:** Produce the number of valid, non-duplicate JSON signals requested by the operator, using only pre-verified inputs from Steps 3 and 4. Default to a batch of at least `4` unless the operator explicitly asks for fewer. Stage each finished candidate in `docs/draft-signals.md` before final JSON output.
 
-`docs/draft-signals.md` is the staging file for finished Step 5 candidates that are ready for Step 5.7 testing. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place finished JSON there once the signal is fully constructed and ready for helper testing.
+`docs/draft-signals.md` is the staging file for finished Step 5 candidates that are ready for Step 5.7 testing. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place finished JSON there once the signal is fully constructed, passes Step 5.5, and is ready for helper testing.
 
 Status language is strict:
 
@@ -247,7 +247,7 @@ Status language is strict:
 
 Hard rule: do not treat `docs/draft-signals.md` placement alone as proof that a signal is ready to submit.
 
-#### 5.1 — Confirm Inputs (do not re-read docs)
+#### 5.1 — Confirm Inputs (do not re-read docs yet)
 
 Confirm these are available from Steps 3 and 4:
 
@@ -255,7 +255,7 @@ Confirm these are available from Steps 3 and 4:
 - [ ] Helper failure patterns from Step 3.4
 - [ ] Verified source list from Step 4.5
 
-**If any are missing → return to the missing step. Do not re-read docs here. Do not proceed.**
+**If any are missing → return to the missing step. Do not re-read docs yet. Do not proceed.**
 
 Before selecting any anchor, answer these with `yes` or `no`:
 - Does this candidate repeat a blocked story shape from today or the last 48h brief window?
@@ -319,7 +319,6 @@ EVIDENCE: <source-backed facts, include timestamp/ID>
 
 IMPLICATION: <direct effect on agents / bitcoin users / system>
 
-
 **Tags:** lowercase slugs only, beat_slug must be first tag
 
 **Disclosure:** model name + every doc checked + date + what was verified from which source
@@ -333,9 +332,9 @@ Body length rule:
 
 #### 5.4b — Apply Helper Bug Lessons
 
-From `docs/helper-bugs.md` (read in Step 3.2 — do not re-read):
+From `docs/helper-bugs.md` (read in Step 3.2 — do not re-read yet):
 
-For every bug entry: read the verbatim error, what caused it, and the fix. Apply the fix to the current JSON.
+For every bug entry: read the exact error, what caused it, and the fix. Apply the fix to the current JSON.
 
 | Past bug | Check on current JSON |
 |---|---|
@@ -350,13 +349,25 @@ For every bug entry: read the verbatim error, what caused it, and the fix. Apply
 | Rejected-shape collision | Does this reuse the same source family + metric family + implication family as a recent rejected filing? |
 | Metric-heavy one-source failure | If the claim is metric-heavy, is there enough independent evidence and not just one organization backing the numbers? |
 
+#### 5.4c — Log New Helper Bugs
+
+If the operator gives a new helper error or filing blocker, copy that exact text into `docs/helper-bugs.md` immediately. Do not paraphrase it.
+
+Add:
+- date
+- exact error text from the operator
+- what caused it
+- fix before next JSON
+
+Do this before staging the JSON in `docs/draft-signals.md` or testing it in Step 5.7.
+
 **The goal is not to run a checklist — it is to confirm no known failure mode is present in the payload.**
 
 **If `docs/helper-bugs.md` has been updated since Step 3.2, re-read it now. New entries mean new failure modes.**
 
 #### 5.5 — Pre-Validation
 
-All must be true before output:
+All must be true before staging:
 
 - [ ] Headline contains accepted anchor
 - [ ] `body` == `analysis` character-for-character
@@ -367,14 +378,26 @@ All must be true before output:
 - [ ] Headline structure not in Step 3.3 blocked list
 - [ ] Body is below 900 chars and kept in the safer 800-900 range when possible
 - [ ] All tags lowercase slugs, beat_slug first
+- [ ] Required helper wrapper fields are present, including `workflow_context` when required
 
+#### 5.5b — Re-check Publisher Rules Before Staging
 
-### Step 5.6 — Final Output (STRICT)
+Re-read the target beat editor file before placing any JSON into `docs/draft-signals.md`.
+
+Confirm the JSON still matches:
+- required checklist items
+- instant rejection triggers
+- beat-specific 90+ requirements
+- any “never use” rules
+
+If it does not, revise the JSON before staging it.
+
+### Step 5.6 — Stage Batch For Helper Testing (STRICT)
 
 Build the full batch requested by the operator, with a default minimum of 4 JSON objects unless the operator explicitly requests fewer.
 
 **Output requirement:**
-Write each completed JSON candidate into `docs/draft-signals.md` before Step 5.7 testing.
+Write each completed JSON candidate into `docs/draft-signals.md` only after it fully passes Step 5.5 and is ready for Step 5.7 testing.
 
 **Rules:**
 - No explanations, no variants, no partial results.
@@ -412,14 +435,29 @@ Write each completed JSON candidate into `docs/draft-signals.md` before Step 5.7
     }
   }
 }
+
 ```
-
-** Hard rule **
-
-Do not output anything until a valid batch is found.
-Return only the final number of JSON objects required for the batch.
-
 ### Step 5.7 — Test With Helper Process Before Final Output
+
+#### 5.7a — Re-read publisher doc before helper test
+
+Re-read the target beat editor file immediately before helper testing:
+
+- `docs/beat-editors/quantum-zen-rocket.md`
+- `docs/beat-editors/bitcoin-macro-ivory-coda.md`
+- `docs/beat-editors/aibtc-network-skill.md`
+
+Use the file that matches the signal’s `beat_slug`.
+
+Confirm the exact JSON still aligns with:
+- required checklist items
+- instant rejection triggers
+- beat-specific 90+ requirements
+- any “never use” rules
+
+If the JSON no longer aligns, revise it before helper testing. Do not rely on memory from Step 3.
+
+#### 5.7b — Test exact JSON in the local helper
 
 Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
 
@@ -453,11 +491,14 @@ Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or be
 - helper/template/guard failures
 - any pre-login helper error the operator would otherwise discover manually
 
+#### 5.7c — Pass condition and reporting
+
 **Pass condition:**
 - helper normalization passes
 - local signal guard passes
 - no pre-login helper rejection remains
 - exact browser helper checks in `file-signal.html` pass for the same JSON
+- the re-read target beat editor file confirms the JSON still aligns with publisher rules
 
 **Reporting rule:**
 - If all repo-side checks pass but the browser helper page was not actually used, report `locally validated only`.
@@ -470,4 +511,3 @@ Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or be
 
 **Hard rule:**
 - Do not return final JSON output until every JSON in the batch passes Step 5.7.
-
