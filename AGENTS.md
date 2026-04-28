@@ -21,6 +21,8 @@ Read these before every signal. No exceptions.
 | `docs/beat-editors/aibtc-network-skill.md` | Step 3 — aibtc-network signals only |
 | `docs/sources.md` | Step 4 — Tier 1/2/3 rules per beat |
 | `docs/helper-bugs.md` | Step 3.2 + Step 5.4b |
+| `docs/draft-signals.md` |Step 5 |
+
 
 If any required doc for the target beat is unread → return `hold`.
 ---
