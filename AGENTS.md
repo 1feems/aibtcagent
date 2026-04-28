@@ -135,8 +135,6 @@ Rules:
 
 ### Step 3 — Load Beat Context (Required Before Any Drafting)
 
-### Step 3 — Load Beat Context (Required Before Any Drafting)
-
 **Goal:** Front-load every constraint Step 5 needs. By the end of Step 3, nothing new should be discovered in Step 5.
 
 #### 3.1 — Identify Target Beat
