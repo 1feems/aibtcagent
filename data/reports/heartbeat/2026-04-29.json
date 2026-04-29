@@ -1,0 +1,15 @@
+{
+  "kind": "heartbeat_reminder",
+  "status": "ok",
+  "address": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+  "checkedAt": "2026-04-29T16:16:07.141Z",
+  "checkInCount": 32,
+  "previousCheckInCount": 31,
+  "delta": 1,
+  "reminderNeeded": false,
+  "lastActiveAt": "2026-04-28T22:14:39.236Z",
+  "displayName": "Valiant Gryphon",
+  "levelName": "Genesis",
+  "error": null,
+  "note": "checkInCount increased since the last reminder run or this is the first recorded baseline."
+}
