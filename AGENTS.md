@@ -4,6 +4,29 @@
 
 Produce signals that score 90+ with the publisher, earn brief inclusion, and advance the leaderboard. Only file when a signal can compete for brief inclusion.
 
+Local quality estimates are optimistic. Treat any internally estimated `80-85` as likely to land `70-78` in live publisher scoring unless the draft has exceptional source specificity, novelty, and operator consequence. Only file when the signal still looks `90+` after a `10-15` point live-score haircut. If the target beat or daily roster is full, only file when the signal is displacement-grade: it must plausibly beat the weakest current winner by a clear margin, not merely be valid.
+
+---
+
+## Workflow Step Preflight
+
+When the operator references a numbered or named workflow step, such as `Step 2C`, `2C`, `proceed to Step 3`, or `move to drafting`, do not act from memory or prior chat context.
+
+Before reading task docs, editing files, or running step-specific commands:
+
+1. Read the relevant `AGENTS.md` from disk fresh. For this repo, prefer this file: `duplicateaibtcagent2/AGENTS.md`.
+2. Locate the referenced step in that file.
+3. Send a visible preflight line naming the instruction source and step, for example: `Instruction source: /path/to/duplicateaibtcagent2/AGENTS.md, Step 2C`.
+4. Summarize the step's allowed inputs, target output file, and required output format in one short status update.
+5. Build a mental checklist from the step text and follow it in order.
+6. If the existing target file format conflicts with the step text, follow the step text and mention the conflict before editing.
+
+Evidence rule:
+
+- A workflow step is not considered started until the visible preflight line names the `AGENTS.md` path and the step.
+- Do not check off, mark complete, or call a step done unless this instruction file was read in the current turn.
+- Do not rely on cached memory, pasted prior context, or the existing target file as the source of truth when a numbered workflow step is requested.
+
 ---
 
 ## Required Docs
@@ -16,6 +39,7 @@ Read these before every signal. No exceptions.
 | `docs/publisher-feedback-board.md` | Step 2 + Step 3.2 |
 | `docs/homepage-brief-snapshots.md` | Step 2 + Step 3.2 |
 | `docs/daily-brief-source-comparison.md` | Step 2 + Step 3.2 |
+| `docs/signal-daily-analysis.md` | Step 2D + Step 3.2 |
 | `docs/beat-editors/quantum-zen-rocket.md` | Step 3 — quantum signals only |
 | `docs/beat-editors/bitcoin-macro-ivory-coda.md` | Step 3 — bitcoin-macro signals only |
 | `docs/beat-editors/aibtc-network-skill.md` | Step 3 — aibtc-network signals only |
@@ -82,7 +106,7 @@ Status meanings:
 
 ### Step 2C — Complete Daily Brief Source Comparison
 
-**Goal:** Learn what won today per beat and adjust signal structure to get into the brief.
+**Goal:** Compare what won today per beat against what we submitted. Step 2C is the evidence table; Step 2D turns the comparison into daily analysis and Step 3/5 rules.
 
 Read only:
 1. `docs/homepage-brief-snapshots.md`
@@ -117,6 +141,7 @@ Determine:
 - which clusters are full
 - how my signals differed
 - which rule I missed
+- score drift between local expectation and live publisher/API outcome
 
 Update only `docs/daily-brief-source-comparison.md`.
 
@@ -129,7 +154,39 @@ Rules:
 - no summaries
 - no repetition of headlines
 - each row must end with a clear drafting action
+- if any submitted signal scored below the expected local quality, record the live-score haircut needed for that beat or source family
+- if a signal was valid but rejected, do not call the lesson “try again”; name the exact missing displacement power or 90+ ingredient
+- if the status is still `submitted`, mark outcome uncertainty explicitly and do not infer approval
 
+---
+
+### Step 2D — Signal Daily Analysis
+
+**Goal:** Convert Step 2A, Step 2B, and Step 2C into a daily learning document that Step 3 turns into a target-beat plan and Step 5 enforces before staging.
+
+Read:
+1. `docs/homepage-brief-snapshots.md`
+2. `docs/publisher-feedback-board.md`
+3. `docs/daily-brief-source-comparison.md`
+
+Analyze:
+- what live winners had that our submitted signals lacked
+- which submitted signals dropped from local/draft confidence into lower live score bands
+- which failure mode caused the drift: source specificity, duplicate cluster, weak beat fit, generic implication, cap/displacement threshold, helper bug, or overbroad metric framing
+- what must be blocked, required, or escalated before drafting again
+
+Update only `docs/signal-daily-analysis.md` using this table:
+
+| Date | Beat | Evidence From Brief | Submitted Outcome | Score Drift / Failure Mode | Lesson | Step 3 Plan Requirement | Step 5 Enforcement Rule |
+|---|---|---|---|---|---|---|---|
+
+Rules:
+- Step 2D is mandatory after Step 2C whenever there is new publisher feedback, a new brief snapshot, or a submitted signal with score drift.
+- Do not infer approval from `submitted`; mark unresolved outcomes as `submitted/no feedback`.
+- If live publisher/API scoring drops an apparently `80+` candidate into the `70s` or low `80s`, record the haircut lesson explicitly.
+- Each row must include one concrete Step 3 plan requirement and one concrete Step 5 enforcement rule.
+- Step 2D is not complete until it creates at least one enforceable lesson for each beat with submitted, rejected, replaced, or approved signals in the current comparison window.
+- Step 3 must copy the relevant Step 2D lesson into `docs/target-beat-rules.md`; Step 5.5c must enforce it before staging.
 
 ---
 
@@ -155,7 +212,8 @@ Read in this exact order:
 | 2 | `docs/homepage-brief-snapshots.md` | Blocked shapes — see 3.3 |
 | 3 | `docs/publisher-feedback-board.md` | Rejection reasons, displacement patterns, score thresholds |
 | 4 | `docs/daily-brief-source-comparison.md` | Story shapes that won and lost, sourcing mistakes |
-| 5 | `docs/helper-bugs.md` | Every bug entry — verbatim error, cause, fix, accepted anchor patterns, accepted source URL substrings, tag rules |
+| 5 | `docs/signal-daily-analysis.md` | Score drift, failure modes, Step 3 plan requirements, Step 5 enforcement rules |
+| 6 | `docs/helper-bugs.md` | Every bug entry — verbatim error, cause, fix, accepted anchor patterns, accepted source URL substrings, tag rules |
 
 Beat editor files:
 
@@ -165,7 +223,7 @@ Beat editor files:
 | `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
 | `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-**Hard rule:** read all five. Never skip. Never reuse a cached read from a prior session.
+**Hard rule:** read all six. Never skip. Never reuse a cached read from a prior session.
 
 #### 3.3 — Extract Blocked Shapes (ALWAYS fresh, NEVER cached)
 
@@ -201,18 +259,37 @@ Rules:
 - one row per date + beat combination
 - `Blocked shapes`: always re-extracted today, never copied from a prior row
 - `Helper failure patterns`: accepted anchor patterns + accepted source substrings from `helper-bugs.md`
+- `What scores 90+`, `Instant rejection triggers`, and `What must change before drafting` must include Step 2D score-drift and enforcement-rule lessons for the target beat
 - `Candidate fit`: `n/a` if no candidate yet, otherwise `yes`, `partial`, or `no`
 
 #### 3.6 — Gate Before Step 4
 
-Confirm all four before proceeding:
+Confirm all five before proceeding:
 
-- [ ] All five docs read in full
+- [ ] All six docs read in full
 - [ ] Blocked shapes extracted fresh from today’s `homepage-brief-snapshots.md`
 - [ ] Helper failure patterns recorded
 - [ ] `docs/target-beat-rules.md` updated
+- [ ] Step 3.7 target beat execution plan written or updated
 
-**Do not proceed to Step 4 until all four are confirmed.**
+**Do not proceed to Step 4 until all five are confirmed.**
+
+#### 3.7 — Target Beat Execution Plan
+
+**Goal:** Turn `docs/target-beat-rules.md` from a rule record into a concrete plan before any source hunting or drafting begins.
+
+Using the target beat row in `docs/target-beat-rules.md` plus the relevant Step 2D row in `docs/signal-daily-analysis.md`, append or update one row in the `Target Beat Plans` table in `docs/target-beat-rules.md`:
+
+| Date | Beat | Open Slots | Winning Bar | Do Not Draft | Required Source Family | Required Operator Delta | Score Haircut | Candidate Policy | Next Action |
+|---|---|---:|---|---|---|---|---|---|---|
+
+Rules:
+- One row per date + beat.
+- If no row exists for today and target beat, create one.
+- If a row exists, update it with fresh Step 2D lessons and today's blocked shapes.
+- `Candidate Policy` must be exactly `draft`, `hold`, or `abort`, followed by a short reason.
+- If `Candidate Policy` is `hold` or `abort`, do not proceed to Step 4.
+- Step 4 may only use source families allowed by `Required Source Family`.
 
 ---
 
@@ -435,12 +512,36 @@ Confirm the JSON still matches:
 
 If it does not, revise the JSON before staging it.
 
+#### 5.5c — Live-Score Haircut Gate
+
+Before placing any JSON into `docs/draft-signals.md`, apply a live-score haircut. This is a hard filing gate, not a note.
+
+Assume:
+- local `80-85` quality usually becomes live `70-78`
+- local `86-94` quality may become live `78-86`
+- only local `95+` quality is likely to survive as publisher `90+`
+
+Reject the candidate locally unless all are true:
+- after a `10-15` point haircut, the candidate still plausibly scores `90+`
+- the source proves the exact headline number or anchor without inference leaps
+- the story family is not already saturated in today's brief or recent rejections
+- the operator implication is specific enough to change an agent, desk, wallet, routing, custody, or filing action today
+- the beat fit is obvious from the first claim sentence
+
+If the beat has `0` slots open or the global roster is effectively full, require displacement-grade strength:
+- the candidate must be materially stronger than the weakest current winner
+- a score tie is not enough
+- a clean `83` is not enough
+- a valid helper-safe draft is not enough
+
+If Hermes or the drafting agent cannot explain why the live publisher would still score the candidate `90+` after the haircut, do not stage or file it. Return `hold` with the failed gate.
+
 ### Step 5.6 — Stage Batch For Helper Testing (STRICT)
 
 Build the full batch requested by the operator, with a default minimum of 4 JSON objects unless the operator explicitly requests fewer.
 
 **Output requirement:**
-Write each completed JSON candidate into `docs/draft-signals.md` only after it fully passes Step 5.5 and is ready for Step 5.7 testing.
+Write each completed JSON candidate into `docs/draft-signals.md` only after it fully passes Step 5.5, Step 5.5b, Step 5.5c, and is ready for Step 5.7 testing.
 
 **Rules:**
 - No explanations, no variants, no partial results.
