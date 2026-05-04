@@ -8,6 +8,56 @@ Local quality estimates are optimistic. Treat any internally estimated `80-85` a
 
 ---
 
+## Retail Impact Priority
+
+Before drafting any signal, ask: **would a regular Bitcoin or Stacks holder care about this?**
+
+Prioritize stories that answer yes to at least one of:
+- Does it change what they should do with their BTC, STX, or sBTC right now?
+- Does it affect the safety or value of what they're holding?
+- Does it change the cost or speed of a transaction they'd actually make?
+- Does it warn them about a real risk to their keys, custody, or funds?
+
+Examples that qualify:
+- Quantum threat updates with concrete timelines or new hardware thresholds
+- Fee windows that make on-chain transactions meaningfully cheaper
+- Protocol changes that affect how existing coins are protected or migrated
+- Security events that expose real user funds or signing keys
+- Network capacity changes that affect payment reliability
+
+Examples that do not qualify:
+- Internal platform API changes with no holder-facing consequence
+- Arbitrage gaps and derivatives funding ticks aimed at trading desks
+- Scoring system or editorial rule changes inside the platform
+- Bug fixes that only affect agent operators, not end users
+
+This is a drafting priority, not a hard gate. A signal that fails this test can still be filed if it scores exceptionally on other criteria. But when two candidates are otherwise equal, prefer the one a retail holder would understand and act on.
+
+---
+
+## Operator Workflow Dashboard
+
+Use `http://127.0.0.1:9119/aibtc-codex/` as the local operator workflow dashboard for this process.
+
+Purpose:
+- show which workflow step is active
+- show which steps are complete
+- distinguish producer completion from Hermes completion
+- prevent duplicate or skipped work
+- make handoffs clear between Codex, Claude, and Hermes
+- show whether required docs/artifacts have only been produced or have also been absorbed/enforced by Hermes
+
+Naming note:
+- `aibtc-codex` is historical/local naming. It is not Codex-only.
+- Blue checkmark = producer completed the step.
+- Producer means Codex or Claude, whichever agent created, updated, checked, or produced the artifact.
+- Green checkmark = Hermes completed/read/absorbed/enforced the step.
+- For Step 2A and Step 2B, producer and Hermes may have separate rows because the producer writes/checks and Hermes reads.
+- From Step 2C onward, use one shared step with two checkmarks: blue means producer updated the shared artifact; green means Hermes consumed or enforced it.
+- When a referenced workflow step is completed, check off the matching dashboard item using this convention.
+
+---
+
 ## Workflow Step Preflight
 
 When the operator references a numbered or named workflow step, such as `Step 2C`, `2C`, `proceed to Step 3`, or `move to drafting`, do not act from memory or prior chat context.
@@ -40,6 +90,7 @@ Read these before every signal. No exceptions.
 | `docs/homepage-brief-snapshots.md` | Step 2 + Step 3.2 |
 | `docs/daily-brief-source-comparison.md` | Step 2 + Step 3.2 |
 | `docs/signal-daily-analysis.md` | Step 2D + Step 3.2 |
+| `docs/live-score-calibration.md` | Step 2D + Step 3.2 + Step 5.5c + Step 5.7 + Step 7 |
 | `docs/beat-editors/quantum-zen-rocket.md` | Step 3 — quantum signals only |
 | `docs/beat-editors/bitcoin-macro-ivory-coda.md` | Step 3 — bitcoin-macro signals only |
 | `docs/beat-editors/aibtc-network-skill.md` | Step 3 — aibtc-network signals only |
@@ -162,23 +213,35 @@ Rules:
 
 ### Step 2D — Signal Daily Analysis
 
-**Goal:** Convert Step 2A, Step 2B, and Step 2C into a daily learning document that Step 3 turns into a target-beat plan and Step 5 enforces before staging.
+**Goal:** Convert Step 2A, Step 2B, Step 2C, and the publisher/beat docs into daily learning artifacts that Step 3 turns into a target-beat plan and Step 5 enforces before staging.
+
+Step 2D is where `docs/live-score-calibration.md` is created or updated. This doc is not just a review checklist. It is the constructed score-learning layer: it compares the feedback snapshot against publisher/beat rules and explains why submitted signals failed to reach `80+`, stalled in the `80-89` band, or remained unresolved despite local confidence.
 
 Read:
 1. `docs/homepage-brief-snapshots.md`
 2. `docs/publisher-feedback-board.md`
 3. `docs/daily-brief-source-comparison.md`
+4. Target beat editor docs in `docs/beat-editors/*.md`
+5. `docs/live-score-calibration.md` if it exists
 
 Analyze:
 - what live winners had that our submitted signals lacked
+- what the publisher/beat docs required and whether each submitted signal met those requirements
 - which submitted signals dropped from local/draft confidence into lower live score bands
+- why any signal failed to reach `80+`, failed to become `90+`, or lacked displacement power
 - which failure mode caused the drift: source specificity, duplicate cluster, weak beat fit, generic implication, cap/displacement threshold, helper bug, or overbroad metric framing
 - what must be blocked, required, or escalated before drafting again
 
-Update only `docs/signal-daily-analysis.md` using this table:
+Update `docs/signal-daily-analysis.md` using this table:
 
 | Date | Beat | Evidence From Brief | Submitted Outcome | Score Drift / Failure Mode | Lesson | Step 3 Plan Requirement | Step 5 Enforcement Rule |
 |---|---|---|---|---|---|---|---|
+
+Also create or update `docs/live-score-calibration.md` with the evidence behind those lessons. It must include:
+- `<80` hard-miss families and the publisher/beat requirement they missed
+- `80-89` below-target families and the missing `90+` or displacement ingredient
+- unresolved `90+` families that must not be reused until publisher feedback lands
+- the exact gate Step 5.5c/Step 5.7 must enforce before JSON staging or helper readiness
 
 Rules:
 - Step 2D is mandatory after Step 2C whenever there is new publisher feedback, a new brief snapshot, or a submitted signal with score drift.
@@ -186,7 +249,8 @@ Rules:
 - If live publisher/API scoring drops an apparently `80+` candidate into the `70s` or low `80s`, record the haircut lesson explicitly.
 - Each row must include one concrete Step 3 plan requirement and one concrete Step 5 enforcement rule.
 - Step 2D is not complete until it creates at least one enforceable lesson for each beat with submitted, rejected, replaced, or approved signals in the current comparison window.
-- Step 3 must copy the relevant Step 2D lesson into `docs/target-beat-rules.md`; Step 5.5c must enforce it before staging.
+- Step 2D is not complete until `docs/live-score-calibration.md` reflects the current feedback snapshot and publisher/beat rule analysis.
+- Step 3 must copy the relevant Step 2D lesson into `docs/target-beat-rules.md`; Step 5.5c and Step 5.7 must enforce it before staging or helper-ready output.
 
 ---
 
@@ -213,7 +277,8 @@ Read in this exact order:
 | 3 | `docs/publisher-feedback-board.md` | Rejection reasons, displacement patterns, score thresholds |
 | 4 | `docs/daily-brief-source-comparison.md` | Story shapes that won and lost, sourcing mistakes |
 | 5 | `docs/signal-daily-analysis.md` | Score drift, failure modes, Step 3 plan requirements, Step 5 enforcement rules |
-| 6 | `docs/helper-bugs.md` | Every bug entry — verbatim error, cause, fix, accepted anchor patterns, accepted source URL substrings, tag rules |
+| 6 | `docs/live-score-calibration.md` | Live score bands, sub-80 hard misses, 80-89 below-target patterns, and the gate that should have blocked each |
+| 7 | `docs/helper-bugs.md` | Every bug entry — verbatim error, cause, fix, accepted anchor patterns, accepted source URL substrings, tag rules |
 
 Beat editor files:
 
@@ -223,7 +288,7 @@ Beat editor files:
 | `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
 | `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-**Hard rule:** read all six. Never skip. Never reuse a cached read from a prior session.
+**Hard rule:** read all seven. Never skip. Never reuse a cached read from a prior session.
 
 #### 3.3 — Extract Blocked Shapes (ALWAYS fresh, NEVER cached)
 
@@ -264,21 +329,22 @@ Rules:
 
 #### 3.6 — Gate Before Step 4
 
-Confirm all five before proceeding:
+Confirm all six before proceeding:
 
-- [ ] All six docs read in full
+- [ ] All seven docs read in full
 - [ ] Blocked shapes extracted fresh from today’s `homepage-brief-snapshots.md`
 - [ ] Helper failure patterns recorded
 - [ ] `docs/target-beat-rules.md` updated
+- [ ] Step 3.8 live-score calibration absorption completed
 - [ ] Step 3.7 target beat execution plan written or updated
 
-**Do not proceed to Step 4 until all five are confirmed.**
+**Do not proceed to Step 4 until all six are confirmed.**
 
 #### 3.7 — Target Beat Execution Plan
 
 **Goal:** Turn `docs/target-beat-rules.md` from a rule record into a concrete plan before any source hunting or drafting begins.
 
-Using the target beat row in `docs/target-beat-rules.md` plus the relevant Step 2D row in `docs/signal-daily-analysis.md`, append or update one row in the `Target Beat Plans` table in `docs/target-beat-rules.md`:
+Using the target beat row in `docs/target-beat-rules.md`, the relevant Step 2D row in `docs/signal-daily-analysis.md`, and the relevant Step 3.8 live-score calibration lessons, append or update one row in the `Target Beat Plans` table in `docs/target-beat-rules.md`:
 
 | Date | Beat | Open Slots | Winning Bar | Do Not Draft | Required Source Family | Required Operator Delta | Score Haircut | Candidate Policy | Next Action |
 |---|---|---:|---|---|---|---|---|---|---|
@@ -290,6 +356,24 @@ Rules:
 - `Candidate Policy` must be exactly `draft`, `hold`, or `abort`, followed by a short reason.
 - If `Candidate Policy` is `hold` or `abort`, do not proceed to Step 4.
 - Step 4 may only use source families allowed by `Required Source Family`.
+
+#### 3.8 — Live-Score Calibration Absorption
+
+**Goal:** Make `docs/live-score-calibration.md` affect source selection and drafting before any JSON exists.
+
+Using `docs/live-score-calibration.md`, add the relevant score-calibration lessons into the target beat row and/or `Target Beat Plans` row in `docs/target-beat-rules.md`.
+
+Required extraction:
+- `<80` hard-miss story families for the target beat
+- `80-89` below-target story families for the target beat
+- unresolved `90+` families that must not be reused until publisher feedback lands
+- the exact new gate from `docs/live-score-calibration.md`
+
+Rules:
+- If a candidate family appears in the `<80` hard-miss band, Step 4 must not source it unless a new primary catalyst changes the live operator action.
+- If a candidate family appears in the `80-89` below-target band, Step 4 may only continue if it has a new source catalyst plus a stronger operator consequence.
+- If a candidate family appears as unresolved `90+`, Step 4 must not reuse it until publisher feedback confirms the outcome.
+- These constraints must be visible in `docs/target-beat-rules.md` before Step 4 begins.
 
 ---
 
@@ -367,23 +451,51 @@ Status language is strict:
 
 Hard rule: do not treat `docs/draft-signals.md` placement alone as proof that a signal is ready to submit.
 
-#### 5.1 — Confirm Inputs (do not re-read docs yet)
+#### 5.1 — Identify Beat and Select Signals
 
-Confirm these are available from Steps 3 and 4:
+Read:
 
-- [ ] Blocked shapes list from Step 3.3 (in `docs/target-beat-rules.md`)
-- [ ] Helper failure patterns from Step 3.4
-- [ ] Verified source list from Step 4.5
+| # | File | What to extract |
+|---|---|---|
+| 1 | Beat editor for target beat | Scoring rules, required checklist, instant rejection triggers |
+| 2 | `docs/daily-brief-source-comparison.md` | What is winning, what failed, and why |
+| 3 | `docs/signal-daily-analysis.md` | Score drift, failure modes, Step 5 enforcement rules |
+| 4 | `docs/draft-signals.md` | What is already staged — avoid duplicating anchor or story family |
 
-**If any are missing → return to the missing step. Do not re-read docs yet. Do not proceed.**
+Beat editor files:
 
-Before selecting any anchor, answer these with `yes` or `no`:
-- Does this candidate repeat a blocked story shape from today or the last 48h brief window?
-- Is this just the same story with fresher numbers?
-- Does this reuse the same metric family, comparison frame, or operator implication as a prior posted brief winner?
-- Does this reuse the same source family + metric family + implication family as a previously rejected recent filing?
+| Beat | File |
+|---|---|
+| `quantum` | `docs/beat-editors/quantum-zen-rocket.md` |
+| `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
+| `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
 
-If any answer is `yes` → stop, reject the candidate locally, and pick a different claim family before writing JSON.
+**Default output: 2 draft stories per available beat (6 total across quantum, bitcoin-macro, aibtc-network). Output is draft stories only — no JSON. Do not proceed to Step 5.2 until all stories are staged in `docs/draft-signals.md`.**
+
+1. **Identify target beat** — quantum, bitcoin-macro, or aibtc-network
+2. **Analyze relevant publisher doc** — read the matching beat editor file for the target beat; extract scoring rules, required checklist, and instant rejection triggers
+3. **Load competitive context** — read `docs/daily-brief-source-comparison.md` and `docs/signal-daily-analysis.md`; identify what is winning, what failed, and why
+4. **Select signals** — choose 2 anchors per beat that can compete against current brief winners; do not select if the story family is already saturated or recently rejected
+5. **Score against beat editor** — using the same beat editor file loaded in step 2, score each selected signal against the 90+ bar. If a signal passes, keep it. If it fails, remove it and return to step 4 to select a replacement anchor.
+6. **Stage each passing candidate in `docs/draft-signals.md`** — each signal includes a headline, analysis, sources, and tags. Use this format:
+
+```
+## Signal [N]
+
+**Headline:** <headline>
+
+**Analysis:**
+CLAIM: ...
+EVIDENCE: ...
+IMPLICATION: ...
+
+**Sources:**
+- <title> — <url>
+
+**Tags:** <beat_slug>, <tag>, <tag>
+```
+
+Complete all 6 stories across all 3 beats before stopping. If a beat has fewer than 2 passing candidates, report why and move on — do not halt the full batch.
 
 #### 5.2 — Select Anchor
 
@@ -516,6 +628,11 @@ If it does not, revise the JSON before staging it.
 
 Before placing any JSON into `docs/draft-signals.md`, apply a live-score haircut. This is a hard filing gate, not a note.
 
+First, check `docs/live-score-calibration.md`:
+- If the candidate matches any `<80` hard-miss story family, reject it locally unless a new primary source changes the live operator action.
+- If the candidate matches an `80-89` below-target family, require a new source catalyst plus a stronger operator consequence before drafting.
+- If the candidate matches a `90+` unresolved family, do not reuse it until publisher feedback confirms the outcome.
+
 Assume:
 - local `80-85` quality usually becomes live `70-78`
 - local `86-94` quality may become live `78-86`
@@ -581,7 +698,51 @@ Write each completed JSON candidate into `docs/draft-signals.md` only after it f
 }
 
 ```
+
+### Step 5.7 — Re-Review Calibration and Update JSON Before Helper Testing
+
+Before helper testing or calling any JSON `ready`, re-read `docs/live-score-calibration.md` and compare every staged JSON object in `docs/draft-signals.md` against it.
+
+Required:
+- confirm the candidate does not match a `<80` hard-miss family unless a new primary source changes the live operator action
+- confirm the candidate does not match an `80-89` below-target family unless it has both a new source catalyst and a stronger operator consequence
+- confirm unresolved `90+` families are not reused before publisher feedback lands
+- confirm the JSON still satisfies the exact Step 5 enforcement rule written in `docs/live-score-calibration.md`
+
+If any JSON fails this review, update `docs/draft-signals.md` before Step 6:
+- mark it `hold`, or
+- remove it, or
+- rework it with a fresh source catalyst and stronger operator consequence.
+
+Do not proceed to Step 6 until `docs/draft-signals.md` has been updated to reflect the current live-score calibration.
+
+Required closeout line:
+
+`Confirmed: live-score calibration reviewed during JSON readiness and draft JSON updated or held before helper testing.`
+
 ### Step 6 — Test With Helper Process Before Final Output
+
+#### 6.1 — Helper-Paste JSON Format
+
+By Step 6, the JSON in `docs/draft-signals.md` must be in the exact shape the operator can paste into the local helper:
+
+```json
+{
+  "beat_slug": "quantum",
+  "btc_address": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
+  "headline": "",
+  "body": "CLAIM: \nEVIDENCE: \nIMPLICATION: \nDirective: ",
+  "sources": [],
+  "tags": [],
+  "disclosure": ""
+}
+```
+
+Rules:
+- Do not include repo-only wrapper fields in the Step 6 paste object.
+- Do not include `workflow_context` in the Step 6 paste object.
+- Do not include duplicate content fields unless the helper explicitly requires them; `body` is the canonical content field.
+- If a Step 5 staged draft includes `analysis`, it must be identical to `body` before converting to this Step 6 helper-paste format.
 
 #### 6a — Re-read publisher doc before helper test
 
@@ -606,6 +767,11 @@ If the JSON no longer aligns, revise it before helper testing. Do not rely on me
 Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
 
 `http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
+
+**Exact input format:**
+- Use the exact helper-paste JSON object staged in `docs/draft-signals.md`.
+- The object must match the Step 6.1 shape: `beat_slug`, `btc_address`, `headline`, `body`, `sources`, `tags`, and `disclosure`.
+- If the staged JSON cannot be pasted into the helper as-is, treat that as a Step 6 blocker and record the exact error in `docs/helper-bugs.md` before changing the draft format.
 
 **Required:**
 - Start or restart the helper if needed.
@@ -655,3 +821,21 @@ Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or be
 
 **Hard rule:**
 - Do not return final JSON output until every JSON in the batch passes Step 6.
+
+### Step 7 — Review and Update Live Score Calibration
+
+Final-review and update the live score calibration before any more filing.
+
+Read `docs/live-score-calibration.md`.
+Re-check the April 24-May 3 rows in `docs/publisher-feedback-board.md`.
+Confirm whether every `<80`, `80-89`, and unresolved `90+` row is represented correctly.
+Add any missing low-score findings to `docs/live-score-calibration.md`.
+Use those findings to review the current `docs/draft-signals.md`.
+If any draft signal matches a `<80` hard-miss family or an `80-89` below-target family without a new source catalyst and stronger operator consequence, update `docs/draft-signals.md` to mark it hold or remove/rework it.
+Confirm that `docs/draft-signals.md` is now informed by the up-to-date live-score calibration.
+
+Step 7 is a final audit, not the first construction pass. The calibration data should already have been created or updated in Step 2D and enforced during Step 5.7.
+
+Required closeout line:
+
+`Confirmed: live-score calibration reviewed against publisher feedback and applied to current draft-signal doc or updated to ensure its submit ready.`
