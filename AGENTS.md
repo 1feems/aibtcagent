@@ -686,11 +686,86 @@ Then check each JSON against every known failure mode from `docs/helper-bugs.md`
 | Rejected-shape collision | Does this reuse the same source family + metric family + implication family as a recent rejected filing? |
 | Metric-heavy one-source failure | If the claim is metric-heavy, is there enough independent evidence and not just one organization backing the numbers? |
 
-Do not proceed to Step 6 until every staged JSON has been reviewed against `docs/live-score-calibration.md`, every bug-check passes, and every required JSON update in `docs/draft-signals.md` is complete.
-
 Required closeout line:
 
 `Confirmed: live-score calibration reviewed during JSON readiness and draft JSON updated or held before helper testing.`
+
+### Step 6 — Test With Helper Process Before Final Output
+
+#### 6a — Re-read publisher doc before helper test
+
+Re-read the target beat editor file immediately before helper testing:
+
+- `docs/beat-editors/quantum-zen-rocket.md`
+- `docs/beat-editors/bitcoin-macro-ivory-coda.md`
+- `docs/beat-editors/aibtc-network-skill.md`
+
+Use the file that matches the signal's `beat_slug`.
+
+Confirm the exact JSON still aligns with:
+- required checklist items
+- instant rejection triggers
+- beat-specific 90+ requirements
+- any "never use" rules
+
+If the JSON no longer aligns, revise it before helper testing. Do not rely on memory from Step 3.
+
+#### 6b — Test exact JSON in the local helper
+
+Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
+
+`http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
+
+**Required:**
+- Start or restart the helper if needed.
+- Load or paste the exact JSON staged in `docs/draft-signals.md`.
+- Validate the exact JSON through the helper normalization path.
+- Validate the payload through the local signal-guard path.
+- Confirm there are no pre-login helper blockers before the `Sign Request` stage.
+- Check the exact browser-side helper rules in `tools/xverse-register/file-signal.html`, not just the server-side guard approximation.
+
+**Explicit interpretation:**
+- Repo-side validation alone is not enough.
+- Script output alone is not enough.
+- If the operator specifically asked for browser-side confirmation, the agent must actually open or otherwise use the local helper page and check the exact JSON there.
+- If browser access is unavailable, blocked, or not performed, the agent must say `locally validated only` and must not say `ready to submit`.
+
+**Minimum browser-side checks:**
+- `getHeadlineAnchorPass(...)`
+- required template labels
+- empty template sections
+- universal payload hints
+- headline length and no-period rule
+- source presence and source `url` / `title` validity
+- `beat_slug` present in `tags`
+
+**This step is specifically for catching:**
+- missing helper wrapper fields such as `workflow_context`
+- helper/template/guard failures
+- any pre-login helper error the operator would otherwise discover manually
+
+#### 6c — Pass condition and reporting
+
+**Pass condition:**
+- helper normalization passes
+- local signal guard passes
+- no pre-login helper rejection remains
+- exact browser helper checks in `file-signal.html` pass for the same JSON
+- the re-read target beat editor file confirms the JSON still aligns with publisher rules
+
+**Reporting rule:**
+- If all repo-side checks pass but the browser helper page was not actually used, report `locally validated only`.
+- If the browser helper page was used and no pre-login blocker remains, report `browser-helper confirmed`.
+- Only after `browser-helper confirmed` may the agent say `ready to submit`.
+
+**Not required:**
+- wallet login
+- final signed submission
+
+**Hard rule:**
+- Do not return final JSON output until every JSON in the batch passes Step 6.
+
+---
 
 ### Step 7 — Review and Update Live Score Calibration
 
