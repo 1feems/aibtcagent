@@ -90,7 +90,7 @@ Read these before every signal. No exceptions.
 | `docs/homepage-brief-snapshots.md` | Step 2 + Step 3.2 |
 | `docs/daily-brief-source-comparison.md` | Step 2 + Step 3.2 |
 | `docs/signal-daily-analysis.md` | Step 2D + Step 3.2 |
-| `docs/live-score-calibration.md` | Step 2D + Step 3.2 + Step 5.5c + Step 5.7 + Step 7 |
+| `docs/live-score-calibration.md` | Step 2E + Step 3.2 + Step 3.7 + Step 7 |
 | `docs/beat-editors/quantum-zen-rocket.md` | Step 3 — quantum signals only |
 | `docs/beat-editors/bitcoin-macro-ivory-coda.md` | Step 3 — bitcoin-macro signals only |
 | `docs/beat-editors/aibtc-network-skill.md` | Step 3 — aibtc-network signals only |
@@ -157,7 +157,7 @@ Status meanings:
 
 ### Step 2C — Complete Daily Brief Source Comparison
 
-**Goal:** Compare what won today per beat against what we submitted. Step 2C is the evidence table; Step 2D turns the comparison into daily analysis and Step 3/5 rules.
+**Goal:** Compare what won today per beat against what we submitted. Step 2C is the evidence table; Step 2D turns the comparison into daily analysis and Step 2E turns publisher feedback into live-score calibration gates for Step 3/5.
 
 Read only:
 1. `docs/homepage-brief-snapshots.md`
@@ -215,14 +215,18 @@ Rules:
 
 **Goal:** Convert Step 2A, Step 2B, Step 2C, and the publisher/beat docs into daily learning artifacts that Step 3 turns into a target-beat plan and Step 5 enforces before staging.
 
-Step 2D is where `docs/live-score-calibration.md` is created or updated. This doc is not just a review checklist. It is the constructed score-learning layer: it compares the feedback snapshot against publisher/beat rules and explains why submitted signals failed to reach `80+`, stalled in the `80-89` band, or remained unresolved despite local confidence.
+Step 2D updates `docs/signal-daily-analysis.md`. It explains what changed in the brief and feedback snapshot, then turns that evidence into Step 3 planning requirements and Step 5 enforcement rules. Step 2D does not update `docs/live-score-calibration.md`; Step 2E owns that file.
 
 Read:
 1. `docs/homepage-brief-snapshots.md`
 2. `docs/publisher-feedback-board.md`
 3. `docs/daily-brief-source-comparison.md`
-4. Target beat editor docs in `docs/beat-editors/*.md`
-5. `docs/live-score-calibration.md` if it exists
+4. Publisher/beat editor docs:
+   - `docs/beat-editors/quantum-zen-rocket.md`
+   - `docs/beat-editors/bitcoin-macro-ivory-coda.md`
+   - `docs/beat-editors/aibtc-network-skill.md`
+
+If Step 2D is analyzing every beat in the current comparison window, read all three publisher/beat editor docs. If Step 2D is explicitly scoped to one target beat, read only that beat's publisher/beat editor doc.
 
 Analyze:
 - what live winners had that our submitted signals lacked
@@ -232,16 +236,10 @@ Analyze:
 - which failure mode caused the drift: source specificity, duplicate cluster, weak beat fit, generic implication, cap/displacement threshold, helper bug, or overbroad metric framing
 - what must be blocked, required, or escalated before drafting again
 
-Update `docs/signal-daily-analysis.md` using this table:
+Update only `docs/signal-daily-analysis.md` using this table:
 
 | Date | Beat | Evidence From Brief | Submitted Outcome | Score Drift / Failure Mode | Lesson | Step 3 Plan Requirement | Step 5 Enforcement Rule |
 |---|---|---|---|---|---|---|---|
-
-Also create or update `docs/live-score-calibration.md` with the evidence behind those lessons. It must include:
-- `<80` hard-miss families and the publisher/beat requirement they missed
-- `80-89` below-target families and the missing `90+` or displacement ingredient
-- unresolved `90+` families that must not be reused until publisher feedback lands
-- the exact gate Step 5.5c/Step 5.7 must enforce before JSON staging or helper readiness
 
 Rules:
 - Step 2D is mandatory after Step 2C whenever there is new publisher feedback, a new brief snapshot, or a submitted signal with score drift.
@@ -249,8 +247,58 @@ Rules:
 - If live publisher/API scoring drops an apparently `80+` candidate into the `70s` or low `80s`, record the haircut lesson explicitly.
 - Each row must include one concrete Step 3 plan requirement and one concrete Step 5 enforcement rule.
 - Step 2D is not complete until it creates at least one enforceable lesson for each beat with submitted, rejected, replaced, or approved signals in the current comparison window.
-- Step 2D is not complete until `docs/live-score-calibration.md` reflects the current feedback snapshot and publisher/beat rule analysis.
-- Step 3 must copy the relevant Step 2D lesson into `docs/target-beat-rules.md`; Step 5.5c and Step 5.7 must enforce it before staging or helper-ready output.
+- Step 2D is not complete until `docs/signal-daily-analysis.md` contains a current row for each beat with submitted, rejected, replaced, or approved signals in the current comparison window.
+- Step 3 must copy the relevant Step 2D lesson into `docs/target-beat-rules.md`.
+
+---
+
+### Step 2E — Live Score Calibration
+
+**Goal:** Update `docs/live-score-calibration.md` so under-80 and below-target publisher/API scores become JSON creation gates before Step 5.6 stages any candidate.
+
+Step 2E explains why submitted JSON payloads scored below target. It does not duplicate the publisher feedback board or daily comparison docs. It identifies which part of the submitted JSON failed, which beat editor rule it conflicted with, and what must change before a similar candidate can be staged again.
+
+**Read only:**
+1. `docs/publisher-feedback-board.md`
+2. `docs/beat-editors/quantum-zen-rocket.md`
+3. `docs/beat-editors/bitcoin-macro-ivory-coda.md`
+4. `docs/beat-editors/aibtc-network-skill.md`
+5. Submitted JSON payload when available
+
+**Update only:**
+`docs/live-score-calibration.md`
+
+Selection rule:
+- Go to `docs/publisher-feedback-board.md`.
+- Find signals that are not currently represented in `docs/live-score-calibration.md`.
+- Only analyze rows with an actual live score and real publisher feedback or publisher outcome.
+- Skip rows with blank scores.
+- Skip rows that are still only `Pending review` / `submitted` with no real feedback outcome.
+
+Use this table:
+
+| Date | Signal ID | Beat | Live Score | Failed JSON Field(s) | Payload Failure Pattern | Beat Editor Conflict | JSON Gate Before Staging | Required Upgrade To Proceed |
+|---|---|---|---:|---|---|---|---|---|
+
+For every newly assessed signal with a live score below `80` and real publisher feedback or outcome, add or update one row.
+
+For `80-89` signals, add a row only when there is real publisher feedback or outcome and the score reveals a reusable JSON creation lesson that would affect Step 5.6 staging.
+
+Column rules:
+- `Failed JSON Field(s)`: name the JSON field(s) that caused the score miss, such as `headline`, `body`, `analysis`, `sources`, `tags`, `disclosure`, `operator_implication`, or `story_family`.
+- `Payload Failure Pattern`: describe the reusable payload mistake, not the whole publisher outcome.
+- `Beat Editor Conflict`: cite the relevant beat editor rule or requirement the payload failed.
+- `JSON Gate Before Staging`: write the hard block Step 5.6 must apply before placing JSON in `docs/draft-signals.md`.
+- `Required Upgrade To Proceed`: state what must be improved before a similar candidate can be staged.
+
+Rules:
+- Do not copy the whole publisher feedback row.
+- Do not summarize the daily brief.
+- Do not duplicate `docs/daily-brief-source-comparison.md`.
+- Focus on the submitted JSON payload and why it scored below target.
+- If the submitted JSON is unavailable, infer only from the headline, one-line signal, sources, score, and beat editor doc; mark the row as `payload unavailable`.
+- If a failure pattern already exists, update it with the newest signal ID and score instead of creating a duplicate pattern row.
+- Step 2E is not complete until every new under-80 scored signal with real publisher feedback or outcome has either a calibration row or an explicit note saying why no JSON creation lesson was found.
 
 ---
 
@@ -324,7 +372,7 @@ Rules:
 - one row per date + beat combination
 - `Blocked shapes`: always re-extracted today, never copied from a prior row
 - `Helper failure patterns`: accepted anchor patterns + accepted source substrings from `helper-bugs.md`
-- `What scores 90+`, `Instant rejection triggers`, and `What must change before drafting` must include Step 2D score-drift and enforcement-rule lessons for the target beat
+- `What scores 90+`, `Instant rejection triggers`, and `What must change before drafting` must include Step 2D score-drift lessons and Step 2E live-score calibration gates for the target beat
 - `Candidate fit`: `n/a` if no candidate yet, otherwise `yes`, `partial`, or `no`
 
 #### 3.6 — Gate Before Step 4
@@ -335,221 +383,191 @@ Confirm all six before proceeding:
 - [ ] Blocked shapes extracted fresh from today’s `homepage-brief-snapshots.md`
 - [ ] Helper failure patterns recorded
 - [ ] `docs/target-beat-rules.md` updated
-- [ ] Step 3.8 live-score calibration absorption completed
-- [ ] Step 3.7 target beat execution plan written or updated
+- [ ] Step 3.7 target beat execution plan written or updated (includes calibration absorption)
 
 **Do not proceed to Step 4 until all six are confirmed.**
 
 #### 3.7 — Target Beat Execution Plan
 
-**Goal:** Turn `docs/target-beat-rules.md` from a rule record into a concrete plan before any source hunting or drafting begins.
+**Goal:** Read the rule record, today's analysis, and calibration bands, then write one execution row that decides whether to draft, hold, or abort before any source hunting begins.
 
-Using the target beat row in `docs/target-beat-rules.md`, the relevant Step 2D row in `docs/signal-daily-analysis.md`, and the relevant Step 3.8 live-score calibration lessons, append or update one row in the `Target Beat Plans` table in `docs/target-beat-rules.md`:
+Read these three docs:
+- the rule-record row for today's beat in the **top table** of `docs/target-beat-rules.md`
+- the Step 2D row in `docs/signal-daily-analysis.md`
+- the calibration bands in `docs/live-score-calibration.md`: `<80` hard-miss families (Step 4 must not source these unless a new primary catalyst changes the live operator action), `80-89` below-target families (Step 4 may continue only with a new source catalyst plus stronger operator consequence), unresolved `90+` families (do not reuse until publisher feedback lands)
+
+Then add or update one row for today's beat in the **Target Beat Plans** table in `docs/target-beat-rules.md`:
 
 | Date | Beat | Open Slots | Winning Bar | Do Not Draft | Required Source Family | Required Operator Delta | Score Haircut | Candidate Policy | Next Action |
 |---|---|---:|---|---|---|---|---|---|---|
 
-Rules:
-- One row per date + beat.
-- If no row exists for today and target beat, create one.
-- If a row exists, update it with fresh Step 2D lessons and today's blocked shapes.
-- `Candidate Policy` must be exactly `draft`, `hold`, or `abort`, followed by a short reason.
-- If `Candidate Policy` is `hold` or `abort`, do not proceed to Step 4.
-- Step 4 may only use source families allowed by `Required Source Family`.
-
-#### 3.8 — Live-Score Calibration Absorption
-
-**Goal:** Make `docs/live-score-calibration.md` affect source selection and drafting before any JSON exists.
-
-Using `docs/live-score-calibration.md`, add the relevant score-calibration lessons into the target beat row and/or `Target Beat Plans` row in `docs/target-beat-rules.md`.
-
-Required extraction:
-- `<80` hard-miss story families for the target beat
-- `80-89` below-target story families for the target beat
-- unresolved `90+` families that must not be reused until publisher feedback lands
-- the exact new gate from `docs/live-score-calibration.md`
-
-Rules:
-- If a candidate family appears in the `<80` hard-miss band, Step 4 must not source it unless a new primary catalyst changes the live operator action.
-- If a candidate family appears in the `80-89` below-target band, Step 4 may only continue if it has a new source catalyst plus a stronger operator consequence.
-- If a candidate family appears as unresolved `90+`, Step 4 must not reuse it until publisher feedback confirms the outcome.
-- These constraints must be visible in `docs/target-beat-rules.md` before Step 4 begins.
+- `Candidate Policy` must be exactly `draft`, `hold`, or `abort` plus a short reason.
+- If `hold` or `abort`: stop here, do not proceed to Step 4.
+- Step 4 may only use source families listed in `Required Source Family`.
 
 ---
 
 ### Step 4 — Build Verified Source List (Required Before Step 5)
 
-**Goal:** Build the only source list Step 5 may use.
+**Goal:** Create the only source list Step 5 may use. Keep only sources that can support a fresh, helper-valid, non-duplicate signal.
 
-#### 4.1 — Pull Tier 1 Sources
+#### 4.1 — Start From Tier 1 Sources
 
-From the target beat editor read in Step 3.2, extract every Tier 1 source URL and what it proves.
+Use the target beat editor read in Step 3.2.
 
-#### 4.2 — Remove Sources Already Used Today
+Extract only:
+- Tier 1 source URL
+- what exact claim, metric, or anchor it can prove
+- anchor type, such as PR, issue, release tag, BIP, API metric, block height, paper ID, or NIST reference
 
-From `docs/homepage-brief-snapshots.md`, find every source URL and numeric anchor already used today for the target beat.
+Do not add new sources here. Do not browse for extras. Do not include Tier 2 or Tier 3 sources unless the beat editor explicitly allows them for the target claim.
 
-Mark each Tier 1 source:
-- `available` = source + numeric anchor not already used today
-- `blocked` = same source + same numeric claim already used today
+#### 4.2 — Remove Already-Used Sources
 
-Remove all `blocked` sources.
+Use `docs/homepage-brief-snapshots.md`.
 
-If today's brief is empty, treat all Tier 1 sources as `available` and note that.
+For the target beat and today only, remove any source that would repeat:
+- same source plus same numeric claim
+- same anchor ID
+- same metric family
+- same comparison frame
+- same operator implication
 
-#### 4.3 — Apply Helper Whitelist
+If today's brief has no entries for the target beat, treat all Tier 1 sources as still available and note that.
 
-From `docs/helper-bugs.md`, keep only sources whose URL contains at least one accepted substring:
+#### 4.3 — Remove Helper-Invalid Sources
+
+Use the accepted source substrings from `docs/helper-bugs.md`.
+
+Keep only URLs containing at least one accepted substring:
 
 `/api/` · `github.com` · `explorer.` · `releases/tag/` · `issues/<n>` · `pull/<n>` · `bip-<n>` · `docs.` · `arxiv.org/abs/` · `eprint.iacr.org/` · `csrc.nist.gov/` · `gnusha.org` · `delvingbitcoin.org`
 
 Remove every source that fails this whitelist.
 
-**Hard rule:** a source that fails the whitelist cannot enter JSON.
+**Hard rule:** a source that fails the helper whitelist cannot enter JSON.
 
 #### 4.4 — Remove Shape-Blocked Sources
 
-From the blocked shapes stored in `docs/target-beat-rules.md`, check each remaining source:
+Use the blocked shapes already stored in `docs/target-beat-rules.md`.
 
-- `available` = can prove at least one non-blocked claim
-- `shape-blocked` = every claim it proves maps to a blocked shape
+Remove any source whose usable claims all map to:
+- a blocked story shape
+- the same story with fresher numbers
+- a saturated cluster
+- a recently rejected source family plus metric family plus implication family
 
-Remove all `shape-blocked` sources.
+Keep a source only if it can prove at least one fresh claim family that avoids those blocks.
 
 #### 4.5 — Output Verified Source List
 
-Use this format:
+Output only the sources that survived 4.2, 4.3, and 4.4.
 
-`[URL] — proves [metric] — anchor: [exact value]`
+Use this exact format:
+
+`[URL] — proves [specific claim or metric] — anchor: [exact value]`
 
 This list is the only input Step 5.2 may use.
 
 For metric-heavy claims:
-- do not rely on one organization alone if the claim combines multiple figures, comparisons, or market-wide implications
-- require two independent organizations or source systems unless one canonical primary source fully proves the exact claim
-- if a second source is needed for comparison, baseline, or consequence, it must also be in this verified list before Step 5 begins
+- require two independent organizations or source systems when the claim combines multiple figures, comparisons, or market-wide implications
+- allow one source only when it is the canonical primary source and fully proves the exact claim
+- if a second source is needed, it must appear in this verified list before Step 5 begins
 
-**Hard rule:** if this list is empty, do not proceed to Step 5. Report that no signal can be filed today for this beat.
+**Hard rule:** if the verified source list is empty, stop. Do not proceed to Step 5. Report that no signal can be filed today for this beat.
 
-#### 4.6 — Update `docs/sources.md`
+#### 4.6 — Update `docs/sources.md` Only If Useful
 
-Add any new source patterns found in today's winning briefs that are not already in `docs/sources.md`.
+Update `docs/sources.md` only when today's winning briefs reveal a new reusable source pattern that helps future sourcing.
+
+Do not update `docs/sources.md` for:
+- one-off URLs
+- rejected sources
+- sources already documented
+- sources that failed the helper whitelist
+- sources that cannot support a fresh winning signal
 
 ---
 
 ### Step 5 — Create Signal (Deterministic)
 
-**Goal:** Produce the number of valid, non-duplicate JSON signals requested by the operator, using only pre-verified inputs from Steps 3 and 4. Default to a batch of at least `4` unless the operator explicitly asks for fewer. Stage each finished candidate in `docs/draft-signals.md` before final JSON output.
+**Goal:** Produce the requested number of valid, non-duplicate JSON signals using only the pre-verified inputs from Steps 3 and 4. Default to at least 4 candidates unless the operator explicitly asks for fewer.
 
-`docs/draft-signals.md` is the staging file for finished Step 5 candidates that are ready for Step 5.7 testing. Despite the filename, do not use it for rough notes, partials, or speculative drafts. Only place finished JSON there once the signal is fully constructed, passes Step 5.5, and is ready for helper testing.
+`docs/draft-signals.md` is the staging file for finished Step 5 JSON only. Do not use it for rough notes, partial drafts, or speculative candidates.
 
 Status language is strict:
+- `locally validated` = repo-side checks pass, including helper normalization and local signal guard
+- `browser-helper confirmed` = exact JSON was checked in `file-signal.html` with no pre-login blocker before Sign Request
+- `ready to submit` = only use after `browser-helper confirmed`
 
-- `locally validated` = repo-side checks pass, such as helper normalization and local signal guard
-- `browser-helper confirmed` = the exact JSON has also been checked in `file-signal.html` with no pre-login blocker before `Sign Request`
-- `ready to submit` = only use this phrase after `browser-helper confirmed`
+**Hard rule:** placing JSON in `docs/draft-signals.md` does not mean it is ready to submit.
 
-Hard rule: do not treat `docs/draft-signals.md` placement alone as proof that a signal is ready to submit.
+#### 5.1 — Confirm Inputs
 
-#### 5.1 — Identify Beat and Select Signals
+Confirm these are available from prior steps:
 
-Read:
+- [ ] Blocked shapes from Step 3.3 in `docs/target-beat-rules.md`
+- [ ] Helper failure patterns from Step 3.4
+- [ ] Verified source list from Step 4.5
 
-| # | File | What to extract |
-|---|---|---|
-| 1 | Beat editor for target beat | Scoring rules, required checklist, instant rejection triggers |
-| 2 | `docs/daily-brief-source-comparison.md` | What is winning, what failed, and why |
-| 3 | `docs/signal-daily-analysis.md` | Score drift, failure modes, Step 5 enforcement rules |
-| 4 | `docs/draft-signals.md` | What is already staged — avoid duplicating anchor or story family |
+If any input is missing, return to the missing step. Do not draft.
 
-Beat editor files:
+Do not re-read source docs in Step 5 unless `docs/helper-bugs.md` changed after Step 3.2.
 
-| Beat | File |
-|---|---|
-| `quantum` | `docs/beat-editors/quantum-zen-rocket.md` |
-| `bitcoin-macro` | `docs/beat-editors/bitcoin-macro-ivory-coda.md` |
-| `aibtc-network` | `docs/beat-editors/aibtc-network-skill.md` |
+#### 5.2 — Select Anchor From Verified Sources Only
 
-**Default output: 2 draft stories per available beat (6 total across quantum, bitcoin-macro, aibtc-network). Output is draft stories only — no JSON. Do not proceed to Step 5.2 until all stories are staged in `docs/draft-signals.md`.**
+Pick one source from the Step 4.5 verified source list.
 
-1. **Identify target beat** — quantum, bitcoin-macro, or aibtc-network
-2. **Analyze relevant publisher doc** — read the matching beat editor file for the target beat; extract scoring rules, required checklist, and instant rejection triggers
-3. **Load competitive context** — read `docs/daily-brief-source-comparison.md` and `docs/signal-daily-analysis.md`; identify what is winning, what failed, and why
-4. **Select signals** — choose 2 anchors per beat that can compete against current brief winners; do not select if the story family is already saturated or recently rejected
-5. **Score against beat editor** — using the same beat editor file loaded in step 2, score each selected signal against the 90+ bar. If a signal passes, keep it. If it fails, remove it and return to step 4 to select a replacement anchor.
-6. **Stage each passing candidate in `docs/draft-signals.md`** — each signal includes a headline, analysis, sources, and tags. Use this format:
+Extract:
+- exact anchor ID, such as PR number, issue number, arXiv ID, BIP, release tag, block height, or metric value
+- exact numeric, version, or status claim
+- timestamp or freshness marker
+- source URL and title
 
-```
-## Signal [N]
+**Hard rule:** do not select a source outside the Step 4.5 verified list.
 
-**Headline:** <headline>
+If no clear anchor plus number/status exists, abort that candidate.
 
-**Analysis:**
-CLAIM: ...
-EVIDENCE: ...
-IMPLICATION: ...
+For metric-heavy claims:
+- use two independent organizations or source systems when the claim combines multiple figures, comparisons, or market-wide implications
+- use one source only when it is the canonical primary source and fully proves the exact claim
+- if a second source is required, it must already be in the Step 4.5 verified list
 
-**Sources:**
-- <title> — <url>
+#### 5.3 — Duplicate And Shape Guard
 
-**Tags:** <beat_slug>, <tag>, <tag>
-```
+Block the candidate if any answer is `yes`:
 
-Complete all 6 stories across all 3 beats before stopping. If a beat has fewer than 2 passing candidates, report why and move on — do not halt the full batch.
+- Does it repeat an anchor ID already used in today's brief?
+- Does it reuse the same source plus same numeric claim?
+- Does it repeat a blocked story shape from today or the last 48h brief window?
+- Is it the same story with fresher numbers?
+- Does it reuse the same metric family, comparison frame, or operator implication as a prior posted winner?
+- Does it reuse the same source family plus metric family plus implication family as a recent rejected filing?
+- Is the cluster already saturated?
 
-#### 5.2 — Select Anchor
-
-Pick one source from the verified list produced in Step 4.5. Extract:
-- exact anchor ID (PR #, arXiv ID, BIP, block height, metric value)
-- exact numeric or version claim
-- timestamp / freshness
-
-If the claim is metric-heavy:
-- identify whether one canonical source fully proves it or whether a second independent organization is required
-- if a second source is required for verification, comparison, baseline, or market-wide framing, do not proceed until both sources are selected
-
-**Hard rule: only pick from Step 4.5 output. Do not select a source independently.**
-**Hard rule: if no clear anchor + number exists, abort.**
-
-#### 5.3 — Duplicate Guard
-
-Block if ANY match:
-- same anchor ID already in today's brief
-- same source + same numeric claim already used
-- same cluster already saturated
-
-**Do NOT compare headlines — compare anchor + claim.**
-
-#### 5.3b — Shape Guard
-
-Use the blocked shapes list from Step 3.3 stored in `docs/target-beat-rules.md`. Do not re-derive.
-
-Map your candidate headline structure to every shape on that list. If it maps to any blocked shape → pick a different anchor from Step 4.5 or abort.
-
-Do not check wording alone. Compare the full story family:
+Do not compare headlines only. Compare:
 - source anchor family
 - core metric family
 - comparison frame
 - operator implication
 
-If the candidate keeps the same story family and only changes numbers, timestamps, or phrasing, it is still blocked.
-If the candidate is too close to a prior posted brief story family or a previously rejected recent filing, treat that family as burned for the day and switch families entirely.
+If blocked, reject the candidate locally and pick a different claim family from Step 4.5.
 
-**Hard rule: do not use a hardcoded shape list. Always use the list extracted fresh in Step 3.3 for today's date.**
+If every Step 4.5 source is blocked, stop and report that no signal can be filed for this beat.
 
-**If every anchor from Step 4.5 maps to a blocked shape → do not file. Report instead.**
+#### 5.4 — Construct Signal
 
-#### 5.4 — Construct Signal (fixed order)
-
-**Headline:** anchor + number, non-blocked structure, no paraphrase-only headlines
+**Headline:** anchor plus number/status, non-blocked structure, no paraphrase-only headlines, no final period
 
 **Body = Analysis (identical):**
 
-CLAIM: <one sentence with anchor + number>
+CLAIM: <one sentence with anchor plus number/status>
 
 EVIDENCE: <source-backed facts, include timestamp/ID>
 
 IMPLICATION: <direct effect on agents / bitcoin users / system>
+
+Directive: <exact action to take>
 
 **Tags:** lowercase slugs only, beat_slug must be first tag
 
@@ -562,11 +580,7 @@ Body length rule:
 - if the body reaches `900` characters, trim before filing
 - do not rely on the live API to truncate safely
 
-#### 5.4b — Apply Helper Bug Lessons
-
-From `docs/helper-bugs.md` (read in Step 3.2 — do not re-read yet):
-
-For every bug entry: read the exact error, what caused it, and the fix. Apply the fix to the current JSON.
+Then check the constructed JSON against every known failure mode from `docs/helper-bugs.md` (read in Step 3.2 — do not re-read unless it has been updated since then):
 
 | Past bug | Check on current JSON |
 |---|---|
@@ -581,9 +595,11 @@ For every bug entry: read the exact error, what caused it, and the fix. Apply th
 | Rejected-shape collision | Does this reuse the same source family + metric family + implication family as a recent rejected filing? |
 | Metric-heavy one-source failure | If the claim is metric-heavy, is there enough independent evidence and not just one organization backing the numbers? |
 
-#### 5.4c — Log New Helper Bugs
+The goal is not to run a checklist — it is to confirm no known failure mode is present in the payload. If `docs/helper-bugs.md` has been updated since Step 3.2, re-read it now before checking.
 
-If the operator gives a new helper error or filing blocker, copy that exact text into `docs/helper-bugs.md` immediately. Do not paraphrase it.
+#### 5.4b — Log New Helper Bugs Only When Given
+
+If the operator gives a new helper error or filing blocker, copy that exact text into `docs/helper-bugs.md` before staging or testing more JSON. Do not paraphrase it.
 
 Add:
 - date
@@ -591,91 +607,39 @@ Add:
 - what caused it
 - fix before next JSON
 
-Do this before staging the JSON in `docs/draft-signals.md` or testing it in Step 5.7.
-
-**The goal is not to run a checklist — it is to confirm no known failure mode is present in the payload.**
-
-**If `docs/helper-bugs.md` has been updated since Step 3.2, re-read it now. New entries mean new failure modes.**
+Do not invent helper bugs. Do not update `docs/helper-bugs.md` during normal drafting unless there is a new real error.
 
 #### 5.5 — Pre-Validation
 
-All must be true before staging:
+All must be true before writing to `docs/draft-signals.md`:
 
-- [ ] Headline contains accepted anchor
-- [ ] `body` == `analysis` character-for-character
-- [ ] `CLAIM:` `EVIDENCE:` `IMPLICATION:` present and non-empty
-- [ ] At least 1 Tier 1 source matches anchor
-- [ ] Metric-heavy claims have enough independent source support or a single canonical source that fully proves the exact claim
-- [ ] Not duplicate by anchor + claim
-- [ ] Headline structure not in Step 3.3 blocked list
-- [ ] Body is below 900 chars and kept in the safer 800-900 range when possible
-- [ ] All tags lowercase slugs, beat_slug first
-- [ ] Required helper wrapper fields are present, including `workflow_context` when required
+- [ ] Source came from Step 4.5
+- [ ] Clear anchor plus number/status exists
+- [ ] Not duplicate by anchor, source, claim, cluster, or story family
+- [ ] Headline structure is not in the Step 3.3 blocked list
+- [ ] Headline contains an accepted anchor and has no final period
+- [ ] `body` equals `analysis`
+- [ ] `CLAIM:`, `EVIDENCE:`, `IMPLICATION:`, and `Directive:` are present and non-empty
+- [ ] Body is below `900` characters
+- [ ] Sources include valid `title` and `url`
+- [ ] Every source URL passes the helper whitelist
+- [ ] Tags are lowercase slugs and `beat_slug` is first
+- [ ] Disclosure is complete
+- [ ] Metric-heavy claims have enough verified support
 
-#### 5.5b — Re-check Publisher Rules Before Staging
+#### 5.6 — Stage Finished JSON For Helper Testing
 
-Re-read the target beat editor file before placing any JSON into `docs/draft-signals.md`.
+Write each completed JSON candidate into `docs/draft-signals.md`.
 
-Confirm the JSON still matches:
-- required checklist items
-- instant rejection triggers
-- beat-specific 90+ requirements
-- any “never use” rules
-
-If it does not, revise the JSON before staging it.
-
-#### 5.5c — Live-Score Haircut Gate
-
-Before placing any JSON into `docs/draft-signals.md`, apply a live-score haircut. This is a hard filing gate, not a note.
-
-First, check `docs/live-score-calibration.md`:
-- If the candidate matches any `<80` hard-miss story family, reject it locally unless a new primary source changes the live operator action.
-- If the candidate matches an `80-89` below-target family, require a new source catalyst plus a stronger operator consequence before drafting.
-- If the candidate matches a `90+` unresolved family, do not reuse it until publisher feedback confirms the outcome.
-
-Assume:
-- local `80-85` quality usually becomes live `70-78`
-- local `86-94` quality may become live `78-86`
-- only local `95+` quality is likely to survive as publisher `90+`
-
-Reject the candidate locally unless all are true:
-- after a `10-15` point haircut, the candidate still plausibly scores `90+`
-- the source proves the exact headline number or anchor without inference leaps
-- the story family is not already saturated in today's brief or recent rejections
-- the operator implication is specific enough to change an agent, desk, wallet, routing, custody, or filing action today
-- the beat fit is obvious from the first claim sentence
-
-If the beat has `0` slots open or the global roster is effectively full, require displacement-grade strength:
-- the candidate must be materially stronger than the weakest current winner
-- a score tie is not enough
-- a clean `83` is not enough
-- a valid helper-safe draft is not enough
-
-If Hermes or the drafting agent cannot explain why the live publisher would still score the candidate `90+` after the haircut, do not stage or file it. Return `hold` with the failed gate.
-
-### Step 5.6 — Stage Batch For Helper Testing (STRICT)
-
-Build the full batch requested by the operator, with a default minimum of 4 JSON objects unless the operator explicitly requests fewer.
-
-**Output requirement:**
-Write each completed JSON candidate into `docs/draft-signals.md` only after it fully passes Step 5.5, Step 5.5b, Step 5.5c, and is ready for Step 5.7 testing.
-
-**Rules:**
-- No explanations, no variants, no partial results.
-- Each JSON object must independently pass Step 5.5.
-- If any candidate fails Step 5.5, return to Step 5.2 for that candidate, select a different anchor from Step 4.5, and repeat.
-- Do not reuse the same anchor, source, or headline structure when retrying.
-- Do not reuse the same anchor, source family, metric family, or implication family across multiple JSONs in the same batch unless the operator explicitly requests near-duplicates.
-- Do not call any batch complete, ready, or final until every JSON in the batch passes Step 5.7.
-- Only exit when the requested number of fully valid signals is constructed or when Step 4.5 leaves no valid anchor for an additional signal.
+Use the exact helper-ready JSON format below. Do not create a second stripped-down paste format.
 
 ```json
 {
   "beat_slug": "<beat>",
   "btc_address": "<address>",
   "headline": "<headline>",
-  "body": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...",
-  "analysis": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...",
+  "body": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...\n\nDirective: ...",
+  "analysis": "CLAIM: ...\n\nEVIDENCE: ...\n\nIMPLICATION: ...\n\nDirective: ...",
   "sources": [
     { "title": "...", "url": "..." }
   ],
@@ -696,138 +660,44 @@ Write each completed JSON candidate into `docs/draft-signals.md` only after it f
     }
   }
 }
-
 ```
 
-### Step 5.7 — Re-Review Calibration and Update JSON Before Helper Testing
+#### 5.7 — Review JSON Against Live Calibration
 
-Before helper testing or calling any JSON `ready`, re-read `docs/live-score-calibration.md` and compare every staged JSON object in `docs/draft-signals.md` against it.
+Before helper testing, re-read `docs/live-score-calibration.md` and compare every staged JSON object in `docs/draft-signals.md` against the calibration table.
 
-Required:
-- confirm the candidate does not match a `<80` hard-miss family unless a new primary source changes the live operator action
-- confirm the candidate does not match an `80-89` below-target family unless it has both a new source catalyst and a stronger operator consequence
-- confirm unresolved `90+` families are not reused before publisher feedback lands
-- confirm the JSON still satisfies the exact Step 5 enforcement rule written in `docs/live-score-calibration.md`
+Execution:
 
-If any JSON fails this review, update `docs/draft-signals.md` before Step 6:
-- mark it `hold`, or
-- remove it, or
-- rework it with a fresh source catalyst and stronger operator consequence.
+- if calibration review finds an issue, resolve it by updating the JSON object in `docs/draft-signals.md`
+- if the issue cannot be resolved, mark the JSON `hold` in `docs/draft-signals.md`
 
-Do not proceed to Step 6 until `docs/draft-signals.md` has been updated to reflect the current live-score calibration.
+Then check each JSON against every known failure mode from `docs/helper-bugs.md` (read in Step 3.2 — do not re-read unless it has been updated since then):
+
+| Past bug | Check on current JSON |
+|---|---|
+| Headline anchor regex mismatch | Does headline contain an anchor from the exact accepted list in the file? |
+| Source URL not in whitelist | Does every source URL contain an accepted substring? Check character by character |
+| Uppercase tags rejected by live API | Are all tags lowercase slugs? Check every tag individually |
+| Body over 900 chars | Count the body. If 900 or above → trim before output; keep filing copy in the safer 800-900 range |
+| Body/analysis mismatch | Are `body` and `analysis` character-for-character identical? |
+| Missing CLAIM/EVIDENCE/IMPLICATION | Are all three labels present and non-empty? |
+| Empty disclosure | Does disclosure name model + sources + date + what was verified? |
+| Prior brief story shape collision | Is this too close to a prior posted brief winner even if the numbers are newer? |
+| Rejected-shape collision | Does this reuse the same source family + metric family + implication family as a recent rejected filing? |
+| Metric-heavy one-source failure | If the claim is metric-heavy, is there enough independent evidence and not just one organization backing the numbers? |
+
+Do not proceed to Step 6 until every staged JSON has been reviewed against `docs/live-score-calibration.md`, every bug-check passes, and every required JSON update in `docs/draft-signals.md` is complete.
 
 Required closeout line:
 
 `Confirmed: live-score calibration reviewed during JSON readiness and draft JSON updated or held before helper testing.`
-
-### Step 6 — Test With Helper Process Before Final Output
-
-#### 6.1 — Helper-Paste JSON Format
-
-By Step 6, the JSON in `docs/draft-signals.md` must be in the exact shape the operator can paste into the local helper:
-
-```json
-{
-  "beat_slug": "quantum",
-  "btc_address": "bc1q0y4jqghkwkuv030n7ur6s2fejhu8tx7p78harv",
-  "headline": "",
-  "body": "CLAIM: \nEVIDENCE: \nIMPLICATION: \nDirective: ",
-  "sources": [],
-  "tags": [],
-  "disclosure": ""
-}
-```
-
-Rules:
-- Do not include repo-only wrapper fields in the Step 6 paste object.
-- Do not include `workflow_context` in the Step 6 paste object.
-- Do not include duplicate content fields unless the helper explicitly requires them; `body` is the canonical content field.
-- If a Step 5 staged draft includes `analysis`, it must be identical to `body` before converting to this Step 6 helper-paste format.
-
-#### 6a — Re-read publisher doc before helper test
-
-Re-read the target beat editor file immediately before helper testing:
-
-- `docs/beat-editors/quantum-zen-rocket.md`
-- `docs/beat-editors/bitcoin-macro-ivory-coda.md`
-- `docs/beat-editors/aibtc-network-skill.md`
-
-Use the file that matches the signal’s `beat_slug`.
-
-Confirm the exact JSON still aligns with:
-- required checklist items
-- instant rejection triggers
-- beat-specific 90+ requirements
-- any “never use” rules
-
-If the JSON no longer aligns, revise it before helper testing. Do not rely on memory from Step 3.
-
-#### 6b — Test exact JSON in the local helper
-
-Before calling any signal `JSON ready`, `helper-ready`, `ready to submit`, or before returning the final batch to the operator, test each JSON against the same local filing-helper process the operator uses at:
-
-`http://127.0.0.1:4173/tools/xverse-register/file-signal.html`
-
-**Exact input format:**
-- Use the exact helper-paste JSON object staged in `docs/draft-signals.md`.
-- The object must match the Step 6.1 shape: `beat_slug`, `btc_address`, `headline`, `body`, `sources`, `tags`, and `disclosure`.
-- If the staged JSON cannot be pasted into the helper as-is, treat that as a Step 6 blocker and record the exact error in `docs/helper-bugs.md` before changing the draft format.
-
-**Required:**
-- Start or restart the helper if needed.
-- Load or paste the exact JSON staged in `docs/draft-signals.md`.
-- Validate the exact JSON through the helper normalization path.
-- Validate the payload through the local signal-guard path.
-- Confirm there are no pre-login helper blockers before the `Sign Request` stage.
-- Check the exact browser-side helper rules in `tools/xverse-register/file-signal.html`, not just the server-side guard approximation.
-
-**Explicit interpretation:**
-- Repo-side validation alone is not enough.
-- Script output alone is not enough.
-- If the operator specifically asked for browser-side confirmation, the agent must actually open or otherwise use the local helper page and check the exact JSON there.
-- If browser access is unavailable, blocked, or not performed, the agent must say `locally validated only` and must not say `ready to submit`.
-
-**Minimum browser-side checks:**
-- `getHeadlineAnchorPass(...)`
-- required template labels
-- empty template sections
-- universal payload hints
-- headline length and no-period rule
-- source presence and source `url` / `title` validity
-- `beat_slug` present in `tags`
-
-**This step is specifically for catching:**
-- missing helper wrapper fields such as `workflow_context`
-- helper/template/guard failures
-- any pre-login helper error the operator would otherwise discover manually
-
-#### 6c — Pass condition and reporting
-
-**Pass condition:**
-- helper normalization passes
-- local signal guard passes
-- no pre-login helper rejection remains
-- exact browser helper checks in `file-signal.html` pass for the same JSON
-- the re-read target beat editor file confirms the JSON still aligns with publisher rules
-
-**Reporting rule:**
-- If all repo-side checks pass but the browser helper page was not actually used, report `locally validated only`.
-- If the browser helper page was used and no pre-login blocker remains, report `browser-helper confirmed`.
-- Only after `browser-helper confirmed` may the agent say `ready to submit`.
-
-**Not required:**
-- wallet login
-- final signed submission
-
-**Hard rule:**
-- Do not return final JSON output until every JSON in the batch passes Step 6.
 
 ### Step 7 — Review and Update Live Score Calibration
 
 Final-review and update the live score calibration before any more filing.
 
 Read `docs/live-score-calibration.md`.
-Re-check the April 24-May 3 rows in `docs/publisher-feedback-board.md`.
+Re-check the recent rows in `docs/publisher-feedback-board.md`, prioritizing rows from the current comparison window and any newly scored signals since the last calibration update.
 Confirm whether every `<80`, `80-89`, and unresolved `90+` row is represented correctly.
 Add any missing low-score findings to `docs/live-score-calibration.md`.
 Use those findings to review the current `docs/draft-signals.md`.
